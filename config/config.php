@@ -16,7 +16,7 @@ $payhere_url = "https://sandbox.payhere.lk/pay/checkout"; // Use live URL in pro
 // Adjust credentials as needed for your environment
 define('DB_HOST', '127.0.0.1');
 define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_PASS', '123321555');
 define('DB_NAME', 'sri_lanka_rental_system');
 
 $mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
