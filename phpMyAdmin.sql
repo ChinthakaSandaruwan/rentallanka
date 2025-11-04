@@ -164,9 +164,6 @@
       CONSTRAINT `fk_rentals_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- Vehicles
-    -- Vehicles removed: system now supports only rooms and property rentals
-
     -- Table: payment_slips
     CREATE TABLE IF NOT EXISTS `payment_slips` (
       `slip_id` INT NOT NULL AUTO_INCREMENT,

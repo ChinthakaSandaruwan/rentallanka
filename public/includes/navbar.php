@@ -7,6 +7,7 @@ session_start();
 
 $loggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
 $role = $_SESSION['role'] ?? '';
+require_once __DIR__ . '/../../config/config.php';
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
@@ -30,7 +31,7 @@ $role = $_SESSION['role'] ?? '';
 <body>
   <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
     <div class="container-fluid">
-      <a class="navbar-brand fw-bold" href="/rentallanka/">🏠 Rentallanka</a>
+      <a class="navbar-brand fw-bold" href="<?= $base_url ?>/">🏠 Rentallanka</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
         data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
         aria-expanded="false" aria-label="Toggle navigation">
@@ -40,18 +41,18 @@ $role = $_SESSION['role'] ?? '';
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <!-- Navigation Links -->
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link active" href="/rentallanka/index.php">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="/rentallanka/properties.php">Properties</a></li>
-          <li class="nav-item"><a class="nav-link" href="/rentallanka/about.php">About</a></li>
-          <li class="nav-item"><a class="nav-link" href="/rentallanka/contact.php">Contact</a></li>
+          <li class="nav-item"><a class="nav-link active" href="<?= $base_url ?>/index.php">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/properties.php">Properties</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/about.php">About</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/contact.php">Contact</a></li>
 
           <?php if ($loggedIn): ?>
             <?php if ($role === 'admin'): ?>
-              <li class="nav-item"><a class="nav-link text-danger" href="/rentallanka/admin/index.php">Admin Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/admin/index.php">Admin Dashboard</a></li>
             <?php elseif ($role === 'owner'): ?>
-              <li class="nav-item"><a class="nav-link text-success" href="/rentallanka/owner/index.php">Owner Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link text-success" href="<?= $base_url ?>/owner/index.php">Owner Dashboard</a></li>
             <?php elseif ($role === 'customer'): ?>
-              <li class="nav-item"><a class="nav-link text-primary" href="/rentallanka/customer/index.php">Customer Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link text-primary" href="<?= $base_url ?>/customer/index.php">Customer Dashboard</a></li>
             <?php endif; ?>
           <?php endif; ?>
         </ul>
@@ -69,10 +70,10 @@ $role = $_SESSION['role'] ?? '';
 
         <!-- Authentication Buttons -->
         <?php if (!$loggedIn): ?>
-          <a href="/rentallanka/auth/login.php" class="btn btn-outline-primary auth-btn">Login</a>
+          <a href="<?= $base_url ?>/auth/login.php" class="btn btn-outline-primary auth-btn">Login</a>
         <?php else: ?>
-          <a href="/rentallanka/public/includes/profile.php" class="btn btn-outline-secondary auth-btn">Profile</a>
-          <a href="/rentallanka/auth/logout.php" class="btn btn-outline-danger auth-btn">Logout</a>
+          <a href="<?= $base_url ?>/public/includes/profile.php" class="btn btn-outline-secondary auth-btn">Profile</a>
+          <a href="<?= $base_url ?>/auth/logout.php" class="btn btn-outline-danger auth-btn">Logout</a>
         <?php endif; ?>
       </div>
     </div>
