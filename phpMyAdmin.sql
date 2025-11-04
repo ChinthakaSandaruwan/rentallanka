@@ -27,6 +27,14 @@
       UNIQUE KEY `uk_users_email` (`email`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- sample user data 
+INSERT INTO `users` (`user_id`, `email`, `phone`, `profile_image`, `role`, `status`, `created_at`) VALUES
+(1, 'super_admin@rentallanka.com', '0713018095', NULL, 'super_admin', 'active', '2025-11-04 12:00:00'),
+(2, 'admin@rentallanka.com', '0710476945', NULL, 'admin', 'active', '2025-11-04 12:00:00'),
+(3, 'owner@rentallanka.com', '0743282394', NULL, 'owner', 'active', '2025-11-04 12:00:00'),
+(4, 'customer@rentallanka.com', '0743282395', NULL, 'customer', 'active', '2025-11-04 12:00:00');
+
+
     -- Table: otp_verifications
     CREATE TABLE IF NOT EXISTS `otp_verifications` (
       `otp_id` INT NOT NULL AUTO_INCREMENT,
