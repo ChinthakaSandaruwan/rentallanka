@@ -27,71 +27,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Enter valid Sri Lanka phone number';
             $stage = 'request';
         } else {
-            $stmt = db()->prepare('SELECT user_id, role, status FROM users WHERE phone = ?');
+            // Block super admins here: they must use the dedicated super admin login
+            $stmt = db()->prepare('SELECT super_admin_id FROM super_admins WHERE phone = ? LIMIT 1');
             $stmt->bind_param('s', $phone07);
             $stmt->execute();
-            $res = $stmt->get_result();
-            $user = $res->fetch_assoc();
+            $sa_res = $stmt->get_result();
+            $super = $sa_res->fetch_assoc();
             $stmt->close();
-            if (!$user) {
-                $role = 'customer';
-                $status = 'active';
-                $stmt = db()->prepare('INSERT INTO users (email, phone, profile_image, role, status) VALUES (NULL, ?, NULL, ?, ?)');
-                $stmt->bind_param('sss', $phone07, $role, $status);
-                $stmt->execute();
-                $uid = $stmt->insert_id;
-                $stmt->close();
+            if ($super) {
+                $error = 'This number is registered as Super Admin. Please use Super Admin login.';
+                $stage = 'request';
             } else {
-                $uid = (int)$user['user_id'];
+                // Regular users table lookup and possible auto-create as customer
+                $stmt = db()->prepare('SELECT user_id, role, status FROM users WHERE phone = ?');
+                $stmt->bind_param('s', $phone07);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $user = $res->fetch_assoc();
+                $stmt->close();
+                if (!$user) {
+                    $role = 'customer';
+                    $status = 'active';
+                    $stmt = db()->prepare('INSERT INTO users (email, phone, profile_image, role, status) VALUES (NULL, ?, NULL, ?, ?)');
+                    $stmt->bind_param('sss', $phone07, $role, $status);
+                    $stmt->execute();
+                    $uid = $stmt->insert_id;
+                    $stmt->close();
+                } else {
+                    $uid = (int)$user['user_id'];
+                }
+                $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                $expires = (new DateTime('+5 minutes'))->format('Y-m-d H:i:s');
+                $stmt = db()->prepare('INSERT INTO otp_verifications (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
+                $stmt->bind_param('iss', $uid, $otp, $expires);
+                $stmt->execute();
+                $stmt->close();
+                $_SESSION['otp_stage'] = 'verify';
+                $_SESSION['otp_user_id'] = $uid;
+                $_SESSION['otp_phone'] = $phone07;
+                $sms = 'Your OTP code is ' . $otp . '. It expires in 5 minutes.';
+                smslenz_send_sms(to_e164_for_sms($phone07), $sms);
+                $info = 'OTP sent to ' . $phone07;
+                $stage = 'verify';
             }
-            $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $expires = (new DateTime('+5 minutes'))->format('Y-m-d H:i:s');
-            $stmt = db()->prepare('INSERT INTO otp_verifications (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
-            $stmt->bind_param('iss', $uid, $otp, $expires);
-            $stmt->execute();
-            $stmt->close();
-            $_SESSION['otp_stage'] = 'verify';
-            $_SESSION['otp_user_id'] = $uid;
-            $_SESSION['otp_phone'] = $phone07;
-            $sms = 'Your OTP code is '.$otp.'. It expires in 5 minutes.';
-            smslenz_send_sms(to_e164_for_sms($phone07), $sms);
-            $info = 'OTP sent to '.$phone07;
-            $stage = 'verify';
         }
     } elseif ($action === 'verify') {
-        $uid = (int)($_SESSION['otp_user_id'] ?? 0);
         $phone07 = $_SESSION['otp_phone'] ?? '';
         $code = trim($_POST['otp'] ?? '');
-        if ($uid <= 0 || !preg_match('/^\d{6}$/', $code)) {
+        if (!preg_match('/^\d{6}$/', $code)) {
             $error = 'Invalid OTP';
             $stage = 'verify';
         } else {
-            $stmt = db()->prepare('SELECT o.otp_id, u.user_id, u.role, u.status FROM otp_verifications o JOIN users u ON u.user_id = o.user_id WHERE o.user_id = ? AND o.otp_code = ? AND o.is_verified = 0 AND o.expires_at >= NOW() ORDER BY o.created_at DESC LIMIT 1');
-            $stmt->bind_param('is', $uid, $code);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            $row = $res->fetch_assoc();
-            $stmt->close();
-            if (!$row) {
-                $error = 'OTP is invalid or expired';
+            // Regular user OTP verification via database table
+            $uid = (int)($_SESSION['otp_user_id'] ?? 0);
+            if ($uid <= 0) {
+                $error = 'Invalid OTP';
                 $stage = 'verify';
             } else {
-                $otp_id = (int)$row['otp_id'];
-                $stmt = db()->prepare('UPDATE otp_verifications SET is_verified = 1 WHERE otp_id = ?');
-                $stmt->bind_param('i', $otp_id);
+                $stmt = db()->prepare('SELECT o.otp_id, u.user_id, u.role, u.status FROM otp_verifications o JOIN users u ON u.user_id = o.user_id WHERE o.user_id = ? AND o.otp_code = ? AND o.is_verified = 0 AND o.expires_at >= NOW() ORDER BY o.created_at DESC LIMIT 1');
+                $stmt->bind_param('is', $uid, $code);
                 $stmt->execute();
+                $res = $stmt->get_result();
+                $row = $res->fetch_assoc();
                 $stmt->close();
-                $_SESSION['user'] = [
-                    'user_id' => (int)$row['user_id'],
-                    'phone' => $phone07,
-                    'role' => $row['role'],
-                ];
-                unset($_SESSION['otp_stage'], $_SESSION['otp_user_id'], $_SESSION['otp_phone']);
-                if ($row['role'] === 'super_admin') {
-                    redirect_with_message($base_url . '/superAdmin/index.php', 'Logged in');
-                } elseif ($row['role'] === 'admin') {
-                    redirect_with_message($base_url . '/admin/index.php', 'Logged in');
+                if (!$row) {
+                    $error = 'OTP is invalid or expired';
+                    $stage = 'verify';
                 } else {
+                    $otp_id = (int)$row['otp_id'];
+                    $stmt = db()->prepare('UPDATE otp_verifications SET is_verified = 1 WHERE otp_id = ?');
+                    $stmt->bind_param('i', $otp_id);
+                    $stmt->execute();
+                    $stmt->close();
+                    $_SESSION['user'] = [
+                        'user_id' => (int)$row['user_id'],
+                        'phone' => $phone07,
+                        'role' => $row['role'],
+                    ];
+                    $_SESSION['loggedin'] = true;
+                    $_SESSION['role'] = $row['role'];
+                    unset($_SESSION['otp_stage'], $_SESSION['otp_user_id'], $_SESSION['otp_phone']);
                     redirect_with_message($base_url . '/index.php', 'Logged in');
                 }
             }

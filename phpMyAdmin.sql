@@ -16,24 +16,58 @@
     CREATE TABLE IF NOT EXISTS `users` (
       `user_id` INT NOT NULL AUTO_INCREMENT,
       `email` VARCHAR(255) NULL,
+      `username` VARCHAR(100) NULL,
 --  password no need (because otp login)
       `phone` VARCHAR(20) NOT NULL,
       `profile_image` VARCHAR(255) NULL,
-      `role` ENUM('admin','owner','customer','super_admin') NOT NULL,
+      `role` ENUM('admin','owner','customer') NOT NULL,
       `status` ENUM('active','inactive','banned') NOT NULL DEFAULT 'active',
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`user_id`),
       UNIQUE KEY `uk_users_phone` (`phone`),
-      UNIQUE KEY `uk_users_email` (`email`)
+      UNIQUE KEY `uk_users_email` (`email`),
+      UNIQUE KEY `uk_users_username` (`username`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- sample user data 
-INSERT INTO `users` (`user_id`, `email`, `phone`, `profile_image`, `role`, `status`, `created_at`) VALUES
-(1, 'super_admin@rentallanka.com', '0713018095', NULL, 'super_admin', 'active', '2025-11-04 12:00:00'),
-(2, 'admin@rentallanka.com', '0710476945', NULL, 'admin', 'active', '2025-11-04 12:00:00'),
-(3, 'owner@rentallanka.com', '0743282394', NULL, 'owner', 'active', '2025-11-04 12:00:00'),
-(4, 'customer@rentallanka.com', '0743282395', NULL, 'customer', 'active', '2025-11-04 12:00:00');
+    -- sample user data 
+    INSERT INTO `users` (`user_id`, `email`, `username`, `phone`, `profile_image`, `role`, `status`, `created_at`) VALUES
+    (1, 'admin@rentallanka.com', 'admin', '0710476945', NULL, 'admin', 'active', '2025-11-04 12:00:00'),
+    (2, 'owner@rentallanka.com', 'owner1', '0743282394', NULL, 'owner', 'active', '2025-11-04 12:00:00'),
+    (3, 'customer@rentallanka.com', 'customer1', '0743282395', NULL, 'customer', 'active', '2025-11-04 12:00:00');
 
+    CREATE TABLE IF NOT EXISTS `super_admins` (
+      `super_admin_id` INT NOT NULL AUTO_INCREMENT,
+      `email` VARCHAR(255) NOT NULL,
+      `username` VARCHAR(100) NOT NULL,
+      `password_hash` VARCHAR(255) NOT NULL,
+      `phone` VARCHAR(20) NULL,
+      `status` ENUM('active','inactive','banned') NOT NULL DEFAULT 'active',
+      `last_login_at` DATETIME NULL,
+      `last_login_ip` VARCHAR(45) NULL,
+      `mfa_secret` VARCHAR(255) NULL,
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`super_admin_id`),
+      UNIQUE KEY `uk_super_admins_email` (`email`),
+      UNIQUE KEY `uk_super_admins_username` (`username`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- super admin sample data password is - SuperAdmin
+INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_hash`, `phone`, `status`, `created_at`) VALUES
+(1, 'super_admin@rentallanka.com', 'superadmin', '$2y$10$placeholderhash', '0713018095', 'active', '2025-11-04 12:00:00'); 
+
+    -- Table: super_admin_otps (OTP codes for super admins)
+    CREATE TABLE IF NOT EXISTS `super_admin_otps` (
+      `sa_otp_id` INT NOT NULL AUTO_INCREMENT,
+      `super_admin_id` INT NOT NULL,
+      `otp_code` VARCHAR(8) NOT NULL,
+      `expires_at` DATETIME NOT NULL,
+      `is_verified` TINYINT(1) NOT NULL DEFAULT 0,
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`sa_otp_id`),
+      KEY `idx_sa_otp_super_admin` (`super_admin_id`),
+      KEY `idx_sa_otp_code` (`otp_code`),
+      CONSTRAINT `fk_sa_otp_super_admin` FOREIGN KEY (`super_admin_id`) REFERENCES `super_admins` (`super_admin_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Table: otp_verifications
     CREATE TABLE IF NOT EXISTS `otp_verifications` (
@@ -60,9 +94,14 @@ INSERT INTO `users` (`user_id`, `email`, `phone`, `profile_image`, `role`, `stat
       `price_per_night` DECIMAL(10,2) NULL,
       `bedrooms` INT NULL DEFAULT 0,
       `bathrooms` INT NULL DEFAULT 0,
+      `living_rooms` INT NULL DEFAULT 0,
+      `has_kitchen` TINYINT(1) NOT NULL DEFAULT 0,
+      `has_parking` TINYINT(1) NOT NULL DEFAULT 0,
+      `has_water_supply` TINYINT(1) NOT NULL DEFAULT 0,
+      `has_electricity_supply` TINYINT(1) NOT NULL DEFAULT 0,
       `property_type` ENUM('house','apartment','room','commercial','other') NULL,
       `image` VARCHAR(255) NULL,
-      `status` ENUM('available','rented','inactive') NOT NULL DEFAULT 'available',
+      `status` ENUM('available','rented','unavailable','pending') NOT NULL DEFAULT 'pending',
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`property_id`),
       KEY `idx_properties_owner_id` (`owner_id`),
@@ -186,6 +225,17 @@ INSERT INTO `users` (`user_id`, `email`, `phone`, `profile_image`, `role`, `stat
       CONSTRAINT `fk_payment_slips_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+    -- Table: property_payment_slips (owner property creation payment slips)
+    CREATE TABLE IF NOT EXISTS `property_payment_slips` (
+      `slip_id` INT NOT NULL AUTO_INCREMENT,
+      `property_id` INT NOT NULL,
+      `slip_path` VARCHAR(255) NOT NULL,
+      `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`slip_id`),
+      KEY `idx_pps_property` (`property_id`),
+      CONSTRAINT `fk_pps_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
     -- Table: settings
     CREATE TABLE IF NOT EXISTS `settings` (
       `setting_id` INT NOT NULL AUTO_INCREMENT,
@@ -225,12 +275,15 @@ INSERT INTO `users` (`user_id`, `email`, `phone`, `profile_image`, `role`, `stat
     CREATE TABLE IF NOT EXISTS `admin_logs` (
       `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
       `admin_id` INT NOT NULL,
+      `super_admin_id` INT NULL,
       `action` VARCHAR(255) NOT NULL,
       `ip` VARCHAR(45) DEFAULT NULL,
       `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`),
       KEY `ix_admin_logs_admin` (`admin_id`),
-      CONSTRAINT `fk_admin_logs_admin` FOREIGN KEY (`admin_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
+      KEY `ix_admin_logs_super_admin` (`super_admin_id`),
+      CONSTRAINT `fk_admin_logs_admin` FOREIGN KEY (`admin_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
+      CONSTRAINT `fk_admin_logs_super_admin` FOREIGN KEY (`super_admin_id`) REFERENCES `super_admins`(`super_admin_id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Table: carts (shopping cart per customer)

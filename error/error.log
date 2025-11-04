@@ -1,0 +1,4 @@
+[04-Nov-2025 23:58:25 Asia/Colombo] [2025-11-04 23:58:25] Uncaught Exception: mysqli_sql_exception: Data truncated for column 'status' at row 1 in C:\xampp\htdocs\rentallanka\owner\property_management.php:53
+
+[05-Nov-2025 00:04:15 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=0 errno=28 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[05-Nov-2025 00:04:30 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=0 errno=28 ok=0 err=SMS credentials not configured (sms_user_id/api_key)

@@ -56,17 +56,42 @@ function get_flash(): array {
     return [$msg, $type];
 }
 
+function setting_get(string $key, ?string $default = null): ?string {
+    $stmt = db()->prepare('SELECT setting_value FROM settings WHERE setting_key = ? LIMIT 1');
+    $stmt->bind_param('s', $key);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res->fetch_assoc();
+    $stmt->close();
+    if ($row && $row['setting_value'] !== null) {
+        return (string)$row['setting_value'];
+    }
+    return $default;
+}
+
+function setting_set(string $key, ?string $value): bool {
+    $stmt = db()->prepare('INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+    $stmt->bind_param('ss', $key, $value);
+    $ok = $stmt->execute();
+    $stmt->close();
+    return $ok;
+}
+
 function smslenz_send_sms(string $to, string $message): array {
     global $smslenz_user_id, $smslenz_api_key, $smslenz_sender_id, $smslenz_base;
+    $conf_user = setting_get('sms_user_id', $smslenz_user_id);
+    $conf_key = setting_get('sms_api_key', $smslenz_api_key);
+    $conf_sender = setting_get('sms_sender_id', $smslenz_sender_id);
+    $conf_base = setting_get('sms_base_url', $smslenz_base);
     $to = trim($to);
     if (!preg_match('/^\+94\d{9}$/', $to)) {
         return ['ok' => false, 'error' => 'Invalid phone format'];
     }
-    $url = rtrim($smslenz_base, '/') . '/send-sms';
+    $url = rtrim($conf_base, '/') . '/send-sms';
     $payload = [
-        'user_id' => $smslenz_user_id,
-        'api_key' => $smslenz_api_key,
-        'sender_id' => $smslenz_sender_id,
+        'user_id' => $conf_user,
+        'api_key' => $conf_key,
+        'sender_id' => $conf_sender,
         'contact' => $to,
         'message' => $message,
     ];
@@ -81,9 +106,12 @@ function smslenz_send_sms(string $to, string $message): array {
     $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     $ok = ($errno === 0 && $http >= 200 && $http < 300);
-    if (!$ok && $smslenz_user_id === '' && $smslenz_api_key === '') {
-        $ok = true;
+    if ($conf_user === '' || $conf_key === '') {
+        $ok = false;
+        $error = 'SMS credentials not configured (sms_user_id/api_key)';
     }
+    // Log summary for diagnostics (visible in Super Admin error log)
+    error_log('[smslenz_send_sms] url=' . $url . ' http=' . ($http ?? 0) . ' errno=' . $errno . ' ok=' . ($ok ? '1' : '0') . ' err=' . (string)$error);
     try {
         $stmt = db()->prepare('INSERT INTO sms_logs (user_id, message, status) VALUES (?, ?, ?)');
         $uid = $_SESSION['user']['user_id'] ?? 0;

@@ -1,11 +1,14 @@
 <?php
-session_start();
+if ((function_exists('session_status') ? session_status() : PHP_SESSION_NONE) === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Example session structure
 // $_SESSION['loggedin'] = true;
 // $_SESSION['role'] = 'admin'; // or 'owner', 'customer'
 
-$loggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
+$isSuper = isset($_SESSION['super_admin_id']);
+$loggedIn = (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) || $isSuper;
 $role = $_SESSION['role'] ?? '';
 require_once __DIR__ . '/../../config/config.php';
 ?>
@@ -47,15 +50,20 @@ require_once __DIR__ . '/../../config/config.php';
           <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/contact.php">Contact</a></li>
 
           <?php if ($loggedIn): ?>
+            <?php if ($isSuper): ?>
+              <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/superAdmin/index.php">Super Admin Dashboard</a></li>
+            <?php endif; ?>
             <?php if ($role === 'admin'): ?>
               <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/admin/index.php">Admin Dashboard</a></li>
             <?php elseif ($role === 'owner'): ?>
               <li class="nav-item"><a class="nav-link text-success" href="<?= $base_url ?>/owner/index.php">Owner Dashboard</a></li>
             <?php elseif ($role === 'customer'): ?>
-              <li class="nav-item"><a class="nav-link text-primary" href="<?= $base_url ?>/customer/index.php">Customer Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link text-primary" href="<?= $base_url ?>/user/index.php">Customer Dashboard</a></li>
             <?php endif; ?>
+            <!-- <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/public/includes/profile.php">Profile</a></li> -->
           <?php endif; ?>
         </ul>
+
 
         <!-- Search Bar -->
         <form class="d-flex me-3" role="search">
@@ -98,3 +106,4 @@ require_once __DIR__ . '/../../config/config.php';
   </script>
 </body>
 </html>
+

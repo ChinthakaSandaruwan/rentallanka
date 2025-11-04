@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/../public/includes/auth_guard.php';
+require_role('admin');
+require_once __DIR__ . '/../config/config.php';
 
 $role = 'customer';
 
@@ -51,9 +53,19 @@ if (($_GET['action'] ?? '') === 'delete') {
 
 list($flash, $flashType) = get_flash();
 
+$q = trim($_GET['q'] ?? '');
 $list = [];
-$res = db()->prepare("SELECT user_id, email, phone, status, created_at FROM users WHERE role=? ORDER BY user_id DESC");
-$res->bind_param('s', $role);
+if ($q !== '') {
+    $like = '%' . $q . '%';
+    $res = db()->prepare("SELECT user_id, email, phone, status, created_at
+                           FROM users
+                           WHERE role=? AND (email LIKE ? OR phone LIKE ?)
+                           ORDER BY user_id DESC");
+    $res->bind_param('sss', $role, $like, $like);
+} else {
+    $res = db()->prepare("SELECT user_id, email, phone, status, created_at FROM users WHERE role=? ORDER BY user_id DESC");
+    $res->bind_param('s', $role);
+}
 $res->execute();
 $result = $res->get_result();
 while ($row = $result->fetch_assoc()) { $list[] = $row; }
@@ -73,80 +85,111 @@ if (($_GET['action'] ?? '') === 'edit') {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Customer Management</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 16px; }
-    .flash { padding: 10px; margin-bottom: 12px; border-radius: 6px; }
-    .flash.success { background: #e8f6ee; color: #0a7a3c; }
-    .flash.error { background: #fdecea; color: #b42318; }
-    form { display: grid; gap: 8px; max-width: 420px; margin-bottom: 24px; }
-    input, select, button { padding: 8px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
-    th { background: #f5f5f5; text-align: left; }
-    a.button { padding: 6px 10px; border: 1px solid #999; border-radius: 4px; text-decoration: none; }
-  </style>
-  </head>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
 <body>
-  <h2>Customer Management</h2>
-  <?php if ($flash): ?>
-    <div class="flash <?php echo htmlspecialchars($flashType); ?>"><?php echo htmlspecialchars($flash); ?></div>
-  <?php endif; ?>
+  <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h4 mb-0">Customer Management</h1>
+      <a href="../auth/logout.php" class="btn btn-outline-danger btn-sm">Logout</a>
+    </div>
 
-  <h3><?php echo $editItem ? 'Edit Customer' : 'Create Customer'; ?></h3>
-  <form method="post">
-    <input type="hidden" name="action" value="<?php echo $editItem ? 'update' : 'create'; ?>">
-    <?php if ($editItem): ?>
-      <input type="hidden" name="user_id" value="<?php echo (int)$editItem['user_id']; ?>">
+    <?php if ($flash): ?>
+      <div class="alert alert-<?php echo $flashType === 'error' ? 'danger' : 'success'; ?>" role="alert">
+        <?php echo htmlspecialchars($flash); ?>
+      </div>
     <?php endif; ?>
-    <label>Email
-      <input type="email" name="email" value="<?php echo htmlspecialchars($editItem['email'] ?? ''); ?>" placeholder="optional">
-    </label>
-    <label>Phone*
-      <input type="text" name="phone" value="<?php echo htmlspecialchars($editItem['phone'] ?? ''); ?>" required>
-    </label>
-    <label>Status*
-      <select name="status" required>
-        <?php $statuses=['active','inactive','banned']; $sel=$editItem['status']??'active'; foreach($statuses as $s){
-          echo '<option value="'.htmlspecialchars($s).'"'.($sel===$s?' selected':'').'>'.htmlspecialchars(ucfirst($s)).'</option>'; }
-        ?>
-      </select>
-    </label>
-    <button type="submit"><?php echo $editItem ? 'Update' : 'Create'; ?></button>
-    <?php if ($editItem): ?>
-      <a class="button" href="customer_management.php">Cancel</a>
-    <?php endif; ?>
-  </form>
 
-  <h3>Customers</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Email</th>
-        <th>Phone</th>
-        <th>Status</th>
-        <th>Created</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php foreach ($list as $row): ?>
-        <tr>
-          <td><?php echo (int)$row['user_id']; ?></td>
-          <td><?php echo htmlspecialchars($row['email']); ?></td>
-          <td><?php echo htmlspecialchars($row['phone']); ?></td>
-          <td><?php echo htmlspecialchars($row['status']); ?></td>
-          <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-          <td>
-            <a class="button" href="customer_management.php?action=edit&user_id=<?php echo (int)$row['user_id']; ?>">Edit</a>
-            <a class="button" href="customer_management.php?action=delete&user_id=<?php echo (int)$row['user_id']; ?>" onclick="return confirm('Delete this customer?');">Delete</a>
-          </td>
-        </tr>
-      <?php endforeach; ?>
-    </tbody>
-  </table>
+    <div class="mb-3">
+      <form method="get" class="row g-2">
+        <div class="col-auto">
+          <input type="text" name="q" class="form-control" placeholder="Search email or phone" value="<?php echo htmlspecialchars($q); ?>">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-outline-primary">Search</button>
+          <?php if ($q !== ''): ?>
+            <a href="customer_management.php" class="btn btn-outline-secondary">Clear</a>
+          <?php endif; ?>
+        </div>
+      </form>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><?php echo $editItem ? 'Edit Customer' : 'Create Customer'; ?></div>
+      <div class="card-body">
+        <form method="post" class="row g-3">
+          <input type="hidden" name="action" value="<?php echo $editItem ? 'update' : 'create'; ?>">
+          <?php if ($editItem): ?>
+            <input type="hidden" name="user_id" value="<?php echo (int)$editItem['user_id']; ?>">
+          <?php endif; ?>
+
+          <div class="col-12 col-md-4">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" value="<?php echo htmlspecialchars($editItem['email'] ?? ''); ?>" placeholder="optional">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label">Phone<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="phone" value="<?php echo htmlspecialchars($editItem['phone'] ?? ''); ?>" required>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label">Status<span class="text-danger">*</span></label>
+            <select name="status" class="form-select" required>
+              <?php $statuses=['active','inactive','banned']; $sel=$editItem['status']??'active'; foreach($statuses as $s){
+                echo '<option value="'.htmlspecialchars($s).'"'.($sel===$s?' selected':'').'>'.htmlspecialchars(ucfirst($s)).'</option>'; }
+              ?>
+            </select>
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><?php echo $editItem ? 'Update' : 'Create'; ?></button>
+            <?php if ($editItem): ?>
+              <a class="btn btn-outline-secondary" href="customer_management.php">Cancel</a>
+            <?php endif; ?>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Customers</div>
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Email</th>
+              <th scope="col">Phone</th>
+              <th scope="col">Status</th>
+              <th scope="col">Created</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($list as $row): ?>
+              <tr>
+                <td><?php echo (int)$row['user_id']; ?></td>
+                <td><?php echo htmlspecialchars($row['email']); ?></td>
+                <td><?php echo htmlspecialchars($row['phone']); ?></td>
+                <td>
+                  <span class="badge <?php echo $row['status']==='active'?'bg-success':($row['status']==='inactive'?'bg-secondary':'bg-danger'); ?>"><?php echo htmlspecialchars($row['status']); ?></span>
+                </td>
+                <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                <td class="text-nowrap">
+                  <a class="btn btn-sm btn-outline-primary" href="customer_management.php?action=edit&user_id=<?php echo (int)$row['user_id']; ?>">Edit</a>
+                  <a class="btn btn-sm btn-outline-danger" href="customer_management.php?action=delete&user_id=<?php echo (int)$row['user_id']; ?>" onclick="return confirm('Delete this customer?');">Delete</a>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  <?php require_once __DIR__ . '/../public/includes/footer.php'; ?>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 
