@@ -84,8 +84,37 @@
           </div>
         </div>
       </div>
+    
+
+     <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">Room Management</h5>
+              <i class="bi bi-person-circle card-icon"></i>
+            </div>
+            <p class="card-text text-muted">Manage rooms.</p>
+            <a href="room_management.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">Location Management</h5>
+              <i class="bi bi-person-circle card-icon"></i>
+            </div>
+            <p class="card-text text-muted">Manage locations.</p>
+            <a href="location_management.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+
+
     </div>
-    </div>
+
 
 
     <div class="row g-3 mt-3">

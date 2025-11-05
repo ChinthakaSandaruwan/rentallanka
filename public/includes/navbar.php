@@ -46,6 +46,7 @@ require_once __DIR__ . '/../../config/config.php';
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a class="nav-link active" href="<?= $base_url ?>/index.php">Home</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/properties.php">Properties</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/rooms.php">Rooms</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/about.php">About</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/contact.php">Contact</a></li>
 
@@ -58,7 +59,7 @@ require_once __DIR__ . '/../../config/config.php';
             <?php elseif ($role === 'owner'): ?>
               <li class="nav-item"><a class="nav-link text-success" href="<?= $base_url ?>/owner/index.php">Owner Dashboard</a></li>
             <?php elseif ($role === 'customer'): ?>
-              <li class="nav-item"><a class="nav-link text-primary" href="<?= $base_url ?>/user/index.php">Customer Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link text-primary" href="<?= $base_url ?>/customer/index.php">Customer Dashboard</a></li>
             <?php endif; ?>
             <!-- <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/public/includes/profile.php">Profile</a></li> -->
           <?php endif; ?>
@@ -71,6 +72,30 @@ require_once __DIR__ . '/../../config/config.php';
           <button class="btn btn-outline-success" type="submit">Search</button>
         </form>
 
+        <?php
+          $cartCount = 0;
+          if ($loggedIn && ($role === 'customer')) {
+            try {
+              $cid = (int)($_SESSION['user']['user_id'] ?? 0);
+              if ($cid > 0) {
+                $c = db()->prepare('SELECT cart_id FROM carts WHERE customer_id=? AND status="active" LIMIT 1');
+                $c->bind_param('i', $cid);
+                $c->execute();
+                $cres = $c->get_result()->fetch_assoc();
+                $c->close();
+                if ($cres) {
+                  $cart_id = (int)$cres['cart_id'];
+                  $q = db()->prepare('SELECT COUNT(*) AS cnt FROM cart_items WHERE cart_id=?');
+                  $q->bind_param('i', $cart_id);
+                  $q->execute();
+                  $cnt = $q->get_result()->fetch_assoc();
+                  $q->close();
+                  $cartCount = (int)($cnt['cnt'] ?? 0);
+                }
+              }
+            } catch (Throwable $e) { /* ignore */ }
+          }
+        ?>
         <!-- Theme Toggle -->
         <button id="themeToggle" class="theme-toggle" title="Toggle theme">
           🌙
@@ -80,6 +105,16 @@ require_once __DIR__ . '/../../config/config.php';
         <?php if (!$loggedIn): ?>
           <a href="<?= $base_url ?>/auth/login.php" class="btn btn-outline-primary auth-btn">Login</a>
         <?php else: ?>
+          <?php if ($role === 'customer'): ?>
+            <a href="<?= $base_url ?>/public/includes/cart.php" class="btn btn-outline-primary position-relative me-2">
+              Cart
+              <?php if ($cartCount > 0): ?>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  <?= $cartCount ?>
+                </span>
+              <?php endif; ?>
+            </a>
+          <?php endif; ?>
           <a href="<?= $base_url ?>/public/includes/profile.php" class="btn btn-outline-secondary auth-btn">Profile</a>
           <a href="<?= $base_url ?>/auth/logout.php" class="btn btn-outline-danger auth-btn">Logout</a>
         <?php endif; ?>

@@ -99,7 +99,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
       `has_parking` TINYINT(1) NOT NULL DEFAULT 0,
       `has_water_supply` TINYINT(1) NOT NULL DEFAULT 0,
       `has_electricity_supply` TINYINT(1) NOT NULL DEFAULT 0,
-      `property_type` ENUM('house','apartment','room','commercial','other') NULL,
+      `property_type` ENUM('house','apartment','commercial','other') NULL,
       `image` VARCHAR(255) NULL,
       `status` ENUM('available','rented','unavailable','pending') NOT NULL DEFAULT 'pending',
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -109,88 +109,111 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
       CONSTRAINT `fk_properties_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    CREATE TABLE IF NOT EXISTS `property_units` (
-      `unit_id` INT NOT NULL AUTO_INCREMENT,
-      `property_id` INT NOT NULL,
-      `name` VARCHAR(100) NOT NULL,
-      `capacity` INT NULL DEFAULT 1,
-      `bedrooms` INT NULL DEFAULT 0,
-      `bathrooms` INT NULL DEFAULT 0,
-      `status` ENUM('available','unavailable','maintenance') NOT NULL DEFAULT 'available',
+
+    CREATE TABLE IF NOT EXISTS `rooms` (
+      `room_id` INT NOT NULL AUTO_INCREMENT,
+      `owner_id` INT NOT NULL,
+      `title` VARCHAR(150) NOT NULL,
+      `room_type` ENUM('single','double','suite','dorm','other') NOT NULL DEFAULT 'other',
+      `description` TEXT NULL,
+      `beds` INT NOT NULL DEFAULT 1,
+      `price_per_day` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      `status` ENUM('available','rented','unavailable','pending') NOT NULL DEFAULT 'pending',
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`unit_id`),
-      KEY `idx_units_property_id` (`property_id`),
-      CONSTRAINT `fk_units_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE
+      PRIMARY KEY (`room_id`),
+      KEY `idx_rooms_owner_id` (`owner_id`),
+      KEY `idx_rooms_status` (`status`),
+      CONSTRAINT `fk_rooms_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- Table: unit_images (images for individual rooms/units)
-    CREATE TABLE IF NOT EXISTS `unit_images` (
-      `image_id` INT NOT NULL AUTO_INCREMENT,
-      `unit_id` INT NOT NULL,
-      `image_path` VARCHAR(255) NOT NULL,
-      `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`image_id`),
-      KEY `idx_unit_images_unit_id` (`unit_id`),
-      CONSTRAINT `fk_unit_images_unit` FOREIGN KEY (`unit_id`) REFERENCES `property_units` (`unit_id`) ON DELETE CASCADE
+    -- Reference geography tables
+    CREATE TABLE IF NOT EXISTS `provinces` (
+      `province_id` INT NOT NULL AUTO_INCREMENT,
+      `name` VARCHAR(100) NOT NULL,
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`province_id`),
+      UNIQUE KEY `uk_provinces_name` (`name`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- Table: property_images
-    CREATE TABLE IF NOT EXISTS `property_images` (
-      `image_id` INT NOT NULL AUTO_INCREMENT,
-      `property_id` INT NOT NULL,
-      `image_path` VARCHAR(255) NOT NULL,
-      `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`image_id`),
-      KEY `idx_images_property_id` (`property_id`),
-      CONSTRAINT `fk_images_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE
+    CREATE TABLE IF NOT EXISTS `districts` (
+      `district_id` INT NOT NULL AUTO_INCREMENT,
+      `province_id` INT NOT NULL,
+      `name` VARCHAR(100) NOT NULL,
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`district_id`),
+      UNIQUE KEY `uk_districts_prov_name` (`province_id`,`name`),
+      KEY `idx_districts_province_id` (`province_id`),
+      CONSTRAINT `fk_districts_province` FOREIGN KEY (`province_id`) REFERENCES `provinces` (`province_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- location 
+    CREATE TABLE IF NOT EXISTS `cities` (
+      `city_id` INT NOT NULL AUTO_INCREMENT,
+      `district_id` INT NOT NULL,
+      `name` VARCHAR(100) NOT NULL,
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`city_id`),
+      UNIQUE KEY `uk_cities_dist_name` (`district_id`,`name`),
+      KEY `idx_cities_district_id` (`district_id`),
+      CONSTRAINT `fk_cities_district` FOREIGN KEY (`district_id`) REFERENCES `districts` (`district_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+    -- locations (must be after rooms and reference tables to satisfy FKs)
     CREATE TABLE IF NOT EXISTS `locations` (
      `location_id` INT NOT NULL AUTO_INCREMENT,
-     `property_id` INT NOT NULL,
-     `province` VARCHAR(100) NOT NULL,
-     `district` VARCHAR(100) NOT NULL,
-     `city` VARCHAR(100) NOT NULL,
+     `property_id` INT NULL,
+     `room_id` INT NULL,
+     `province_id` INT NOT NULL,
+     `district_id` INT NOT NULL,
+     `city_id` INT NOT NULL,
      `address` VARCHAR(255) NULL,
      `postal_code` VARCHAR(10) NOT NULL,
      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
      PRIMARY KEY (`location_id`),
      KEY `idx_locations_property_id` (`property_id`),
-     CONSTRAINT `fk_locations_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE
+     KEY `idx_locations_room_id` (`room_id`),
+     KEY `idx_locations_province_id` (`province_id`),
+     KEY `idx_locations_district_id` (`district_id`),
+     KEY `idx_locations_city_id` (`city_id`),
+     CONSTRAINT `fk_locations_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE,
+     CONSTRAINT `fk_locations_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE,
+     CONSTRAINT `fk_locations_province` FOREIGN KEY (`province_id`) REFERENCES `provinces` (`province_id`) ON DELETE RESTRICT,
+     CONSTRAINT `fk_locations_district` FOREIGN KEY (`district_id`) REFERENCES `districts` (`district_id`) ON DELETE RESTRICT,
+     CONSTRAINT `fk_locations_city` FOREIGN KEY (`city_id`) REFERENCES `cities` (`city_id`) ON DELETE RESTRICT
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    CREATE TABLE IF NOT EXISTS `bookings` (
-      `booking_id` INT NOT NULL AUTO_INCREMENT,
-      `unit_id` INT NOT NULL,
-      `customer_id` INT NOT NULL,
-      `booking_type` ENUM('daily') NOT NULL,
-      `start_date` DATE NOT NULL,
-      `end_date` DATE NOT NULL,
-      `total_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-      `with_meal` TINYINT(1) NOT NULL DEFAULT 0,
-      `meal_plan` ENUM('none','breakfast','lunch','dinner','half_board','full_board','all_inclusive','custom') NOT NULL DEFAULT 'none',
-      `meal_notes` VARCHAR(255) NULL,
-      `status` ENUM('pending','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending',
-      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`booking_id`),
-      KEY `idx_bookings_unit_id` (`unit_id`),
-      KEY `idx_bookings_customer_id` (`customer_id`),
-      KEY `idx_bookings_status` (`status`),
-      KEY `idx_bookings_start_date` (`start_date`),
-      CONSTRAINT `fk_bookings_unit` FOREIGN KEY (`unit_id`) REFERENCES `property_units` (`unit_id`) ON DELETE RESTRICT,
-      CONSTRAINT `fk_bookings_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-    -- Table: booking_images (images attached to a specific booking)
-    CREATE TABLE IF NOT EXISTS `booking_images` (
+    -- Table: room_images (images attached to a specific room)
+    CREATE TABLE IF NOT EXISTS `room_images` (
       `image_id` INT NOT NULL AUTO_INCREMENT,
-      `booking_id` INT NOT NULL,
+      `room_id` INT NOT NULL,
       `image_path` VARCHAR(255) NOT NULL,
+      `is_primary` TINYINT(1) NOT NULL DEFAULT 0,
       `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`image_id`),
-      KEY `idx_booking_images_booking_id` (`booking_id`),
-      CONSTRAINT `fk_booking_images_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE
+      KEY `idx_room_images_room_id` (`room_id`),
+      CONSTRAINT `fk_room_images_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+    -- Table: property_images (images attached to a specific property)
+    CREATE TABLE IF NOT EXISTS `property_images` (
+      `image_id` INT NOT NULL AUTO_INCREMENT,
+      `property_id` INT NOT NULL,
+      `image_path` VARCHAR(255) NOT NULL,
+      `is_primary` TINYINT(1) NOT NULL DEFAULT 0,
+      `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`image_id`),
+      KEY `idx_property_images_property_id` (`property_id`),
+      CONSTRAINT `fk_property_images_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+    -- Table: room_payment_slips (owner room creation payment slips)
+    CREATE TABLE IF NOT EXISTS `room_payment_slips` (
+      `slip_id` INT NOT NULL AUTO_INCREMENT,
+      `room_id` INT NOT NULL,
+      `slip_path` VARCHAR(255) NOT NULL,
+      `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`slip_id`),
+      KEY `idx_rps_room` (`room_id`),
+      CONSTRAINT `fk_rps_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Table: rentals
@@ -211,18 +234,33 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
       CONSTRAINT `fk_rentals_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+    -- Table: room_rentals (finalized daily room rentals)
+    CREATE TABLE IF NOT EXISTS `room_rentals` (
+      `room_rental_id` INT NOT NULL AUTO_INCREMENT,
+      `room_id` INT NOT NULL,
+      `customer_id` INT NOT NULL,
+      `start_date` DATE NOT NULL,
+      `end_date` DATE NOT NULL,
+      `total_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      `status` ENUM('active','completed','cancelled') NOT NULL DEFAULT 'active',
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`room_rental_id`),
+      KEY `idx_room_rentals_room_id` (`room_id`),
+      KEY `idx_room_rentals_customer_id` (`customer_id`),
+      KEY `idx_room_rentals_status` (`status`),
+      CONSTRAINT `fk_room_rentals_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE RESTRICT,
+      CONSTRAINT `fk_room_rentals_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
     -- Table: payment_slips
     CREATE TABLE IF NOT EXISTS `payment_slips` (
       `slip_id` INT NOT NULL AUTO_INCREMENT,
       `rental_id` INT NULL,
-      `booking_id` INT NULL,
       `slip_path` VARCHAR(255) NOT NULL,
       `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`slip_id`),
       KEY `idx_payment_slips_rental_id` (`rental_id`),
-      KEY `idx_payment_slips_booking_id` (`booking_id`),
-      CONSTRAINT `fk_payment_slips_rental` FOREIGN KEY (`rental_id`) REFERENCES `rentals` (`rental_id`) ON DELETE CASCADE,
-      CONSTRAINT `fk_payment_slips_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE
+      CONSTRAINT `fk_payment_slips_rental` FOREIGN KEY (`rental_id`) REFERENCES `rentals` (`rental_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Table: property_payment_slips (owner property creation payment slips)
@@ -298,13 +336,13 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
       CONSTRAINT `fk_carts_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- Table: cart_items (supports daily unit bookings or monthly property rentals)
+    -- Table: cart_items (supports daily room bookings or monthly property rentals)
     CREATE TABLE IF NOT EXISTS `cart_items` (
       `item_id` INT NOT NULL AUTO_INCREMENT,
       `cart_id` INT NOT NULL,
-      `unit_id` INT NULL,
+      `room_id` INT NULL,
       `property_id` INT NULL,
-      `item_type` ENUM('daily_unit','monthly_property') NOT NULL,
+      `item_type` ENUM('daily_room','monthly_property') NOT NULL,
       `start_date` DATE NOT NULL,
       `end_date` DATE NOT NULL,
       `quantity` INT NOT NULL DEFAULT 1,
@@ -314,10 +352,10 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`item_id`),
       KEY `idx_cart_items_cart_id` (`cart_id`),
-      KEY `idx_cart_items_unit_id` (`unit_id`),
+      KEY `idx_cart_items_room_id` (`room_id`),
       KEY `idx_cart_items_property_id` (`property_id`),
       CONSTRAINT `fk_cart_items_cart` FOREIGN KEY (`cart_id`) REFERENCES `carts` (`cart_id`) ON DELETE CASCADE,
-      CONSTRAINT `fk_cart_items_unit` FOREIGN KEY (`unit_id`) REFERENCES `property_units` (`unit_id`) ON DELETE RESTRICT,
+      CONSTRAINT `fk_cart_items_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE RESTRICT,
       CONSTRAINT `fk_cart_items_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE RESTRICT
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -339,8 +377,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
       `user_id` INT NOT NULL,
       `title` VARCHAR(150) NOT NULL,
       `message` TEXT NOT NULL,
-      `type` ENUM('system','booking','rental','payment','other') NOT NULL DEFAULT 'system',
-      `booking_id` INT NULL,
+      `type` ENUM('system','rental','payment','other') NOT NULL DEFAULT 'system',
       `rental_id` INT NULL,
       `property_id` INT NULL,
       `is_read` TINYINT(1) NOT NULL DEFAULT 0,
@@ -348,11 +385,9 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
       PRIMARY KEY (`notification_id`),
       KEY `idx_notifications_user_id` (`user_id`),
       KEY `idx_notifications_is_read` (`is_read`),
-      KEY `idx_notifications_booking_id` (`booking_id`),
       KEY `idx_notifications_rental_id` (`rental_id`),
       KEY `idx_notifications_property_id` (`property_id`),
       CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-      CONSTRAINT `fk_notifications_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE SET NULL,
       CONSTRAINT `fk_notifications_rental` FOREIGN KEY (`rental_id`) REFERENCES `rentals` (`rental_id`) ON DELETE SET NULL,
       CONSTRAINT `fk_notifications_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
