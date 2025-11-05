@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'This number is registered as Super Admin. Please use Super Admin login.';
                 $stage = 'request';
             } else {
-                // Regular users table lookup and possible auto-create as customer
+                // Regular users table lookup; if not found, redirect to register
                 $stmt = db()->prepare('SELECT user_id, role, status FROM users WHERE phone = ?');
                 $stmt->bind_param('s', $phone07);
                 $stmt->execute();
@@ -46,16 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $user = $res->fetch_assoc();
                 $stmt->close();
                 if (!$user) {
-                    $role = 'customer';
-                    $status = 'active';
-                    $stmt = db()->prepare('INSERT INTO users (email, phone, profile_image, role, status) VALUES (NULL, ?, NULL, ?, ?)');
-                    $stmt->bind_param('sss', $phone07, $role, $status);
-                    $stmt->execute();
-                    $uid = $stmt->insert_id;
-                    $stmt->close();
-                } else {
-                    $uid = (int)$user['user_id'];
+                    redirect_with_message($base_url . '/auth/register.php?phone=' . urlencode($phone07), 'No account found. Please register.', 'info');
                 }
+                $uid = (int)$user['user_id'];
                 $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                 $expires = (new DateTime('+5 minutes'))->format('Y-m-d H:i:s');
                 $stmt = db()->prepare('INSERT INTO otp_verifications (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
@@ -154,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="hidden" name="action" value="request" />
                                 <button type="submit" class="btn btn-primary w-100">Send OTP</button>
                             </form>
+                            <a href="<?php echo $base_url; ?>/auth/register.php" class="btn btn-outline-secondary w-100 mt-2">Don't have an account? Register</a>
                         <?php else: ?>
                             <form method="post" class="vstack gap-3">
                                 <div>

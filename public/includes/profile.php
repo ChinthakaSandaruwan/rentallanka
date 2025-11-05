@@ -13,31 +13,39 @@ $user = $_SESSION['user'] ?? null; // for non-super users
 // Prepare display data
 $display = [
     'role' => $role,
-    'username' => '',
+    'name' => '',
+    'nic' => '',
     'email' => $user['email'] ?? '',
     'phone' => $user['phone'] ?? '',
     'id' => $user['user_id'] ?? null,
     'profile_image' => $user['profile_image'] ?? '',
+    'status' => '',
+    'created_at' => '',
 ];
 
 // For non-super users, refresh details from DB (including profile_image)
 if (!$isSuper && $display['id'] !== null) {
     $uid = (int)$display['id'];
-    $stmtU = db()->prepare('SELECT email, phone, profile_image FROM users WHERE user_id = ? LIMIT 1');
+    $stmtU = db()->prepare('SELECT name, nic, email, phone, profile_image, role, status, created_at FROM users WHERE user_id = ? LIMIT 1');
     $stmtU->bind_param('i', $uid);
     $stmtU->execute();
     $resU = $stmtU->get_result();
     if ($rowU = $resU->fetch_assoc()) {
+        $display['name'] = (string)($rowU['name'] ?? '');
+        $display['nic'] = (string)($rowU['nic'] ?? '');
         $display['email'] = (string)($rowU['email'] ?? $display['email']);
         $display['phone'] = (string)($rowU['phone'] ?? $display['phone']);
         $display['profile_image'] = (string)($rowU['profile_image'] ?? $display['profile_image']);
+        $display['role'] = (string)($rowU['role'] ?? $display['role']);
+        $display['status'] = (string)($rowU['status'] ?? '');
+        $display['created_at'] = (string)($rowU['created_at'] ?? '');
     }
     $stmtU->close();
 }
 
 if ($isSuper) {
     $sid = (int)$_SESSION['super_admin_id'];
-    $stmt = db()->prepare('SELECT username, email, phone FROM super_admins WHERE super_admin_id = ? LIMIT 1');
+    $stmt = db()->prepare('SELECT name, email, phone, status, created_at FROM super_admins WHERE super_admin_id = ? LIMIT 1');
     $stmt->bind_param('i', $sid);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -45,10 +53,12 @@ if ($isSuper) {
     $stmt->close();
     if ($sa) {
         $display['role'] = 'super_admin';
-        $display['username'] = (string)$sa['username'];
+        $display['name'] = (string)($sa['name'] ?? '');
         $display['email'] = (string)($sa['email'] ?? '');
         $display['phone'] = (string)($sa['phone'] ?? '');
         $display['id'] = $sid;
+        $display['status'] = (string)($sa['status'] ?? '');
+        $display['created_at'] = (string)($sa['created_at'] ?? '');
     }
 }
 
@@ -141,24 +151,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 <?php require_once __DIR__ . '/navbar.php'; ?>
-<?php require_once __DIR__ . '/navbar.php'; ?>
 <div class="container py-4">
   <div class="row justify-content-center">
     <div class="col-12 col-md-8 col-lg-6">
       <div class="card shadow-sm">
         <div class="card-body">
-          <h3 class="mb-3">Profile</h3>
-          <?php
-            $badgeClass = 'bg-secondary';
-            if ($display['role'] === 'super_admin') $badgeClass = 'bg-danger';
-            elseif ($display['role'] === 'admin') $badgeClass = 'bg-danger';
-            elseif ($display['role'] === 'owner') $badgeClass = 'bg-success';
-            elseif ($display['role'] === 'customer') $badgeClass = 'bg-primary';
-          ?>
           <div class="mb-3 d-flex align-items-center gap-2">
+            <?php
+              $badgeClass = 'bg-secondary';
+              if ($display['role'] === 'super_admin') $badgeClass = 'bg-danger';
+              elseif ($display['role'] === 'admin') $badgeClass = 'bg-danger';
+              elseif ($display['role'] === 'owner') $badgeClass = 'bg-success';
+              elseif ($display['role'] === 'customer') $badgeClass = 'bg-primary';
+            ?>
             <span class="badge <?= $badgeClass ?> text-uppercase"><?= htmlspecialchars($display['role'] ?: 'unknown') ?></span>
-            <?php if ($display['username']): ?>
-              <span class="text-muted">@<?= htmlspecialchars($display['username']) ?></span>
+            <?php if (!empty($display['name'])): ?>
+              <span class="text-muted"><?= htmlspecialchars($display['name']) ?></span>
             <?php endif; ?>
           </div>
           <div class="text-center mb-3">
@@ -175,10 +183,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <span>ID</span><span><?= $display['id'] !== null ? (int)$display['id'] : '-' ?></span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>Name</span><span><?= $display['name'] !== '' ? htmlspecialchars($display['name']) : '-' ?></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>NIC</span><span><?= $display['nic'] !== '' ? htmlspecialchars($display['nic']) : '-' ?></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
               <span>Email</span><span><?= $display['email'] !== '' ? htmlspecialchars($display['email']) : '-' ?></span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center">
               <span>Phone</span><span><?= $display['phone'] !== '' ? htmlspecialchars($display['phone']) : '-' ?></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>Role</span><span><?= $display['role'] !== '' ? htmlspecialchars($display['role']) : '-' ?></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>Status</span><span><?= $display['status'] !== '' ? htmlspecialchars($display['status']) : '-' ?></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>Created</span><span><?= $display['created_at'] !== '' ? htmlspecialchars($display['created_at']) : '-' ?></span>
             </li>
           </ul>
 

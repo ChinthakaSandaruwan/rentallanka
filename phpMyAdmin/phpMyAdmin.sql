@@ -16,7 +16,8 @@
     CREATE TABLE IF NOT EXISTS `users` (
       `user_id` INT NOT NULL AUTO_INCREMENT,
       `email` VARCHAR(255) NULL,
-      `username` VARCHAR(100) NULL,
+      `nic` VARCHAR(20) NULL,
+      `name` VARCHAR(100) NULL,
 --  password no need (because otp login)
       `phone` VARCHAR(20) NOT NULL,
       `profile_image` VARCHAR(255) NULL,
@@ -26,19 +27,21 @@
       PRIMARY KEY (`user_id`),
       UNIQUE KEY `uk_users_phone` (`phone`),
       UNIQUE KEY `uk_users_email` (`email`),
-      UNIQUE KEY `uk_users_username` (`username`)
+      UNIQUE KEY `uk_users_name` (`name`),
+      UNIQUE KEY `uk_users_nic` (`nic`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- sample user data 
-    INSERT INTO `users` (`user_id`, `email`, `username`, `phone`, `profile_image`, `role`, `status`, `created_at`) VALUES
+    INSERT INTO `users` (`user_id`, `email`, `name`, `phone`, `profile_image`, `role`, `status`, `created_at`) VALUES
     (1, 'admin@rentallanka.com', 'admin', '0710476945', NULL, 'admin', 'active', '2025-11-04 12:00:00'),
+    
     (2, 'owner@rentallanka.com', 'owner1', '0743282394', NULL, 'owner', 'active', '2025-11-04 12:00:00'),
     (3, 'customer@rentallanka.com', 'customer1', '0743282395', NULL, 'customer', 'active', '2025-11-04 12:00:00');
 
     CREATE TABLE IF NOT EXISTS `super_admins` (
       `super_admin_id` INT NOT NULL AUTO_INCREMENT,
       `email` VARCHAR(255) NOT NULL,
-      `username` VARCHAR(100) NOT NULL,
+      `name` VARCHAR(100) NOT NULL,
       `password_hash` VARCHAR(255) NOT NULL,
       `phone` VARCHAR(20) NULL,
       `status` ENUM('active','inactive','banned') NOT NULL DEFAULT 'active',
@@ -48,11 +51,11 @@
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`super_admin_id`),
       UNIQUE KEY `uk_super_admins_email` (`email`),
-      UNIQUE KEY `uk_super_admins_username` (`username`)
+      UNIQUE KEY `uk_super_admins_name` (`name`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- super admin sample data password is - SuperAdmin
-INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_hash`, `phone`, `status`, `created_at`) VALUES
+INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, `phone`, `status`, `created_at`) VALUES
 (1, 'super_admin@rentallanka.com', 'superadmin', '$2y$10$placeholderhash', '0713018095', 'active', '2025-11-04 12:00:00'); 
 
     -- Table: super_admin_otps (OTP codes for super admins)

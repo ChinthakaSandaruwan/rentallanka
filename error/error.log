@@ -102,3 +102,15 @@
 
 [05-Nov-2025 18:44:00 Asia/Colombo] [2025-11-05 18:44:00] Uncaught Exception: mysqli_sql_exception: Unknown column 'province_id' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:17
 
+[05-Nov-2025 19:33:37 Asia/Colombo] [2025-11-05 19:33:37] Uncaught Exception: mysqli_sql_exception: Unknown column 'username' in 'field list' in C:\xampp\htdocs\rentallanka\auth\register.php:59
+
+[05-Nov-2025 19:36:14 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[05-Nov-2025 19:38:09 Asia/Colombo] [2025-11-05 19:38:09] PHP Error: Undefined array key "username" in C:\xampp\htdocs\rentallanka\public\includes\profile.php:170
+
+[05-Nov-2025 19:38:09 Asia/Colombo] PHP Warning:  Undefined array key "username" in C:\xampp\htdocs\rentallanka\public\includes\profile.php on line 170
+[05-Nov-2025 19:38:10 Asia/Colombo] [2025-11-05 19:38:10] PHP Error: Undefined array key "username" in C:\xampp\htdocs\rentallanka\public\includes\profile.php:170
+
+[05-Nov-2025 19:38:10 Asia/Colombo] PHP Warning:  Undefined array key "username" in C:\xampp\htdocs\rentallanka\public\includes\profile.php on line 170
+[05-Nov-2025 19:38:11 Asia/Colombo] [2025-11-05 19:38:11] PHP Error: Undefined array key "username" in C:\xampp\htdocs\rentallanka\public\includes\profile.php:170
+
+[05-Nov-2025 19:38:11 Asia/Colombo] PHP Warning:  Undefined array key "username" in C:\xampp\htdocs\rentallanka\public\includes\profile.php on line 170
