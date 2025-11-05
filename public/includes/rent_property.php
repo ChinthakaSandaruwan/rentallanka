@@ -95,6 +95,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container py-4">
   <div class="row g-4">
     <div class="col-12 col-lg-7">
+      <div class="card mb-3">
+        <div class="card-header">Images</div>
+        <div class="card-body">
+          <?php $primaryUrl = norm_url($prop['image'] ?? ''); ?>
+          <?php if ($primaryUrl): ?>
+            <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid rounded mb-3" alt="">
+          <?php endif; ?>
+          <?php if ($gallery): ?>
+            <div class="row g-2">
+              <?php foreach ($gallery as $img): ?>
+                <?php $p = norm_url($img['image_path'] ?? ''); ?>
+                <div class="col-6 col-md-4">
+                  <a href="<?php echo htmlspecialchars($p); ?>" target="_blank">
+                    <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid rounded" alt="">
+                  </a>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php elseif (!$primaryUrl): ?>
+            <div class="text-muted">No images uploaded.</div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-5">
       <div class="card">
         <div class="card-header">Property Details</div>
         <div class="card-body">
@@ -130,31 +155,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <span class="text-muted ms-2">(Form submission wiring pending)</span>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-lg-5">
-      <div class="card mb-3">
-        <div class="card-header">Images</div>
-        <div class="card-body">
-          <?php $primaryUrl = norm_url($prop['image'] ?? ''); ?>
-          <?php if ($primaryUrl): ?>
-            <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid rounded mb-3" alt="">
-          <?php endif; ?>
-          <?php if ($gallery): ?>
-            <div class="row g-2">
-              <?php foreach ($gallery as $img): ?>
-                <?php $p = norm_url($img['image_path'] ?? ''); ?>
-                <div class="col-6 col-md-4">
-                  <a href="<?php echo htmlspecialchars($p); ?>" target="_blank">
-                    <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid rounded" alt="">
-                  </a>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php elseif (!$primaryUrl): ?>
-            <div class="text-muted">No images uploaded.</div>
-          <?php endif; ?>
         </div>
       </div>
     </div>

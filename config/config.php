@@ -18,7 +18,7 @@ $payhere_url = "https://sandbox.payhere.lk/pay/checkout"; // Use live URL in pro
 define('DB_HOST', '127.0.0.1');
 define('DB_USER', 'root');
 define('DB_PASS', '123321555');
-define('DB_NAME', 'sri_lanka_rental_system');
+define('DB_NAME', 'rentallanka');
 
 $smslenz_user_id = getenv('SMSLENZ_USER_ID') ?: '';
 $smslenz_api_key = getenv('SMSLENZ_API_KEY') ?: '';

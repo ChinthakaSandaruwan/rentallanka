@@ -61,3 +61,44 @@
 
 [05-Nov-2025 15:03:39 Asia/Colombo] [2025-11-05 15:03:39] Uncaught Exception: mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`sri_lanka_rental_system`.`locations`, CONSTRAINT `fk_locations_city` FOREIGN KEY (`city_id`) REFERENCES `cities` (`city_id`) ON DELETE RESTRICT) in C:\xampp\htdocs\rentallanka\admin\location_management.php:53
 
+[05-Nov-2025 15:17:29 Asia/Colombo] [2025-11-05 15:17:29] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:17:55 Asia/Colombo] [2025-11-05 15:17:55] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:18:34 Asia/Colombo] [2025-11-05 15:18:34] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:18:35 Asia/Colombo] [2025-11-05 15:18:35] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:18:38 Asia/Colombo] [2025-11-05 15:18:38] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:18:39 Asia/Colombo] [2025-11-05 15:18:39] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:19:31 Asia/Colombo] [2025-11-05 15:19:31] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:19:32 Asia/Colombo] [2025-11-05 15:19:32] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:19:48 Asia/Colombo] [2025-11-05 15:19:48] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:19:49 Asia/Colombo] [2025-11-05 15:19:49] Uncaught Exception: mysqli_sql_exception: Unknown database 'sri_lanka_rental_system' in C:\xampp\htdocs\rentallanka\config\config.php:33
+
+[05-Nov-2025 15:47:11 Asia/Colombo] [2025-11-05 15:47:11] Uncaught Exception: mysqli_sql_exception: Unknown column 'province_id' in 'field list' in C:\xampp\htdocs\rentallanka\owner\property_management.php:16
+
+[05-Nov-2025 16:43:09 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[05-Nov-2025 18:37:08 Asia/Colombo] [2025-11-05 18:37:08] Uncaught Exception: mysqli_sql_exception: Unknown column 'province_id' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:17
+
+[05-Nov-2025 18:38:31 Asia/Colombo] [2025-11-05 18:38:31] Uncaught Exception: mysqli_sql_exception: Unknown column 'province_id' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:17
+
+[05-Nov-2025 18:41:01 Asia/Colombo] [2025-11-05 18:41:01] Uncaught Exception: mysqli_sql_exception: Unknown column 'pr.name' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:190
+
+[05-Nov-2025 18:41:03 Asia/Colombo] [2025-11-05 18:41:03] Uncaught Exception: mysqli_sql_exception: Unknown column 'pr.name' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:190
+
+[05-Nov-2025 18:41:06 Asia/Colombo] [2025-11-05 18:41:06] Uncaught Exception: mysqli_sql_exception: Unknown column 'pr.name' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:190
+
+[05-Nov-2025 18:41:33 Asia/Colombo] [2025-11-05 18:41:33] Uncaught Exception: mysqli_sql_exception: Unknown column 'pr.name' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:190
+
+[05-Nov-2025 18:43:02 Asia/Colombo] [2025-11-05 18:43:02] Uncaught Exception: mysqli_sql_exception: Unknown column 'province_id' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:17
+
+[05-Nov-2025 18:43:21 Asia/Colombo] [2025-11-05 18:43:21] Uncaught Exception: mysqli_sql_exception: Unknown column 'province_id' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:17
+
+[05-Nov-2025 18:44:00 Asia/Colombo] [2025-11-05 18:44:00] Uncaught Exception: mysqli_sql_exception: Unknown column 'province_id' in 'field list' in C:\xampp\htdocs\rentallanka\owner\room_management.php:17
+

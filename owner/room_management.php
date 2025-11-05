@@ -14,13 +14,13 @@ if (isset($_GET['geo'])) {
     $type = $_GET['geo'];
     if ($type === 'provinces') {
         $rows = [];
-        $res = db()->query("SELECT province_id, name FROM provinces ORDER BY name");
+        $res = db()->query("SELECT id AS province_id, name_en AS name FROM provinces ORDER BY name_en");
         while ($r = $res->fetch_assoc()) { $rows[] = $r; }
         echo json_encode($rows); exit;
     } elseif ($type === 'districts') {
         $province_id = (int)($_GET['province_id'] ?? 0);
         $rows = [];
-        $stmt = db()->prepare("SELECT district_id, name FROM districts WHERE province_id=? ORDER BY name");
+        $stmt = db()->prepare("SELECT id AS district_id, name_en AS name FROM districts WHERE province_id=? ORDER BY name_en");
         $stmt->bind_param('i', $province_id);
         $stmt->execute();
         $rs = $stmt->get_result();
@@ -30,7 +30,7 @@ if (isset($_GET['geo'])) {
     } elseif ($type === 'cities') {
         $district_id = (int)($_GET['district_id'] ?? 0);
         $rows = [];
-        $stmt = db()->prepare("SELECT city_id, name FROM cities WHERE district_id=? ORDER BY name");
+        $stmt = db()->prepare("SELECT id AS city_id, name_en AS name FROM cities WHERE district_id=? ORDER BY name_en");
         $stmt->bind_param('i', $district_id);
         $stmt->execute();
         $rs = $stmt->get_result();
@@ -187,9 +187,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Load rooms for this owner
 $rooms = [];
-$rs = db()->prepare("SELECT r.room_id, r.title, r.status, r.price_per_day, r.created_at
-                     FROM rooms r
-                     WHERE r.owner_id = ? ORDER BY r.room_id DESC");
+$rs = db()->prepare(
+    "SELECT r.room_id, r.title, r.room_type, r.beds, r.status, r.price_per_day, r.created_at,
+            (
+              SELECT ri.image_path FROM room_images ri
+              WHERE ri.room_id = r.room_id
+              ORDER BY ri.is_primary DESC, ri.image_id DESC
+              LIMIT 1
+            ) AS image_path,
+            pr.name_en AS province_name, d.name_en AS district_name, c.name_en AS city_name
+     FROM rooms r
+     LEFT JOIN locations l ON l.room_id = r.room_id
+     LEFT JOIN provinces pr ON pr.id = l.province_id
+     LEFT JOIN districts d ON d.id = l.district_id
+     LEFT JOIN cities c ON c.id = l.city_id
+     WHERE r.owner_id = ?
+     ORDER BY r.room_id DESC"
+);
 $rs->bind_param('i', $owner_id);
 $rs->execute();
 $rres = $rs->get_result();
@@ -300,25 +314,46 @@ $rs->close();
           <div class="card-header">Your Rooms</div>
           <div class="card-body p-0">
             <div class="table-responsive">
-              <table class="table table-striped table-hover mb-0">
+              <table class="table table-striped table-hover mb-0 align-middle">
                 <thead class="table-light">
                   <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Status</th>
+                    <th>Image</th>
+                    <th>Title & Type</th>
+                    <th>Location</th>
                     <th>Price/day</th>
+                    <th>Status</th>
                     <th>Created</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php foreach ($rooms as $r): ?>
+                    <?php
+                      $img = $r['image_path'] ?? '';
+                      if ($img && !preg_match('#^https?://#i', $img) && $img[0] !== '/') { $img = '/' . ltrim($img, '/'); }
+                      $loc = trim(implode(', ', array_filter([($r['city_name'] ?? ''), ($r['district_name'] ?? ''), ($r['province_name'] ?? '')])));
+                      $s = strtolower(trim((string)($r['status'] ?? '')));
+                      $badge = 'bg-secondary';
+                      if ($s === 'available') $badge = 'bg-success';
+                      elseif ($s === 'pending') $badge = 'bg-warning text-dark';
+                      elseif ($s === 'rented' || $s === 'unavailable') $badge = 'bg-danger';
+                    ?>
                     <tr>
-                      <td><?php echo (int)$r['room_id']; ?></td>
-                      <td><?php echo htmlspecialchars($r['title']); ?></td>
-                      <td><span class="badge bg-secondary text-uppercase"><?php echo htmlspecialchars($r['status']); ?></span></td>
-                      <td><?php echo number_format((float)$r['price_per_day'], 2); ?></td>
-                      <td><?php echo htmlspecialchars($r['created_at']); ?></td>
+                      <td style="width: 72px;">
+                        <?php if ($img): ?>
+                          <img src="<?php echo htmlspecialchars($img); ?>" alt="" class="rounded" style="width:64px;height:48px;object-fit:cover;">
+                        <?php else: ?>
+                          <div class="bg-light border rounded d-inline-block" style="width:64px;height:48px;"></div>
+                        <?php endif; ?>
+                      </td>
+                      <td>
+                        <div class="fw-semibold mb-0"><?php echo htmlspecialchars($r['title']); ?></div>
+                        <div class="text-muted small"><?php echo htmlspecialchars(ucfirst($r['room_type'] ?? '')); ?> • Beds: <?php echo (int)$r['beds']; ?></div>
+                      </td>
+                      <td class="text-muted small"><?php echo $loc ? htmlspecialchars($loc) : '-'; ?></td>
+                      <td class="fw-semibold"><?php echo number_format((float)$r['price_per_day'], 2); ?></td>
+                      <td><span class="badge <?php echo $badge; ?> text-uppercase"><?php echo htmlspecialchars($r['status']); ?></span></td>
+                      <td class="text-muted small"><?php echo htmlspecialchars($r['created_at']); ?></td>
                       <td class="text-nowrap">
                         <form method="post" class="d-inline" onsubmit="return confirm('Delete this room?');">
                           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
@@ -330,7 +365,7 @@ $rs->close();
                     </tr>
                   <?php endforeach; ?>
                   <?php if (!$rooms): ?>
-                    <tr><td colspan="6" class="text-center py-4">No rooms yet.</td></tr>
+                    <tr><td colspan="7" class="text-center py-4">No rooms yet.</td></tr>
                   <?php endif; ?>
                 </tbody>
               </table>

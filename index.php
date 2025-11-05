@@ -12,9 +12,13 @@
 
 <?php include 'public/includes/navbar.php'; ?>
 <?php include 'public/includes/hero.php'; ?>
+<hr/>
 <?php include 'public/includes/search.php'; ?>
+<hr/>
 <?php include 'public/includes/property.php'; ?>
+<hr/>
 <?php include 'public/includes/room.php'; ?>
+<hr/>
 <?php include 'public/includes/footer.php'; ?>
 
 

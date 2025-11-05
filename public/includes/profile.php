@@ -91,11 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     redirect_with_message($base_url . '/public/includes/profile.php', 'Invalid image', 'error');
                 }
                 $dir_map = [
-                    'admin' => __DIR__ . '/../../upload/admin_profile_photo',
-                    'owner' => __DIR__ . '/../../upload/owner_profile_photo',
-                    'customer' => __DIR__ . '/../../upload/user_profile_photo',
+                    'admin' => __DIR__ . '/../../uploads/admin_profile_photo',
+                    'owner' => __DIR__ . '/../../uploads/owner_profile_photo',
+                    'customer' => __DIR__ . '/../../uploads/user_profile_photo',
                 ];
-                $target_dir = $dir_map[$display['role']] ?? (__DIR__ . '/../../upload/user_profile_photo');
+                $target_dir = $dir_map[$display['role']] ?? (__DIR__ . '/../../uploads/user_profile_photo');
                 if (!is_dir($target_dir)) { @mkdir($target_dir, 0777, true); }
                 $fname = 'u' . $uid . '_' . time() . '.' . $ext;
                 $dest = rtrim($target_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fname;

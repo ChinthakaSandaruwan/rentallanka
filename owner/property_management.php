@@ -13,13 +13,13 @@ if (isset($_GET['geo'])) {
     $type = $_GET['geo'];
     if ($type === 'provinces') {
         $rows = [];
-        $res = db()->query("SELECT province_id, name FROM provinces ORDER BY name");
+        $res = db()->query("SELECT id AS province_id, name_en AS name FROM provinces ORDER BY name_en");
         while ($r = $res->fetch_assoc()) { $rows[] = $r; }
         echo json_encode($rows); exit;
     } elseif ($type === 'districts') {
         $province_id = (int)($_GET['province_id'] ?? 0);
         $rows = [];
-        $stmt = db()->prepare("SELECT district_id, name FROM districts WHERE province_id=? ORDER BY name");
+        $stmt = db()->prepare("SELECT id AS district_id, name_en AS name FROM districts WHERE province_id=? ORDER BY name_en");
         $stmt->bind_param('i', $province_id);
         $stmt->execute();
         $rs = $stmt->get_result();
@@ -29,7 +29,7 @@ if (isset($_GET['geo'])) {
     } elseif ($type === 'cities') {
         $district_id = (int)($_GET['district_id'] ?? 0);
         $rows = [];
-        $stmt = db()->prepare("SELECT city_id, name FROM cities WHERE district_id=? ORDER BY name");
+        $stmt = db()->prepare("SELECT id AS city_id, name_en AS name FROM cities WHERE district_id=? ORDER BY name_en");
         $stmt->bind_param('i', $district_id);
         $stmt->execute();
         $rs = $stmt->get_result();
@@ -72,6 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bedrooms = (int)($_POST['bedrooms'] ?? 0);
         $bathrooms = (int)($_POST['bathrooms'] ?? 0);
         $living_rooms = (int)($_POST['living_rooms'] ?? 0);
+        $garden = isset($_POST['garden']) ? 1 : 0;
+        $gym = isset($_POST['gym']) ? 1 : 0;
+        $pool = isset($_POST['pool']) ? 1 : 0;
+        $sqft = $_POST['sqft'] ?? null;
+        $sqft = ($sqft === '' || $sqft === null) ? null : (float)$sqft;
         // Location fields (FKs)
         $province_id = (int)($_POST['province_id'] ?? 0);
         $district_id = (int)($_POST['district_id'] ?? 0);
@@ -93,9 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($province_id <= 0 || $district_id <= 0 || $city_id <= 0 || $postal_code === '') {
             $error = 'Location (province, district, city, postal code) is required';
         } else {
-            $stmt = db()->prepare('INSERT INTO properties (owner_id, title, description, price_per_month, bedrooms, bathrooms, living_rooms, has_kitchen, has_parking, has_water_supply, has_electricity_supply, property_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt = db()->prepare('INSERT INTO properties (owner_id, title, description, price_per_month, bedrooms, bathrooms, living_rooms, garden, gym, pool, sqft, has_kitchen, has_parking, has_water_supply, has_electricity_supply, property_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             $stmt->bind_param(
-                'issdiiiiiiis',
+                'issdiiiiiidiiiis',
                 $uid,
                 $title,
                 $description,
@@ -103,6 +108,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $bedrooms,
                 $bathrooms,
                 $living_rooms,
+                $garden,
+                $gym,
+                $pool,
+                $sqft,
                 $has_kitchen,
                 $has_parking,
                 $has_water_supply,
@@ -112,6 +121,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->execute()) {
                 $new_id = db()->insert_id;
                 $stmt->close();
+
+                // Generate a unique human-friendly property code (e.g., PROP-000123)
+                $code = 'PROP-' . str_pad((string)$new_id, 6, '0', STR_PAD_LEFT);
+                $upc = db()->prepare('UPDATE properties SET property_code = ? WHERE property_id = ?');
+                $upc->bind_param('si', $code, $new_id);
+                $upc->execute();
+                $upc->close();
 
                 // Insert location linked by FK IDs
                 $loc = db()->prepare('INSERT INTO locations (property_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)');
@@ -187,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $props = [];
-$stmt = db()->prepare('SELECT property_id, title, status, created_at, price_per_month FROM properties WHERE owner_id = ? ORDER BY property_id DESC');
+$stmt = db()->prepare('SELECT property_id, property_code, title, status, created_at, price_per_month FROM properties WHERE owner_id = ? ORDER BY property_id DESC');
 $stmt->bind_param('i', $uid);
 $stmt->execute();
 $res = $stmt->get_result();
@@ -203,6 +219,7 @@ $stmt->close();
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Owner Property Management</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
   </head>
 <body>
@@ -251,7 +268,7 @@ $stmt->close();
                 <input name="postal_code" class="form-control" required>
               </div>
               <div class="col-12">
-                <label class="form-label">Address (optional)</label>
+                <label class="form-label">Address</label>
                 <input name="address" class="form-control">
               </div>
             </div>
@@ -299,6 +316,26 @@ $stmt->close();
                 </div>
               </div>
             </div>
+            <div class="row g-3 mb-3">
+              <div class="col-6 col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="garden" id="garden">
+                  <label class="form-check-label" for="garden">Garden</label>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="gym" id="gym">
+                  <label class="form-check-label" for="gym">Gym</label>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="pool" id="pool">
+                  <label class="form-check-label" for="pool">Pool</label>
+                </div>
+              </div>
+            </div>
             <div class="mb-3">
               <label class="form-label">Property type</label>
               <select name="property_type" class="form-select">
@@ -308,6 +345,10 @@ $stmt->close();
                 <option value="commercial">Commercial</option>
                 <option value="other">Other</option>
               </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="sqft">Area (sqft)</label>
+              <input class="form-control" type="number" name="sqft" id="sqft" step="0.01" min="0" placeholder="e.g. 1200">
             </div>
             <div class="mb-3">
               <label class="form-label">Primary Image</label>
@@ -337,6 +378,7 @@ $stmt->close();
             <table class="table table-striped table-hover mb-0">
               <thead class="table-light">
                 <tr>
+                  <th>Code</th>
                   <th>ID</th>
                   <th>Title</th>
                   <th>Status</th>
@@ -348,6 +390,7 @@ $stmt->close();
               <tbody>
                 <?php foreach ($props as $p): ?>
                   <tr>
+                    <td><?php echo htmlspecialchars($p['property_code'] ?? ''); ?></td>
                     <td><?php echo (int)$p['property_id']; ?></td>
                     <td><?php echo htmlspecialchars($p['title']); ?></td>
                     <td><span class="badge bg-secondary text-uppercase"><?php echo htmlspecialchars($p['status']); ?></span></td>
@@ -429,6 +472,10 @@ $stmt->close();
         .catch(() => fillSelect(citySel, [], 'Select city'));
     });
   });
+
+  
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKvVYl0ZlEFp3rG5GkHA7r4XK6tBT3M" crossorigin="anonymous"></script>
+
 </body>
 </html>

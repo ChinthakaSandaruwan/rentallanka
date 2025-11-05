@@ -8,9 +8,7 @@
         <div class="position-absolute top-50 start-50 translate-middle text-center text-white px-3">
           <h4 class="fw-bold mb-1">Find Your Perfect Rental</h4>
           <p class="mb-2 small">Browse properties and rooms across Sri Lanka</p>
-          <a href="#results" class="btn btn-sm btn-primary">
-            <i class="bi bi-search me-1"></i> Start Searching
-          </a>
+       
         </div>
       </div>
     </div>

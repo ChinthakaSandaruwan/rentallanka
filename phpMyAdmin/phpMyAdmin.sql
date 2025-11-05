@@ -7,10 +7,10 @@
     SET sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
     -- Create and select database
-    CREATE DATABASE IF NOT EXISTS `sri_lanka_rental_system`
+    CREATE DATABASE IF NOT EXISTS `rentallanka`
       CHARACTER SET utf8mb4
       COLLATE utf8mb4_unicode_ci;
-    USE `sri_lanka_rental_system`;
+    USE `rentallanka`;
 
     -- Table: users
     CREATE TABLE IF NOT EXISTS `users` (
@@ -87,6 +87,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
     -- Table: properties
     CREATE TABLE IF NOT EXISTS `properties` (
       `property_id` INT NOT NULL AUTO_INCREMENT,
+      `property_code` VARCHAR(20) NULL,
       `owner_id` INT NULL,
       `title` VARCHAR(255) NOT NULL,
       `description` TEXT NULL,
@@ -95,6 +96,10 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
       `bedrooms` INT NULL DEFAULT 0,
       `bathrooms` INT NULL DEFAULT 0,
       `living_rooms` INT NULL DEFAULT 0,
+      `garden`INT NULL DEFAULT 0,
+      `gym`INT NULL DEFAULT 0,
+      `pool`INT NULL DEFAULT 0,
+      `sqft` DECIMAL(10,2) NULL,
       `has_kitchen` TINYINT(1) NOT NULL DEFAULT 0,
       `has_parking` TINYINT(1) NOT NULL DEFAULT 0,
       `has_water_supply` TINYINT(1) NOT NULL DEFAULT 0,
@@ -104,6 +109,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
       `status` ENUM('available','rented','unavailable','pending') NOT NULL DEFAULT 'pending',
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`property_id`),
+      UNIQUE KEY `uk_properties_property_code` (`property_code`),
       KEY `idx_properties_owner_id` (`owner_id`),
       KEY `idx_properties_status` (`status`),
       CONSTRAINT `fk_properties_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
@@ -127,35 +133,6 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Reference geography tables
-    CREATE TABLE IF NOT EXISTS `provinces` (
-      `province_id` INT NOT NULL AUTO_INCREMENT,
-      `name` VARCHAR(100) NOT NULL,
-      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`province_id`),
-      UNIQUE KEY `uk_provinces_name` (`name`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-    CREATE TABLE IF NOT EXISTS `districts` (
-      `district_id` INT NOT NULL AUTO_INCREMENT,
-      `province_id` INT NOT NULL,
-      `name` VARCHAR(100) NOT NULL,
-      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`district_id`),
-      UNIQUE KEY `uk_districts_prov_name` (`province_id`,`name`),
-      KEY `idx_districts_province_id` (`province_id`),
-      CONSTRAINT `fk_districts_province` FOREIGN KEY (`province_id`) REFERENCES `provinces` (`province_id`) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-    CREATE TABLE IF NOT EXISTS `cities` (
-      `city_id` INT NOT NULL AUTO_INCREMENT,
-      `district_id` INT NOT NULL,
-      `name` VARCHAR(100) NOT NULL,
-      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`city_id`),
-      UNIQUE KEY `uk_cities_dist_name` (`district_id`,`name`),
-      KEY `idx_cities_district_id` (`district_id`),
-      CONSTRAINT `fk_cities_district` FOREIGN KEY (`district_id`) REFERENCES `districts` (`district_id`) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- locations (must be after rooms and reference tables to satisfy FKs)
     CREATE TABLE IF NOT EXISTS `locations` (
@@ -173,12 +150,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `username`, `password_has
      KEY `idx_locations_room_id` (`room_id`),
      KEY `idx_locations_province_id` (`province_id`),
      KEY `idx_locations_district_id` (`district_id`),
-     KEY `idx_locations_city_id` (`city_id`),
-     CONSTRAINT `fk_locations_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE,
-     CONSTRAINT `fk_locations_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE,
-     CONSTRAINT `fk_locations_province` FOREIGN KEY (`province_id`) REFERENCES `provinces` (`province_id`) ON DELETE RESTRICT,
-     CONSTRAINT `fk_locations_district` FOREIGN KEY (`district_id`) REFERENCES `districts` (`district_id`) ON DELETE RESTRICT,
-     CONSTRAINT `fk_locations_city` FOREIGN KEY (`city_id`) REFERENCES `cities` (`city_id`) ON DELETE RESTRICT
+     KEY `idx_locations_city_id` (`city_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Table: room_images (images attached to a specific room)

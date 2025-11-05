@@ -67,16 +67,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $filter = $_GET['filter'] ?? 'all';
+$q = trim($_GET['q'] ?? '');
 $where = '';
 if (in_array($filter, $allowed_status, true)) {
     $where = ' WHERE p.status = ? ';
 }
+if ($q !== '') {
+    $cond = ' (p.title LIKE CONCAT("%", ?, "%") OR u.username LIKE CONCAT("%", ?, "%") OR p.property_id = ?) ';
+    $where .= ($where ? ' AND ' : ' WHERE ') . $cond;
+}
 
-$sql = 'SELECT p.property_id, p.title, p.status, p.created_at, p.price_per_month, u.username AS owner_name, u.user_id AS owner_id
+$sql = 'SELECT p.*, u.username AS owner_name, u.user_id AS owner_id
         FROM properties p LEFT JOIN users u ON u.user_id = p.owner_id' . $where . ' ORDER BY p.property_id DESC';
 $stmt = db()->prepare($sql);
 if ($where) {
-    $stmt->bind_param('s', $filter);
+    if (in_array($filter, $allowed_status, true) && $q !== '') {
+        $qid = (int)$q;
+        $stmt->bind_param('sssi', $filter, $q, $q, $qid);
+    } elseif (in_array($filter, $allowed_status, true)) {
+        $stmt->bind_param('s', $filter);
+    } else {
+        $qid = (int)$q;
+        $stmt->bind_param('ssi', $q, $q, $qid);
+    }
 }
 $stmt->execute();
 $res = $stmt->get_result();
@@ -110,7 +123,7 @@ $stmt->close();
   <?php endif; ?>
 
   <form method="get" class="row g-2 align-items-end mb-3">
-    <div class="col-auto">
+    <div class="col-12 col-md-auto">
       <label class="form-label mb-0">Filter status</label>
       <select name="filter" class="form-select" onchange="this.form.submit()">
         <option value="all" <?php echo $filter==='all'?'selected':''; ?>>All</option>
@@ -119,41 +132,16 @@ $stmt->close();
         <?php endforeach; ?>
       </select>
     </div>
-    <noscript class="col-auto"><button type="submit" class="btn btn-primary">Apply</button></noscript>
+    <div class="col-12 col-md">
+      <label class="form-label mb-0">Search</label>
+      <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>" class="form-control" placeholder="Title, owner, or ID">
+    </div>
+    <div class="col-12 col-md-auto">
+      <button type="submit" class="btn btn-primary w-100">Search</button>
+    </div>
   </form>
 
-  <div class="row g-4 mb-3">
-    <div class="col-12 col-lg-5">
-      <div class="card">
-        <div class="card-header">Add Property</div>
-        <div class="card-body">
-          <form method="post" class="row g-2">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-            <input type="hidden" name="action" value="create">
-            <div class="col-12">
-              <label class="form-label">Title</label>
-              <input name="title" class="form-control" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Price/mo (LKR)</label>
-              <input name="price_per_month" type="number" min="0" step="0.01" class="form-control" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Status</label>
-              <select name="status" class="form-select">
-                <?php foreach ($allowed_status as $s): ?>
-                  <option value="<?php echo htmlspecialchars($s); ?>" <?php echo $s==='pending'?'selected':''; ?>><?php echo htmlspecialchars(ucfirst($s)); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="col-12">
-              <button class="btn btn-primary" type="submit">Create</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+  
 
   <div class="card">
     <div class="card-body p-0">
@@ -161,51 +149,34 @@ $stmt->close();
         <table class="table table-striped table-hover mb-0">
           <thead class="table-light">
             <tr>
+              <th>Code</th>
               <th>ID</th>
               <th>Title</th>
               <th>Owner</th>
               <th>Status</th>
               <th>Price/mo</th>
               <th>Created</th>
-              <th>Actions</th>
               <th>View</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($rows as $p): ?>
               <tr>
+                <td><?php echo htmlspecialchars($p['property_code'] ?? ''); ?></td>
                 <td><?php echo (int)$p['property_id']; ?></td>
                 <td><?php echo htmlspecialchars($p['title']); ?></td>
                 <td><?php echo htmlspecialchars(($p['owner_name'] ?? 'N/A') . ' (#' . (int)($p['owner_id'] ?? 0) . ')'); ?></td>
                 <td><span class="badge bg-secondary text-uppercase"><?php echo htmlspecialchars($p['status']); ?></span></td>
                 <td><?php echo number_format((float)$p['price_per_month'], 2); ?></td>
                 <td><?php echo htmlspecialchars($p['created_at']); ?></td>
-                <td>
-                  <form method="post" class="d-flex gap-2 align-items-center">
-                    <input type="hidden" name="action" value="update_status">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                    <input type="hidden" name="property_id" value="<?php echo (int)$p['property_id']; ?>">
-                    <select name="status" class="form-select form-select-sm" style="max-width: 180px;">
-                      <?php foreach ($allowed_status as $s): ?>
-                        <option value="<?php echo htmlspecialchars($s); ?>" <?php echo ($p['status']===$s)?'selected':''; ?>><?php echo htmlspecialchars(ucfirst($s)); ?></option>
-                      <?php endforeach; ?>
-                    </select>
-                    <button type="submit" class="btn btn-sm btn-primary">Update</button>
-                  </form>
-                  <form method="post" class="d-inline-block ms-2" onsubmit="return confirm('Delete this property?');">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="property_id" value="<?php echo (int)$p['property_id']; ?>">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                  </form>
-                </td>
+                
                 <td class="text-nowrap">
                   <a class="btn btn-sm btn-outline-secondary" href="property_view.php?id=<?php echo (int)$p['property_id']; ?>">View</a>
                 </td>
               </tr>
             <?php endforeach; ?>
             <?php if (!$rows): ?>
-              <tr><td colspan="7" class="text-center py-4">No properties found.</td></tr>
+              <tr><td colspan="8" class="text-center py-4">No properties found.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>

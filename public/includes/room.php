@@ -1,6 +1,24 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
-$items = [];
+
+$q = trim($_GET['q'] ?? '');
+$province_id = (int)($_GET['province_id'] ?? 0);
+$district_id = (int)($_GET['district_id'] ?? 0);
+$city_id = (int)($_GET['city_id'] ?? 0);
+
+$conds = ["r.status = 'available'"];
+$types = '';
+$vals = [];
+if ($q !== '') {
+  $like = '%' . $q . '%';
+  $conds[] = '(r.title LIKE ? OR r.room_type LIKE ? OR pr.name_en LIKE ? OR d.name_en LIKE ? OR c.name_en LIKE ? OR l.address LIKE ? OR l.postal_code LIKE ?)';
+  $types .= 'sssssss';
+  array_push($vals, $like, $like, $like, $like, $like, $like, $like);
+}
+if ($province_id) { $conds[] = 'l.province_id = ?'; $types .= 'i'; $vals[] = $province_id; }
+if ($district_id) { $conds[] = 'l.district_id = ?'; $types .= 'i'; $vals[] = $district_id; }
+if ($city_id) { $conds[] = 'l.city_id = ?'; $types .= 'i'; $vals[] = $city_id; }
+
 $sql = "SELECT r.room_id, r.title, r.room_type, r.beds, r.price_per_day, r.status,
                (
                  SELECT ri.image_path FROM room_images ri
@@ -9,24 +27,29 @@ $sql = "SELECT r.room_id, r.title, r.room_type, r.beds, r.price_per_day, r.statu
                  LIMIT 1
                ) AS image_path
         FROM rooms r
-        WHERE r.status = 'available'
-        ORDER BY r.room_id DESC
-        LIMIT 8";
+        LEFT JOIN locations l ON l.room_id = r.room_id
+        LEFT JOIN provinces pr ON pr.id = l.province_id
+        LEFT JOIN districts d ON d.id = l.district_id
+        LEFT JOIN cities c ON c.id = l.city_id
+        WHERE " . implode(' AND ', $conds) . "
+        ORDER BY r.room_id DESC " . ($q!=='' || $province_id || $district_id || $city_id ? '' : 'LIMIT 8');
+
 $stmt = db()->prepare($sql);
+if ($types !== '') { $stmt->bind_param($types, ...$vals); }
 $stmt->execute();
 $res = $stmt->get_result();
 $items = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 $stmt->close();
 ?>
-<section class="container py-4">
+<section id="rooms-section" class="container py-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="h4 mb-0">Latest Rooms</h2>
+    <h2 class="h4 mb-0"><i class=\"bi bi-door-open me-1\"></i>Rooms</h2>
     <a href="owner/room_management.php" class="btn btn-sm btn-outline-primary d-none">View all</a>
   </div>
   <div class="row g-3">
     <?php foreach ($items as $r): ?>
       <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card h-100 border-0 shadow-sm position-relative">
+        <div class="card h-100 border shadow-sm position-relative">
           <?php if (!empty($r['status'])): ?>
             <span class="badge bg-success position-absolute top-0 start-0 m-2 text-uppercase small"><?php echo htmlspecialchars($r['status']); ?></span>
           <?php endif; ?>
@@ -53,7 +76,7 @@ $stmt->close();
       </div>
     <?php endforeach; ?>
     <?php if (!$items): ?>
-      <div class="col-12"><div class="alert alert-light border">No rooms to show.</div></div>
+      <div class="col-12"><div class="alert alert-light border">No rooms found.</div></div>
     <?php endif; ?>
   </div>
 </section>

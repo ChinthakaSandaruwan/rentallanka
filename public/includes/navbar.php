@@ -23,8 +23,8 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
         <!-- Navigation Links -->
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/'||$reqPath==='/index.php')?'active':'' ?>" href="<?= $base_url ?>/index.php"><i class="bi bi-house-door me-1"></i>Home</a></li>
-          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/properties.php')?'active':'' ?>" href="<?= $base_url ?>/properties.php"><i class="bi bi-building me-1"></i>Properties</a></li>
-          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/rooms.php')?'active':'' ?>" href="<?= $base_url ?>/rooms.php"><i class="bi bi-door-open me-1"></i>Rooms</a></li>
+          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_properties.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_properties.php"><i class="bi bi-building me-1"></i>Properties</a></li>
+          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_rooms.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_rooms.php"><i class="bi bi-door-open me-1"></i>Rooms</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/about.php')?'active':'' ?>" href="<?= $base_url ?>/about.php"><i class="bi bi-info-circle me-1"></i>About</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/contact.php')?'active':'' ?>" href="<?= $base_url ?>/contact.php"><i class="bi bi-envelope me-1"></i>Contact</a></li>
 

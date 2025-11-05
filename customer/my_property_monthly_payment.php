@@ -46,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'repla
     $for_month = trim($_POST['for_month'] ?? '');
     if ($slip_id <= 0) {
       $err = 'Bad input';
-    } elseif ($for_month !== '' && !preg_match('/^\d{4}-\d{2}$/', $for_month)) {
-      $err = 'Invalid month (use YYYY-MM)';
+    } elseif ($for_month === '' || !preg_match('/^\d{4}-\d{2}$/', $for_month)) {
+      $err = 'Please pick a month (YYYY-MM)';
     } elseif (!isset($_FILES['slip']) || $_FILES['slip']['error'] !== UPLOAD_ERR_OK) {
       $err = 'Please choose a file';
     } else {
@@ -66,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'repla
         if (!is_dir($targetDir)) { @mkdir($targetDir, 0777, true); }
         $ext = pathinfo($_FILES['slip']['name'], PATHINFO_EXTENSION);
         $safeExt = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
-        // Use chosen month if provided, else derive from now
-        $yyyymm = $for_month ? str_replace('-', '', substr($for_month, 0, 7)) : date('Ym');
+        // Use chosen month encoded in filename (YYYYMM)
+        $yyyymm = str_replace('-', '', substr($for_month, 0, 7));
         $fname = 'property_slip_' . $rental_id . '_' . $yyyymm . '_' . time() . '_' . bin2hex(random_bytes(4)) . ($safeExt ? ('.' . $safeExt) : '');
         $dest = $targetDir . '/' . $fname;
         if (move_uploaded_file($_FILES['slip']['tmp_name'], $dest)) {
@@ -283,9 +283,21 @@ if ($rows) {
                             <?php
                               $href = $s['slip_path'] ?? '';
                               $uploaded_at = $s['uploaded_at'] ?? '';
-                              $ts = $uploaded_at ? strtotime($uploaded_at) : false;
-                              $label = $ts ? date('F Y', $ts) : 'Uploaded';
                               $sid = (int)($s['slip_id'] ?? 0);
+                              // Prefer month from filename pattern: ..._{YYYYMM}_...
+                              $label = '';
+                              $ym = null;
+                              if ($href) {
+                                $base = basename(parse_url($href, PHP_URL_PATH));
+                                if (preg_match('/_(\d{6})_/', $base, $m)) { $ym = $m[1]; }
+                              }
+                              if ($ym) {
+                                $y = (int)substr($ym, 0, 4); $mnum = (int)substr($ym, 4, 2);
+                                $label = date('F Y', strtotime(sprintf('%04d-%02d-01', $y, $mnum)));
+                              } else {
+                                $ts = $uploaded_at ? strtotime($uploaded_at) : false;
+                                $label = $ts ? date('F Y', $ts) : 'Uploaded';
+                              }
                             ?>
                             <li class="list-group-item px-0">
                               <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
