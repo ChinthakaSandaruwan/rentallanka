@@ -74,6 +74,8 @@ if (isset($_GET['raw']) && $_GET['raw'] == '1') {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Slip #<?php echo (int)$slip_id; ?> | Property #<?php echo (int)($slip['property_id'] ?? 0); ?></title>
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>html,body{height:100%} .viewer{height:calc(100vh - 60px);} iframe,embed{width:100%; height:100%; border:0}</style>
 </head>

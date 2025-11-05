@@ -41,6 +41,8 @@ if (file_exists($logFile)) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Error Log Viewer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     pre.log { max-height: 70vh; overflow:auto; background:#0f172a; color:#e2e8f0; padding:1rem; border-radius:.5rem; }
