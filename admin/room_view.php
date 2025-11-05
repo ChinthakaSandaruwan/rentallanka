@@ -46,7 +46,7 @@ if ($rid <= 0) {
 // Fetch room details + owner fields
 $sql = 'SELECT r.*, 
                u.user_id AS owner_id,
-               u.username AS owner_name,
+               u.name AS owner_name,
                u.email   AS owner_email,
                u.profile_image AS owner_profile_image,
                u.phone   AS owner_phone,
@@ -154,7 +154,7 @@ $sp->close();
             <?php endif; ?>
             <dl class="row mb-0">
               <dt class="col-sm-4">Owner ID</dt><dd class="col-sm-8"><?php echo (int)($room['owner_id'] ?? 0); ?></dd>
-              <dt class="col-sm-4">Username</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['owner_name'] ?? 'N/A'); ?></dd>
+              <dt class="col-sm-4">name</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['owner_name'] ?? 'N/A'); ?></dd>
               <dt class="col-sm-4">Email</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['owner_email'] ?? ''); ?></dd>
               <dt class="col-sm-4">Phone</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['owner_phone'] ?? ''); ?></dd>
               <dt class="col-sm-4">Role</dt><dd class="col-sm-8 text-uppercase"><?php echo htmlspecialchars($room['owner_role'] ?? ''); ?></dd>

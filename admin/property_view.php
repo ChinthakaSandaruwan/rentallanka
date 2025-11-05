@@ -46,7 +46,7 @@ if ($pid <= 0) {
 // Fetch property details
 $sql = 'SELECT p.*, 
                u.user_id AS owner_id,
-               u.username AS owner_name,
+               u.name AS owner_name,
                u.email   AS owner_email,
                u.profile_image AS owner_profile_image,
                u.phone   AS owner_phone,
@@ -93,7 +93,7 @@ $gp->close();
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKvVYl0ZlEFp3rG5GkHA7r4XK6tBT3M" crossorigin="anonymous"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="overflow-x-hidden">
   <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -178,7 +178,7 @@ $gp->close();
             <?php endif; ?>
             <dl class="row mb-0">
               <dt class="col-sm-4">Owner ID</dt><dd class="col-sm-8"><?php echo (int)($prop['owner_id'] ?? 0); ?></dd>
-              <dt class="col-sm-4">Username</dt><dd class="col-sm-8"><?php echo htmlspecialchars($prop['owner_name'] ?? 'N/A'); ?></dd>
+              <dt class="col-sm-4">name</dt><dd class="col-sm-8"><?php echo htmlspecialchars($prop['owner_name'] ?? 'N/A'); ?></dd>
               <dt class="col-sm-4">Email</dt><dd class="col-sm-8"><?php echo htmlspecialchars($prop['owner_email'] ?? ''); ?></dd>
               <dt class="col-sm-4">Phone</dt><dd class="col-sm-8"><?php echo htmlspecialchars($prop['owner_phone'] ?? ''); ?></dd>
               <dt class="col-sm-4">Role</dt><dd class="col-sm-8 text-uppercase"><?php echo htmlspecialchars($prop['owner_role'] ?? ''); ?></dd>

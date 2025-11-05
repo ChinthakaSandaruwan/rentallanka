@@ -30,27 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $error = 'Bad input';
             }
-        } elseif ($action === 'create') {
-            $title = trim($_POST['title'] ?? '');
-            $room_type = $_POST['room_type'] ?? 'other';
-            $beds = (int)($_POST['beds'] ?? 1);
-            $price_per_day = (float)($_POST['price_per_day'] ?? 0);
-            $status_in = $_POST['status'] ?? 'pending';
-            $allowed_types = ['single','double','suite','dorm','other'];
-            if (!in_array($room_type, $allowed_types, true)) { $room_type = 'other'; }
-            if (!in_array($status_in, $allowed_status, true)) { $status_in = 'pending'; }
-            if ($title !== '' && $price_per_day >= 0 && $beds >= 0) {
-                $stmt = db()->prepare('INSERT INTO rooms (owner_id, title, room_type, description, beds, price_per_day, status) VALUES (NULL, ?, ?, NULL, ?, ?, ?)');
-                $stmt->bind_param('ssids', $title, $room_type, $beds, $price_per_day, $status_in);
-                if ($stmt->execute()) {
-                    $okmsg = 'Room created';
-                } else {
-                    $error = 'Create failed';
-                }
-                $stmt->close();
-            } else {
-                $error = 'Bad input';
-            }
         } else {
             $rid = (int)($_POST['room_id'] ?? 0);
             $new_status = $_POST['status'] ?? '';
@@ -76,7 +55,7 @@ if (in_array($filter, $allowed_status, true)) {
     $where = ' WHERE r.status = ? ';
 }
 
-$sql = 'SELECT r.room_id, r.title, r.room_type, r.status, r.created_at, r.price_per_day, u.username AS owner_name, u.user_id AS owner_id
+$sql = 'SELECT r.room_id, r.title, r.room_type, r.status, r.created_at, r.price_per_day, u.name AS owner_name, u.user_id AS owner_id
         FROM rooms r LEFT JOIN users u ON u.user_id = r.owner_id' . $where . ' ORDER BY r.room_id DESC';
 $stmt = db()->prepare($sql);
 if ($where) {
@@ -95,7 +74,8 @@ $stmt->close();
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin Room Management</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
   <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
@@ -126,52 +106,7 @@ $stmt->close();
     <noscript class="col-auto"><button type="submit" class="btn btn-primary">Apply</button></noscript>
   </form>
 
-  <div class="row g-4 mb-3">
-    <div class="col-12 col-lg-5">
-      <div class="card">
-        <div class="card-header">Add Room</div>
-        <div class="card-body">
-          <form method="post" class="row g-2">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-            <input type="hidden" name="action" value="create">
-            <div class="col-12">
-              <label class="form-label">Title</label>
-              <input name="title" class="form-control" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Room Type</label>
-              <select name="room_type" class="form-select">
-                <option value="single">Single</option>
-                <option value="double">Double</option>
-                <option value="suite">Suite</option>
-                <option value="dorm">Dorm</option>
-                <option value="other" selected>Other</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Beds</label>
-              <input name="beds" type="number" min="0" value="1" class="form-control">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Price/day (LKR)</label>
-              <input name="price_per_day" type="number" min="0" step="0.01" class="form-control" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Status</label>
-              <select name="status" class="form-select">
-                <?php foreach ($allowed_status as $s): ?>
-                  <option value="<?php echo htmlspecialchars($s); ?>" <?php echo $s==='pending'?'selected':''; ?>><?php echo htmlspecialchars(ucfirst($s)); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="col-12">
-              <button class="btn btn-primary" type="submit">Create</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+  
 
   <div class="card">
     <div class="card-body p-0">
@@ -233,6 +168,6 @@ $stmt->close();
     </div>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKvVYl0ZlEFp3rG5GkHA7r4XK6tBT3M" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

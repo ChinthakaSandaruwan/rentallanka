@@ -179,14 +179,14 @@ if ($rows) {
     $in = implode(',', array_fill(0, count($roomIds), '?'));
     $types = str_repeat('i', count($roomIds));
     // counts
-    $q = db()->prepare('SELECT room_id, COUNT(*) AS c FROM room_payment_slips WHERE room_id IN (' . $in . ') GROUP BY room_id');
+    $q = db()->prepare('SELECT room_id, COUNT(*) AS c FROM room_payment_slips WHERE room_id IN (' . $in . ') AND slip_path LIKE CONCAT("%", "/uploads/payment_slips/rooms/", "%") GROUP BY room_id');
     stmt_bind_params_array($q, $types, $roomIds);
     $q->execute();
     $rs = $q->get_result();
     while ($r = $rs->fetch_assoc()) { $slipCounts[(int)$r['room_id']] = (int)$r['c']; }
     $q->close();
     // history
-    $q2 = db()->prepare('SELECT slip_id, room_id, slip_path, uploaded_at FROM room_payment_slips WHERE room_id IN (' . $in . ') ORDER BY uploaded_at DESC');
+    $q2 = db()->prepare('SELECT slip_id, room_id, slip_path, uploaded_at FROM room_payment_slips WHERE room_id IN (' . $in . ') AND slip_path LIKE CONCAT("%", "/uploads/payment_slips/rooms/", "%") ORDER BY uploaded_at DESC');
     stmt_bind_params_array($q2, $types, $roomIds);
     $q2->execute();
     $rs2 = $q2->get_result();

@@ -9,7 +9,7 @@ if ($rid <= 0) {
 }
 
 // Fetch room (only available)
-$sql = 'SELECT r.*, u.username AS owner_name
+$sql = 'SELECT r.*, u.name AS owner_name
         FROM rooms r LEFT JOIN users u ON u.user_id = r.owner_id
         WHERE r.room_id = ? AND r.status = "available" LIMIT 1';
 $stmt = db()->prepare($sql);

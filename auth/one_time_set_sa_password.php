@@ -8,26 +8,26 @@ if (!$allowed) {
     exit;
 }
 
-$username = 'superadmin';
+$name = 'superadmin';
 $newPassword = 'SuperAdmin';
 
 // Ensure row exists
-$stmt = db()->prepare('SELECT super_admin_id FROM super_admins WHERE username = ? LIMIT 1');
-$stmt->bind_param('s', $username);
+$stmt = db()->prepare('SELECT super_admin_id FROM super_admins WHERE name = ? LIMIT 1');
+$stmt->bind_param('s', $name);
 $stmt->execute();
 $res = $stmt->get_result();
 $row = $res->fetch_assoc();
 $stmt->close();
 
 if (!$row) {
-    echo 'Super admin user not found. Please create it first in DB (username=superadmin).';
+    echo 'Super admin user not found. Please create it first in DB (name=superadmin).';
     exit;
 }
 
 $hash = password_hash($newPassword, PASSWORD_BCRYPT);
 
-$stmt = db()->prepare('UPDATE super_admins SET password_hash = ?, status = "active" WHERE username = ? LIMIT 1');
-$stmt->bind_param('ss', $hash, $username);
+$stmt = db()->prepare('UPDATE super_admins SET password_hash = ?, status = "active" WHERE name = ? LIMIT 1');
+$stmt->bind_param('ss', $hash, $name);
 $ok = $stmt->execute();
 $aff = $stmt->affected_rows;
 $stmt->close();

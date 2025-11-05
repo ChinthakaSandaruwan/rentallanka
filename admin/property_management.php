@@ -73,11 +73,11 @@ if (in_array($filter, $allowed_status, true)) {
     $where = ' WHERE p.status = ? ';
 }
 if ($q !== '') {
-    $cond = ' (p.title LIKE CONCAT("%", ?, "%") OR u.username LIKE CONCAT("%", ?, "%") OR p.property_id = ?) ';
+    $cond = ' (p.title LIKE CONCAT("%", ?, "%") OR u.name LIKE CONCAT("%", ?, "%") OR p.property_id = ?) ';
     $where .= ($where ? ' AND ' : ' WHERE ') . $cond;
 }
 
-$sql = 'SELECT p.*, u.username AS owner_name, u.user_id AS owner_id
+$sql = 'SELECT p.*, u.name AS owner_name, u.user_id AS owner_id
         FROM properties p LEFT JOIN users u ON u.user_id = p.owner_id' . $where . ' ORDER BY p.property_id DESC';
 $stmt = db()->prepare($sql);
 if ($where) {

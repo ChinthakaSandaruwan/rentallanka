@@ -10,7 +10,7 @@ if ($pid <= 0) {
 }
 
 // Fetch property (only available)
-$sql = 'SELECT p.*, u.username AS owner_name
+$sql = 'SELECT p.*, u.name AS owner_name
         FROM properties p LEFT JOIN users u ON u.user_id = p.owner_id
         WHERE p.property_id = ? AND p.status = "available" LIMIT 1';
 $stmt = db()->prepare($sql);

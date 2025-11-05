@@ -9,7 +9,7 @@ if ($pid <= 0) {
 }
 
 // Fetch property (only available) with location names
-$sql = 'SELECT p.*, u.username AS owner_name, l.address, l.postal_code,
+$sql = 'SELECT p.*, u.name AS owner_name, l.address, l.postal_code,
                pr.name_en AS province_name, d.name_en AS district_name, c.name_en AS city_name
         FROM properties p
         LEFT JOIN users u ON u.user_id = p.owner_id

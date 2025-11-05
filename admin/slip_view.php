@@ -115,5 +115,7 @@ if (isset($_GET['raw']) && $_GET['raw'] == '1') {
     <div class="container py-4"><div class="alert alert-warning">No slip source found.</div></div>
   <?php endif; ?>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

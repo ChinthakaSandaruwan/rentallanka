@@ -3,13 +3,13 @@ require_once __DIR__ . '/../config/config.php';
 
 $err = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
+    $name = trim($_POST['name'] ?? '');
     $password = (string)($_POST['password'] ?? '');
-    if ($username === '' || $password === '') {
-        $err = 'Username and password required';
+    if ($name === '' || $password === '') {
+        $err = 'name and password required';
     } else {
-        $stmt = db()->prepare('SELECT super_admin_id, password_hash, status FROM super_admins WHERE username = ? LIMIT 1');
-        $stmt->bind_param('s', $username);
+        $stmt = db()->prepare('SELECT super_admin_id, password_hash, status FROM super_admins WHERE name = ? LIMIT 1');
+        $stmt->bind_param('s', $name);
         $stmt->execute();
         $res = $stmt->get_result();
         $sa = $res->fetch_assoc();
@@ -45,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if ($err): ?><div class="alert alert-danger"><?php echo htmlspecialchars($err); ?></div><?php endif; ?>
             <form method="post" class="vstack gap-3">
               <div>
-                <label class="form-label">Username</label>
-                <input type="text" class="form-control" name="username" required />
+                <label class="form-label">name</label>
+                <input type="text" class="form-control" name="name" required />
               </div>
               <div>
                 <label class="form-label">Password</label>

@@ -18,17 +18,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ((int)($cres['c'] ?? 0) >= 2) {
             redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Maximum super admins (2) reached', 'error');
         }
-        $username = trim($_POST['username'] ?? '');
+        $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
         $status = in_array($_POST['status'] ?? 'active', ['active','inactive','banned']) ? $_POST['status'] : 'active';
         $password = (string)($_POST['password'] ?? '');
-        if ($username === '' || $email === '' || $password === '') {
-            redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Username, email and password are required', 'error');
+        if ($name === '' || $email === '' || $password === '') {
+            redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'name, email and password are required', 'error');
         }
         $hash = password_hash($password, PASSWORD_BCRYPT);
-        $stmt = db()->prepare('INSERT INTO super_admins (email, username, password_hash, phone, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
-        $stmt->bind_param('sssss', $email, $username, $hash, $phone, $status);
+        $stmt = db()->prepare('INSERT INTO super_admins (email, name, password_hash, phone, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+        $stmt->bind_param('sssss', $email, $name, $hash, $phone, $status);
         $ok = $stmt->execute();
         $err = $stmt->error;
         $stmt->close();
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $edit_id = (int)($_GET['edit'] ?? 0);
 $edit_row = null;
 if ($edit_id > 0) {
-    $stmt = db()->prepare('SELECT super_admin_id, email, username, phone, status, created_at, last_login_at, last_login_ip FROM super_admins WHERE super_admin_id = ?');
+    $stmt = db()->prepare('SELECT super_admin_id, email, name, phone, status, created_at, last_login_at, last_login_ip FROM super_admins WHERE super_admin_id = ?');
     $stmt->bind_param('i', $edit_id);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -104,7 +104,7 @@ if ($edit_id > 0) {
     $stmt->close();
 }
 
-$stmt = db()->prepare('SELECT super_admin_id, email, username, phone, status, created_at FROM super_admins ORDER BY super_admin_id ASC');
+$stmt = db()->prepare('SELECT super_admin_id, email, name, phone, status, created_at FROM super_admins ORDER BY super_admin_id ASC');
 $stmt->execute();
 $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
@@ -137,9 +137,9 @@ $sa_count = count($rows);
           <?php if ($edit_row): ?>
             <form method="post" class="vstack gap-3">
               <div>
-                <label class="form-label">Username</label>
-                <input type="text" class="form-control" value="<?= htmlspecialchars($edit_row['username']) ?>" disabled>
-                <div class="form-text">Username cannot be changed.</div>
+                <label class="form-label">name</label>
+                <input type="text" class="form-control" value="<?= htmlspecialchars($edit_row['name']) ?>" disabled>
+                <div class="form-text">name cannot be changed.</div>
               </div>
               <div>
                 <label class="form-label">Email</label>
@@ -174,8 +174,8 @@ $sa_count = count($rows);
             <?php else: ?>
               <form method="post" class="vstack gap-3">
                 <div>
-                  <label class="form-label">Username</label>
-                  <input type="text" name="username" class="form-control" required>
+                  <label class="form-label">name</label>
+                  <input type="text" name="name" class="form-control" required>
                 </div>
                 <div>
                   <label class="form-label">Email</label>
@@ -215,7 +215,7 @@ $sa_count = count($rows);
               <thead class="table-light">
                 <tr>
                   <th>ID</th>
-                  <th>Username</th>
+                  <th>name</th>
                   <th>Email</th>
                   <th>Phone</th>
                   <th>Status</th>
@@ -227,7 +227,7 @@ $sa_count = count($rows);
                 <?php foreach ($rows as $r): ?>
                   <tr>
                     <td><?= (int)$r['super_admin_id'] ?></td>
-                    <td><?= htmlspecialchars($r['username']) ?></td>
+                    <td><?= htmlspecialchars($r['name']) ?></td>
                     <td><?= htmlspecialchars($r['email']) ?></td>
                     <td><?= htmlspecialchars($r['phone']) ?></td>
                     <td><span class="badge <?= $r['status']==='active'?'bg-success':($r['status']==='inactive'?'bg-secondary':'bg-danger') ?>"><?= htmlspecialchars($r['status']) ?></span></td>

@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Load current SA data
-$stmt = db()->prepare('SELECT username, email, phone, created_at, last_login_at, last_login_ip FROM super_admins WHERE super_admin_id = ? LIMIT 1');
+$stmt = db()->prepare('SELECT name, email, phone, created_at, last_login_at, last_login_ip FROM super_admins WHERE super_admin_id = ? LIMIT 1');
 $stmt->bind_param('i', $sid);
 $stmt->execute();
 $res = $stmt->get_result();
@@ -70,7 +70,7 @@ $stmt->close();
             <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" style="width:96px;height:96px;color:white;">
               <span style="font-weight:600;">SA</span>
             </div>
-            <div class="mt-2 text-muted">@<?= htmlspecialchars($sa['username'] ?? '') ?></div>
+            <div class="mt-2 text-muted">@<?= htmlspecialchars($sa['name'] ?? '') ?></div>
           </div>
 
           <ul class="list-group mb-4">

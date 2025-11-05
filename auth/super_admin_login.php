@@ -19,10 +19,10 @@ $pending = $_SESSION['sa_pending'] ?? null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'login') {
-        $username = trim($_POST['username'] ?? '');
+        $name = trim($_POST['name'] ?? '');
         $password = (string)($_POST['password'] ?? '');
-        $stmt = db()->prepare('SELECT super_admin_id, username, password_hash, phone, status FROM super_admins WHERE username = ? LIMIT 1');
-        $stmt->bind_param('s', $username);
+        $stmt = db()->prepare('SELECT super_admin_id, name, password_hash, phone, status FROM super_admins WHERE name = ? LIMIT 1');
+        $stmt->bind_param('s', $name);
         $stmt->execute();
         $res = $stmt->get_result();
         $sa = $res->fetch_assoc();
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['sa_stage'] = 'otp';
                     $_SESSION['sa_pending'] = [
                         'super_admin_id' => (int)$sa['super_admin_id'],
-                        'username' => (string)$sa['username'],
+                        'name' => (string)$sa['name'],
                         'phone07' => $phone07,
                         'otp' => $otp,
                         'expires_ts' => $expires_at,
@@ -189,8 +189,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php if ($stage === 'credentials'): ?>
                         <form method="post" class="vstack gap-3">
                             <div>
-                                <label class="form-label">Username</label>
-                                <input type="text" class="form-control" name="username" required />
+                                <label class="form-label">name</label>
+                                <input type="text" class="form-control" name="name" required />
                             </div>
                             <div>
                                 <label class="form-label">Password</label>
@@ -245,5 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         })();
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
