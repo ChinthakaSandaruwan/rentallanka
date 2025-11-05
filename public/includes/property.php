@@ -12,22 +12,29 @@ $stmt->close();
     <h2 class="h4 mb-0">Latest Properties</h2>
     <a href="owner/property_management.php" class="btn btn-sm btn-outline-primary d-none">View all</a>
   </div>
-  <div class="row g-3">
+  <div class="row g-3 ">
     <?php foreach ($items as $p): ?>
       <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card h-100">
+        <div class="card h-100 border rounded-3 shadow-sm position-relative overflow-hidden">
+          <?php if (!empty($p['status'])): ?>
+            <span class="badge bg-success position-absolute top-0 start-0 m-2 text-uppercase small"><?php echo htmlspecialchars($p['status']); ?></span>
+          <?php endif; ?>
           <?php if (!empty($p['image'])): ?>
-            <img src="<?php echo htmlspecialchars($p['image']); ?>" class="card-img-top" alt="">
+            <?php $src = $p['image']; if ($src && !preg_match('#^https?://#i', $src) && $src[0] !== '/') { $src = '/'.ltrim($src, '/'); } ?>
+            <div class="ratio ratio-16x9">
+              <img src="<?php echo htmlspecialchars($src); ?>" class="w-100 h-100 object-fit-cover" alt="">
+            </div>
           <?php endif; ?>
           <div class="card-body d-flex flex-column">
             <h5 class="card-title mb-1"><?php echo htmlspecialchars($p['title']); ?></h5>
-            <div class="text-muted mb-2 small text-uppercase"><?php echo htmlspecialchars($p['status']); ?></div>
-            <div class="mt-auto fw-semibold">LKR <?php echo number_format((float)$p['price_per_month'], 2); ?>/month</div>
+            <div class="mt-auto">
+              <span class="fw-semibold">LKR <?php echo number_format((float)$p['price_per_month'], 2); ?>/month</span>
+            </div>
           </div>
           <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
             <div class="d-flex gap-2">
-              <a class="btn btn-sm btn-outline-secondary" href="public/includes/view_property.php?id=<?php echo (int)$p['property_id']; ?>">View</a>
-              <a class="btn btn-sm btn-primary" href="public/includes/rent_property.php?id=<?php echo (int)$p['property_id']; ?>">Rent</a>
+              <a class="btn btn-sm btn-outline-secondary" href="<?php echo $base_url; ?>/public/includes/view_property.php?id=<?php echo (int)$p['property_id']; ?>"><i class="bi bi-eye me-1"></i>View</a>
+              <a class="btn btn-sm btn-primary" href="<?php echo $base_url; ?>/public/includes/rent_property.php?id=<?php echo (int)$p['property_id']; ?>"><i class="bi bi-bag-plus me-1"></i>Rent</a>
             </div>
           </div>
         </div>

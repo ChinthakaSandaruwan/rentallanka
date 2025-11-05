@@ -46,6 +46,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) { $ok = 'City added'; } else { $err = 'Insert failed'; }
         $stmt->close();
       }
+    } elseif ($action === 'wipe_locations') {
+      $db = db();
+      $db->begin_transaction();
+      $ok = '';
+      try {
+        // Delete in FK-safe order
+        if (!$db->query('DELETE FROM locations')) { throw new Exception('Delete all failed (locations)'); }
+        if (!$db->query('DELETE FROM cities')) { throw new Exception('Delete all failed (cities)'); }
+        if (!$db->query('DELETE FROM districts')) { throw new Exception('Delete all failed (districts)'); }
+        if (!$db->query('DELETE FROM provinces')) { throw new Exception('Delete all failed (provinces)'); }
+        $db->commit();
+        $ok = 'All location data deleted';
+      } catch (Throwable $e) {
+        $db->rollback();
+        $err = $e->getMessage();
+      }
     } elseif ($action === 'delete' && isset($_POST['type'])) {
       $type = $_POST['type'];
       $id = (int)($_POST['id'] ?? 0);
@@ -127,7 +143,14 @@ while ($r = $res3->fetch_assoc()) { $cities[] = $r; }
 <div class="container py-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="h3 mb-0">Location Management</h1>
-    <a href="index.php" class="btn btn-outline-secondary btn-sm">Back</a>
+    <div class="d-flex gap-2">
+      <form method="post" class="d-inline" onsubmit="return confirm('Delete ALL provinces, districts, and cities? This cannot be undone and may fail if referenced by other data.');">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+        <input type="hidden" name="action" value="wipe_locations">
+        <button class="btn btn-danger btn-sm">Delete All Location Data</button>
+      </form>
+      <a href="index.php" class="btn btn-outline-secondary btn-sm">Back</a>
+    </div>
   </div>
   <?php if ($err): ?><div class="alert alert-danger"><?php echo htmlspecialchars($err); ?></div><?php endif; ?>
   <?php if ($ok): ?><div class="alert alert-success"><?php echo htmlspecialchars($ok); ?></div><?php endif; ?>

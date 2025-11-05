@@ -15,8 +15,6 @@
 <?php include 'public/includes/search.php'; ?>
 <?php include 'public/includes/property.php'; ?>
 <?php include 'public/includes/room.php'; ?>
-
-
 <?php include 'public/includes/footer.php'; ?>
 
 

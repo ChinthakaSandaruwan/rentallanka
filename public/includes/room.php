@@ -26,21 +26,27 @@ $stmt->close();
   <div class="row g-3">
     <?php foreach ($items as $r): ?>
       <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card h-100">
+        <div class="card h-100 border-0 shadow-sm position-relative">
+          <?php if (!empty($r['status'])): ?>
+            <span class="badge bg-success position-absolute top-0 start-0 m-2 text-uppercase small"><?php echo htmlspecialchars($r['status']); ?></span>
+          <?php endif; ?>
           <?php if (!empty($r['image_path'])): ?>
             <?php $src = $r['image_path']; if ($src && !preg_match('#^https?://#i', $src) && $src[0] !== '/') { $src = '/'.ltrim($src, '/'); } ?>
-            <img src="<?php echo htmlspecialchars($src); ?>" class="card-img-top" alt="">
+            <div class="ratio ratio-16x9">
+              <img src="<?php echo htmlspecialchars($src); ?>" class="w-100 h-100 object-fit-cover" alt="">
+            </div>
           <?php endif; ?>
           <div class="card-body d-flex flex-column">
             <h5 class="card-title mb-1"><?php echo htmlspecialchars($r['title']); ?></h5>
             <div class="text-muted small mb-1"><?php echo htmlspecialchars(ucfirst($r['room_type'])); ?> • Beds: <?php echo (int)$r['beds']; ?></div>
-            <div class="text-muted mb-2 small text-uppercase"><?php echo htmlspecialchars($r['status']); ?></div>
-            <div class="mt-auto fw-semibold">LKR <?php echo number_format((float)$r['price_per_day'], 2); ?>/day</div>
+            <div class="mt-auto">
+              <span class="fw-semibold">LKR <?php echo number_format((float)$r['price_per_day'], 2); ?>/day</span>
+            </div>
           </div>
           <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
             <div class="d-flex gap-2">
-              <a class="btn btn-sm btn-outline-secondary" href="public/includes/view_room.php?id=<?php echo (int)$r['room_id']; ?>">View</a>
-              <a class="btn btn-sm btn-primary" href="public/includes/rent_room.php?id=<?php echo (int)$r['room_id']; ?>">Rent</a>
+              <a class="btn btn-sm btn-outline-secondary" href="<?php echo $base_url; ?>/public/includes/view_room.php?id=<?php echo (int)$r['room_id']; ?>"><i class="bi bi-eye me-1"></i>View</a>
+              <a class="btn btn-sm btn-primary" href="<?php echo $base_url; ?>/public/includes/rent_room.php?id=<?php echo (int)$r['room_id']; ?>"><i class="bi bi-bag-plus me-1"></i>Rent</a>
             </div>
           </div>
         </div>

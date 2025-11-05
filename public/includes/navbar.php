@@ -3,38 +3,16 @@ if ((function_exists('session_status') ? session_status() : PHP_SESSION_NONE) ==
     session_start();
 }
 
-// Example session structure
-// $_SESSION['loggedin'] = true;
-// $_SESSION['role'] = 'admin'; // or 'owner', 'customer'
-
 $isSuper = isset($_SESSION['super_admin_id']);
 $loggedIn = (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) || $isSuper;
 $role = $_SESSION['role'] ?? '';
 require_once __DIR__ . '/../../config/config.php';
+// Active link helper
+$reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
 ?>
-<!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rentallanka</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    .theme-toggle {
-      border: none;
-      background: none;
-      cursor: pointer;
-      font-size: 1.3rem;
-    }
-    .auth-btn {
-      margin-left: 10px;
-    }
-  </style>
-</head>
-<body>
-  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
-    <div class="container-fluid">
-      <a class="navbar-brand fw-bold" href="<?= $base_url ?>/">🏠 Rentallanka</a>
+  <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom shadow-sm sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="<?= $base_url ?>/"><i class="bi bi-house-door-fill me-1"></i>Rentallanka</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
         data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
         aria-expanded="false" aria-label="Toggle navigation">
@@ -44,33 +22,26 @@ require_once __DIR__ . '/../../config/config.php';
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <!-- Navigation Links -->
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link active" href="<?= $base_url ?>/index.php">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/properties.php">Properties</a></li>
-          <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/rooms.php">Rooms</a></li>
-          <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/about.php">About</a></li>
-          <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/contact.php">Contact</a></li>
+          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/'||$reqPath==='/index.php')?'active':'' ?>" href="<?= $base_url ?>/index.php"><i class="bi bi-house-door me-1"></i>Home</a></li>
+          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/properties.php')?'active':'' ?>" href="<?= $base_url ?>/properties.php"><i class="bi bi-building me-1"></i>Properties</a></li>
+          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/rooms.php')?'active':'' ?>" href="<?= $base_url ?>/rooms.php"><i class="bi bi-door-open me-1"></i>Rooms</a></li>
+          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/about.php')?'active':'' ?>" href="<?= $base_url ?>/about.php"><i class="bi bi-info-circle me-1"></i>About</a></li>
+          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/contact.php')?'active':'' ?>" href="<?= $base_url ?>/contact.php"><i class="bi bi-envelope me-1"></i>Contact</a></li>
 
           <?php if ($loggedIn): ?>
             <?php if ($isSuper): ?>
-              <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/superAdmin/index.php">Super Admin Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/superAdmin/index.php"><i class="bi bi-shield-lock me-1"></i>Super Admin Dashboard</a></li>
             <?php endif; ?>
             <?php if ($role === 'admin'): ?>
-              <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/admin/index.php">Admin Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/admin/index.php"><i class="bi bi-speedometer2 me-1"></i>Admin Dashboard</a></li>
             <?php elseif ($role === 'owner'): ?>
-              <li class="nav-item"><a class="nav-link text-success" href="<?= $base_url ?>/owner/index.php">Owner Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link text-success" href="<?= $base_url ?>/owner/index.php"><i class="bi bi-briefcase me-1"></i>Owner Dashboard</a></li>
             <?php elseif ($role === 'customer'): ?>
-              <li class="nav-item"><a class="nav-link text-primary" href="<?= $base_url ?>/customer/index.php">Customer Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link text-primary" href="<?= $base_url ?>/customer/index.php"><i class="bi bi-person-badge me-1"></i>Customer Dashboard</a></li>
             <?php endif; ?>
             <!-- <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/public/includes/profile.php">Profile</a></li> -->
           <?php endif; ?>
         </ul>
-
-
-        <!-- Search Bar -->
-        <form class="d-flex me-3" role="search">
-          <input class="form-control me-2" type="search" placeholder="Search properties..." aria-label="Search">
-          <button class="btn btn-outline-success" type="submit">Search</button>
-        </form>
 
         <?php
           $cartCount = 0;
@@ -96,49 +67,68 @@ require_once __DIR__ . '/../../config/config.php';
             } catch (Throwable $e) { /* ignore */ }
           }
         ?>
-        <!-- Theme Toggle -->
-        <button id="themeToggle" class="theme-toggle" title="Toggle theme">
-          🌙
-        </button>
+        <!-- Right side -->
+        <div class="d-flex align-items-center gap-2">
+          <!-- Theme Toggle -->
+          <button id="themeToggle" class="btn btn-light btn-sm" title="Toggle theme">
+            <i id="themeIcon" class="bi bi-moon"></i>
+          </button>
 
-        <!-- Authentication Buttons -->
-        <?php if (!$loggedIn): ?>
-          <a href="<?= $base_url ?>/auth/login.php" class="btn btn-outline-primary auth-btn">Login</a>
-        <?php else: ?>
-          <?php if ($role === 'customer'): ?>
-            <a href="<?= $base_url ?>/public/includes/cart.php" class="btn btn-outline-primary position-relative me-2">
-              Cart
-              <?php if ($cartCount > 0): ?>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  <?= $cartCount ?>
-                </span>
-              <?php endif; ?>
-            </a>
+          <?php if (!$loggedIn): ?>
+            <a href="<?= $base_url ?>/auth/login.php" class="btn btn-primary btn-sm">Login</a>
+          <?php else: ?>
+            <?php if ($role === 'customer'): ?>
+              <a href="<?= $base_url ?>/public/includes/cart.php" class="btn btn-outline-primary position-relative btn-sm" title="Cart">
+                <i class="bi bi-cart"></i>
+                <?php if ($cartCount > 0): ?>
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    <?= $cartCount ?>
+                  </span>
+                <?php endif; ?>
+              </a>
+            <?php endif; ?>
+
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-1"></i> Account
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <?php if ($isSuper): ?>
+                  <li><a class="dropdown-item text-danger" href="<?= $base_url ?>/superAdmin/index.php"><i class="bi bi-shield-lock me-1"></i>Super Admin</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                <?php endif; ?>
+                <?php if ($role === 'admin'): ?>
+                  <li><a class="dropdown-item" href="<?= $base_url ?>/admin/index.php"><i class="bi bi-speedometer2 me-1"></i>Admin Dashboard</a></li>
+                <?php elseif ($role === 'owner'): ?>
+                  <li><a class="dropdown-item" href="<?= $base_url ?>/owner/index.php"><i class="bi bi-briefcase me-1"></i>Owner Dashboard</a></li>
+                <?php elseif ($role === 'customer'): ?>
+                  <li><a class="dropdown-item" href="<?= $base_url ?>/customer/index.php"><i class="bi bi-person-badge me-1"></i>Customer Dashboard</a></li>
+                <?php endif; ?>
+                <li><a class="dropdown-item" href="<?= $base_url ?>/public/includes/profile.php"><i class="bi bi-person-lines-fill me-1"></i>Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="<?= $base_url ?>/auth/logout.php"><i class="bi bi-box-arrow-right me-1"></i>Logout</a></li>
+              </ul>
+            </div>
           <?php endif; ?>
-          <a href="<?= $base_url ?>/public/includes/profile.php" class="btn btn-outline-secondary auth-btn">Profile</a>
-          <a href="<?= $base_url ?>/auth/logout.php" class="btn btn-outline-danger auth-btn">Logout</a>
-        <?php endif; ?>
+        </div>
       </div>
     </div>
   </nav>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Theme Toggle
     const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
     const htmlElement = document.documentElement;
     const savedTheme = localStorage.getItem('theme') || 'light';
     htmlElement.setAttribute('data-bs-theme', savedTheme);
-    themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    themeIcon.className = savedTheme === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
 
     themeToggle.addEventListener('click', () => {
       const currentTheme = htmlElement.getAttribute('data-bs-theme');
       const newTheme = currentTheme === 'light' ? 'dark' : 'light';
       htmlElement.setAttribute('data-bs-theme', newTheme);
       localStorage.setItem('theme', newTheme);
-      themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+      themeIcon.className = newTheme === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
     });
   </script>
-</body>
-</html>
 

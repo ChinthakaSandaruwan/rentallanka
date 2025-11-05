@@ -383,11 +383,16 @@ $stmt->close();
     ph.textContent = placeholder;
     ph.disabled = true; ph.selected = true;
     select.appendChild(ph);
-    items.forEach(v => {
+    (items || []).forEach(item => {
+      const isObj = typeof item === 'object' && item !== null;
+      const value = isObj ? (item.value ?? item.id ?? '') : item;
+      const label = isObj ? (item.label ?? item.name ?? String(value)) : String(item);
       const opt = document.createElement('option');
-      opt.value = v; opt.textContent = v;
+      opt.value = value;
+      opt.textContent = label;
       select.appendChild(opt);
     });
+    select.disabled = false;
   }
 
   document.addEventListener('DOMContentLoaded', () => {

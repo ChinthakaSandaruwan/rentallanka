@@ -1,3 +1,63 @@
 [05-Nov-2025 10:17:31 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
 [05-Nov-2025 11:42:46 Asia/Colombo] [2025-11-05 11:42:46] Uncaught Exception: mysqli_sql_exception: Unknown column 'province' in 'field list' in C:\xampp\htdocs\rentallanka\admin\location_management.php:47
 
+[05-Nov-2025 12:30:59 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[05-Nov-2025 12:32:51 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[05-Nov-2025 12:41:08 Asia/Colombo] [2025-11-05 12:41:08] PHP Error: Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php:36
+
+[05-Nov-2025 12:41:08 Asia/Colombo] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php on line 36
+[05-Nov-2025 12:41:13 Asia/Colombo] [2025-11-05 12:41:13] PHP Error: Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php:36
+
+[05-Nov-2025 12:41:13 Asia/Colombo] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php on line 36
+[05-Nov-2025 12:41:15 Asia/Colombo] [2025-11-05 12:41:15] PHP Error: Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php:36
+
+[05-Nov-2025 12:41:15 Asia/Colombo] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php on line 36
+[05-Nov-2025 12:41:16 Asia/Colombo] [2025-11-05 12:41:16] PHP Error: Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php:207
+
+[05-Nov-2025 12:41:16 Asia/Colombo] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php on line 207
+[05-Nov-2025 12:41:22 Asia/Colombo] [2025-11-05 12:41:22] PHP Error: Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php:36
+
+[05-Nov-2025 12:41:22 Asia/Colombo] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:121) in C:\xampp\htdocs\rentallanka\public\includes\search.php on line 36
+[05-Nov-2025 12:41:48 Asia/Colombo] [2025-11-05 12:41:48] PHP Error: Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:115) in C:\xampp\htdocs\rentallanka\public\includes\search.php:36
+
+[05-Nov-2025 12:41:48 Asia/Colombo] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:115) in C:\xampp\htdocs\rentallanka\public\includes\search.php on line 36
+[05-Nov-2025 12:42:26 Asia/Colombo] [2025-11-05 12:42:26] PHP Error: Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:115) in C:\xampp\htdocs\rentallanka\public\includes\search.php:36
+
+[05-Nov-2025 12:42:26 Asia/Colombo] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:115) in C:\xampp\htdocs\rentallanka\public\includes\search.php on line 36
+[05-Nov-2025 12:43:04 Asia/Colombo] [2025-11-05 12:43:04] PHP Error: Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:115) in C:\xampp\htdocs\rentallanka\public\includes\search.php:207
+
+[05-Nov-2025 12:43:04 Asia/Colombo] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\rentallanka\public\includes\navbar.php:115) in C:\xampp\htdocs\rentallanka\public\includes\search.php on line 207
+[05-Nov-2025 12:55:22 Asia/Colombo] [2025-11-05 12:55:22] Uncaught Exception: ParseError: syntax error, unexpected token "endif", expecting end of file in C:\xampp\htdocs\rentallanka\public\includes\search.php:222
+
+[05-Nov-2025 12:57:24 Asia/Colombo] [2025-11-05 12:57:24] Uncaught Exception: ParseError: syntax error, unexpected token "endif", expecting end of file in C:\xampp\htdocs\rentallanka\public\includes\search.php:222
+
+[05-Nov-2025 12:57:39 Asia/Colombo] [2025-11-05 12:57:39] Uncaught Exception: ParseError: syntax error, unexpected token "endif", expecting end of file in C:\xampp\htdocs\rentallanka\public\includes\search.php:222
+
+[05-Nov-2025 12:57:40 Asia/Colombo] [2025-11-05 12:57:40] Uncaught Exception: ParseError: syntax error, unexpected token "endif", expecting end of file in C:\xampp\htdocs\rentallanka\public\includes\search.php:222
+
+[05-Nov-2025 12:57:40 Asia/Colombo] [2025-11-05 12:57:40] Uncaught Exception: ParseError: syntax error, unexpected token "endif", expecting end of file in C:\xampp\htdocs\rentallanka\public\includes\search.php:222
+
+[05-Nov-2025 13:47:37 Asia/Colombo] [2025-11-05 13:47:37] Uncaught Exception: mysqli_sql_exception: Unknown column 'created_at' in 'field list' in C:\xampp\htdocs\rentallanka\customer\my_property_monthly_payment.php:92
+
+[05-Nov-2025 13:47:39 Asia/Colombo] [2025-11-05 13:47:39] Uncaught Exception: mysqli_sql_exception: Unknown column 'created_at' in 'field list' in C:\xampp\htdocs\rentallanka\customer\my_property_monthly_payment.php:92
+
+[05-Nov-2025 13:48:06 Asia/Colombo] [2025-11-05 13:48:06] Uncaught Exception: mysqli_sql_exception: Unknown column 'created_at' in 'field list' in C:\xampp\htdocs\rentallanka\customer\my_property_monthly_payment.php:92
+
+[05-Nov-2025 13:48:07 Asia/Colombo] [2025-11-05 13:48:07] Uncaught Exception: mysqli_sql_exception: Unknown column 'created_at' in 'field list' in C:\xampp\htdocs\rentallanka\customer\my_property_monthly_payment.php:92
+
+[05-Nov-2025 13:48:23 Asia/Colombo] [2025-11-05 13:48:23] Uncaught Exception: mysqli_sql_exception: Unknown column 'created_at' in 'field list' in C:\xampp\htdocs\rentallanka\customer\my_property_monthly_payment.php:92
+
+[05-Nov-2025 13:49:26 Asia/Colombo] [2025-11-05 13:49:26] Uncaught Exception: mysqli_sql_exception: Unknown column 'created_at' in 'field list' in C:\xampp\htdocs\rentallanka\customer\my_property_monthly_payment.php:102
+
+[05-Nov-2025 13:49:27 Asia/Colombo] [2025-11-05 13:49:27] Uncaught Exception: mysqli_sql_exception: Unknown column 'created_at' in 'field list' in C:\xampp\htdocs\rentallanka\customer\my_property_monthly_payment.php:102
+
+[05-Nov-2025 14:58:38 Asia/Colombo] [2025-11-05 14:58:38] Uncaught Exception: mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`sri_lanka_rental_system`.`locations`, CONSTRAINT `fk_locations_city` FOREIGN KEY (`city_id`) REFERENCES `cities` (`city_id`) ON DELETE RESTRICT) in C:\xampp\htdocs\rentallanka\admin\location_management.php:64
+
+[05-Nov-2025 14:58:50 Asia/Colombo] [2025-11-05 14:58:50] Uncaught Exception: mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`sri_lanka_rental_system`.`locations`, CONSTRAINT `fk_locations_city` FOREIGN KEY (`city_id`) REFERENCES `cities` (`city_id`) ON DELETE RESTRICT) in C:\xampp\htdocs\rentallanka\admin\location_management.php:64
+
+[05-Nov-2025 15:03:21 Asia/Colombo] [2025-11-05 15:03:21] Uncaught Exception: mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`sri_lanka_rental_system`.`locations`, CONSTRAINT `fk_locations_city` FOREIGN KEY (`city_id`) REFERENCES `cities` (`city_id`) ON DELETE RESTRICT) in C:\xampp\htdocs\rentallanka\admin\location_management.php:72
+
+[05-Nov-2025 15:03:24 Asia/Colombo] [2025-11-05 15:03:24] Uncaught Exception: mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`sri_lanka_rental_system`.`locations`, CONSTRAINT `fk_locations_city` FOREIGN KEY (`city_id`) REFERENCES `cities` (`city_id`) ON DELETE RESTRICT) in C:\xampp\htdocs\rentallanka\admin\location_management.php:53
+
+[05-Nov-2025 15:03:39 Asia/Colombo] [2025-11-05 15:03:39] Uncaught Exception: mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`sri_lanka_rental_system`.`locations`, CONSTRAINT `fk_locations_city` FOREIGN KEY (`city_id`) REFERENCES `cities` (`city_id`) ON DELETE RESTRICT) in C:\xampp\htdocs\rentallanka\admin\location_management.php:53
+
