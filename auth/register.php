@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../php_mailer/mailer.php';
 
 function normalize_phone_07(string $phone): string {
     $p = preg_replace('/\D+/', '', $phone);
@@ -58,34 +59,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $status = 'active';
                 $stmt = db()->prepare('INSERT INTO users (email, nic, name, phone, profile_image, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)');
                 $stmt->bind_param('sssssss', $email, $nic, $name, $phone07, $profileUrl, $role, $status);
-                if (!$stmt->execute()) {
-                    // Handle unique constraint errors
-                    $error = 'Registration failed. Email/Name/NIC/Phone may already be in use.';
-                    $stage = 'request';
-                    $stmt->close();
-                } else {
+                try {
+                    $stmt->execute();
                     $uid = (int)$stmt->insert_id;
                     $stmt->close();
 
-            // Create OTP and send
-            $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $expires = (new DateTime('+5 minutes'))->format('Y-m-d H:i:s');
-            $stmt = db()->prepare('INSERT INTO otp_verifications (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
-            $stmt->bind_param('iss', $uid, $otp, $expires);
-            $stmt->execute();
-            $stmt->close();
+                    // Create OTP and send
+                    $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                    $expires = (new DateTime('+5 minutes'))->format('Y-m-d H:i:s');
+                    $stmt = db()->prepare('INSERT INTO otp_verifications (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
+                    $stmt->bind_param('iss', $uid, $otp, $expires);
+                    $stmt->execute();
+                    $stmt->close();
 
-            $_SESSION['reg_stage'] = 'verify';
-            $_SESSION['reg_user_id'] = $uid;
-            $_SESSION['reg_phone'] = $phone07;
-            if ($email) { $_SESSION['reg_email'] = $email; }
+                    $_SESSION['reg_stage'] = 'verify';
+                    $_SESSION['reg_user_id'] = $uid;
+                    $_SESSION['reg_phone'] = $phone07;
+                    if ($email) { $_SESSION['reg_email'] = $email; }
 
-            $sms = 'Your Registration OTP is ' . $otp . '. It expires in 5 minutes.';
-            smslenz_send_sms(to_e164_for_sms($phone07), $sms);
-            $info = 'OTP sent to ' . $phone07;
-            $stage = 'verify';
+                    $sms = 'Your Registration OTP is ' . $otp . '. It expires in 5 minutes.';
+                    smslenz_send_sms(to_e164_for_sms($phone07), $sms);
+                    $info = 'OTP sent to ' . $phone07;
+                    $stage = 'verify';
+                } catch (Throwable $e) {
+                    // Duplicate entry (MySQL 1062) or other DB error
+                    $code = (int)($e->getCode() ?? 0);
+                    if ($code === 1062) {
+                        $error = 'Registration failed. Email/Name/NIC/Phone already exists.';
+                    } else {
+                        $error = 'Registration failed due to a server error.';
+                    }
+                    if (isset($stmt) && $stmt) { $stmt->close(); }
+                    $stage = 'request';
+                }
             }
-        }
         }
     } elseif ($action === 'verify') {
         $phone07 = $_SESSION['reg_phone'] ?? '';
@@ -114,6 +121,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->bind_param('i', $otp_id);
                     $stmt->execute();
                     $stmt->close();
+
+                    // Send registration success email (best-effort)
+                    try {
+                        $uidNow = (int)$row['user_id'];
+                        $se = db()->prepare('SELECT name, email FROM users WHERE user_id=? LIMIT 1');
+                        $se->bind_param('i', $uidNow);
+                        $se->execute();
+                        $uinfo = $se->get_result()->fetch_assoc();
+                        $se->close();
+                        if (!empty($uinfo['email'])) {
+                            $subject = 'Welcome to Rentallanka';
+                            $nameTo = (string)($uinfo['name'] ?? '');
+                            $body = '<p>Hi ' . htmlspecialchars($nameTo ?: 'there') . ',</p>'
+                                  . '<p>Your registration is successful. You can now sign in and start using Rentallanka.</p>'
+                                  . '<p>Thank you,<br>Rentallanka</p>';
+                            @mailer_send($uinfo['email'], $nameTo, $subject, $body);
+                        }
+                    } catch (Throwable $e) { /* ignore */ }
 
                     $_SESSION['user'] = [
                         'user_id' => (int)$row['user_id'],
