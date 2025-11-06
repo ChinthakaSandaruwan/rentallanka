@@ -39,18 +39,48 @@ function norm_url($p) {
   return '/' . ltrim($p, '/');
 }
 
-// Handle POST (add to cart)
+[$flash, $flash_type] = (function(){
+  if (function_exists('get_flash')) { return get_flash(); }
+  return [null, null];
+})();
+
+// Handle POST (create room rental)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $start = trim($_POST['start_date'] ?? '');
   $end = trim($_POST['end_date'] ?? '');
+  $child_count = (int)($_POST['child_count'] ?? 0);
+  $adult_count = (int)($_POST['adult_count'] ?? 0);
   $cust_id = (int)($_SESSION['user']['user_id'] ?? 0);
   if (!$cust_id || !$room) {
     redirect_with_message($GLOBALS['base_url'] . '/index.php', 'Invalid request', 'error');
   }
+  // ensure customer exists to satisfy FK
+  $uc = db()->prepare('SELECT 1 FROM users WHERE user_id = ? LIMIT 1');
+  if ($uc) {
+    $uc->bind_param('i', $cust_id);
+    $uc->execute();
+    $urow = $uc->get_result()->fetch_assoc();
+    $uc->close();
+    if (!$urow) {
+      redirect_with_message($GLOBALS['base_url'] . '/index.php', 'Your account was not found. Please sign in again.', 'error');
+    }
+  }
   if (!$start || !$end || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end) || strtotime($end) < strtotime($start)) {
     redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Invalid dates', 'error');
   }
-  // ensure cart
+  // validate people counts
+  if ($child_count < 0 || $adult_count < 0) {
+    redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Invalid people counts', 'error');
+  }
+  $capacity = (int)($room['total_people_count'] ?? 0);
+  if ($capacity > 0 && ($child_count + $adult_count) > $capacity) {
+    redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'People exceed room capacity', 'error');
+  }
+  // calculate totals
+  $days = (int)max(1, round((strtotime($end) - strtotime($start)) / 86400));
+  $price = (float)$room['price_per_day'];
+  $total = $price * $days;
+  // ensure active cart
   $cart_id = 0;
   $c = db()->prepare('SELECT cart_id FROM carts WHERE customer_id=? AND status="active" LIMIT 1');
   $c->bind_param('i', $cust_id);
@@ -65,16 +95,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cart_id = (int)db()->insert_id;
     $ci->close();
   }
-  // calculate totals
-  $days = (int)max(1, round((strtotime($end) - strtotime($start)) / 86400));
-  $price = (float)$room['price_per_day'];
-  $total = $price * $days;
-  // insert cart item
+  // insert cart item (daily_room)
   $it = db()->prepare('INSERT INTO cart_items (cart_id, room_id, property_id, item_type, start_date, end_date, quantity, meal_plan, price, total_price) VALUES (?, ?, NULL, "daily_room", ?, ?, 1, "none", ?, ?)');
+  if (!$it) {
+    redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Server error while preparing cart item.', 'error');
+  }
   $it->bind_param('iissdd', $cart_id, $rid, $start, $end, $price, $total);
   if ($it->execute()) {
     $it->close();
-    redirect_with_message($GLOBALS['base_url'] . '/index.php', 'Added room to cart', 'success');
+    redirect_with_message($GLOBALS['base_url'] . '/public/includes/cart.php', 'Added room to cart', 'success');
   } else {
     $it->close();
     redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Failed to add to cart', 'error');
@@ -94,6 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <?php require_once __DIR__ . '/navbar.php'; ?>
 <div class="container py-4">
+  <?php if (!empty($flash)): ?>
+    <div class="alert <?php echo ($flash_type==='success')?'alert-success':'alert-danger'; ?>" role="alert"><?php echo htmlspecialchars($flash); ?></div>
+  <?php endif; ?>
   <div class="row g-4">
     <div class="col-12 col-lg-7">
       <div class="card">
@@ -104,6 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <dt class="col-sm-4">Owner</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['owner_name'] ?? ''); ?></dd>
             <dt class="col-sm-4">Type</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['room_type'] ?? ''); ?></dd>
             <dt class="col-sm-4">Beds</dt><dd class="col-sm-8"><?php echo (int)$room['beds']; ?></dd>
+            <dt class="col-sm-4">Max people</dt><dd class="col-sm-8"><?php echo (int)($room['total_people_count'] ?? 0); ?></dd>
             <dt class="col-sm-4">Price / day</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$room['price_per_day'], 2); ?></dd>
           </dl>
           <div class="mt-3">
@@ -115,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="card mt-3">
         <div class="card-header">Rent this room</div>
         <div class="card-body">
-          <form method="post" action="#" class="row g-3">
+          <form id="rent-form" method="post" action="#" class="row g-3">
             <div class="col-12 col-md-6">
               <label class="form-label">Start date</label>
               <input type="date" name="start_date" class="form-control" min="<?php echo date('Y-m-d'); ?>" required>
@@ -124,6 +157,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <label class="form-label">End date</label>
               <input type="date" name="end_date" class="form-control" min="<?php echo date('Y-m-d'); ?>" required>
               <div class="form-text">Same-day stay is allowed.</div>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label">Children</label>
+              <input type="number" name="child_count" class="form-control" min="0" value="0" max="<?php echo (int)($room['total_people_count'] ?? 0); ?>">
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label">Adults</label>
+              <input type="number" name="adult_count" class="form-control" min="0" value="1" max="<?php echo (int)($room['total_people_count'] ?? 0); ?>">
+            </div>
+            <div class="col-12 text-muted small">
+              Maximum people allowed: <strong><?php echo (int)($room['total_people_count'] ?? 0); ?></strong>
             </div>
             <div class="col-12">
               <button type="submit" class="btn btn-primary">Continue</button>
@@ -163,6 +207,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 </div>
 <?php require_once __DIR__ . '/footer.php'; ?>
+<script>
+  (function(){
+    var form = document.getElementById('rent-form');
+    if (!form) return;
+    var child = form.querySelector('input[name="child_count"]');
+    var adult = form.querySelector('input[name="adult_count"]');
+    var max = <?php echo (int)($room['total_people_count'] ?? 0); ?>;
+    var errorEl = document.createElement('div');
+    errorEl.className = 'text-danger small';
+    errorEl.style.display = 'none';
+    errorEl.textContent = 'Total people exceeds maximum allowed (' + max + ').';
+    form.appendChild(errorEl);
+    function validate(){
+      var c = parseInt(child.value || '0', 10);
+      var a = parseInt(adult.value || '0', 10);
+      var total = (isNaN(c)?0:c) + (isNaN(a)?0:a);
+      var ok = total >= 1 && (max <= 0 || total <= max);
+      errorEl.style.display = ok ? 'none' : '';
+      return ok;
+    }
+    child.addEventListener('input', validate);
+    adult.addEventListener('input', validate);
+    form.addEventListener('submit', function(e){ if (!validate()) { e.preventDefault(); e.stopPropagation(); } });
+  })();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

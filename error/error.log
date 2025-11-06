@@ -1,7 +1,1 @@
-[05-Nov-2025 20:34:33 Asia/Colombo] [2025-11-05 20:34:33] Uncaught Exception: mysqli_sql_exception: Unknown column 'u.name' in 'field list' in C:\xampp\htdocs\rentallanka\admin\room_management.php:81
-
-[05-Nov-2025 22:21:51 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
-[05-Nov-2025 22:42:18 Asia/Colombo] [2025-11-05 22:42:18] Uncaught Exception: mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`rentallanka`.`cart_items`, CONSTRAINT `fk_cart_items_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE RESTRICT) in C:\xampp\htdocs\rentallanka\owner\room_management.php:64
-
-[05-Nov-2025 22:43:38 Asia/Colombo] [2025-11-05 22:43:38] Uncaught Exception: mysqli_sql_exception: Cannot delete or update a parent row: a foreign key constraint fails (`rentallanka`.`cart_items`, CONSTRAINT `fk_cart_items_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE RESTRICT) in C:\xampp\htdocs\rentallanka\owner\room_management.php:64
-
+[06-Nov-2025 15:44:53 Asia/Colombo] rent_room.php about to insert: room_id=1 customer_id=3 child=2 adult=3 start=2025-11-06 end=2025-11-25 total=38000

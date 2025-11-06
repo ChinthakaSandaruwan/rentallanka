@@ -62,7 +62,6 @@ $stmt->close();
           <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
             <div class="d-flex gap-2">
               <a class="btn btn-sm btn-outline-secondary" href="<?php echo $base_url; ?>/public/includes/view_property.php?id=<?php echo (int)$p['property_id']; ?>"><i class="bi bi-eye me-1"></i>View</a>
-              <a class="btn btn-sm btn-primary" href="<?php echo $base_url; ?>/public/includes/rent_property.php?id=<?php echo (int)$p['property_id']; ?>"><i class="bi bi-bag-plus me-1"></i>Rent</a>
             </div>
           </div>
         </div>

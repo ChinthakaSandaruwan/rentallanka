@@ -4,14 +4,14 @@
 --
 
 CREATE TABLE IF NOT EXISTS `districts` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `province_id` int(2) NOT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `province_id` INT NOT NULL,
   `name_en` varchar(45) DEFAULT NULL,
   `name_si` varchar(45) DEFAULT NULL,
   `name_ta` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `provinces_id` (`province_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 ;
 
 --
 -- Dumping data for table `districts`

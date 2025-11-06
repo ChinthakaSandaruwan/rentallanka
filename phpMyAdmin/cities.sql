@@ -1,4 +1,3 @@
-
 -- --------------------------------------------------------
 
 --
@@ -6,20 +5,20 @@
 --
 
 CREATE TABLE `cities` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `district_id` int(11) NOT NULL,
-  `name_en` varchar(45) DEFAULT NULL,
-  `name_si` varchar(45) DEFAULT NULL,
-  `name_ta` varchar(45) DEFAULT NULL,
-  `sub_name_en` varchar(45) DEFAULT NULL,
-  `sub_name_si` varchar(45) DEFAULT NULL,
-  `sub_name_ta` varchar(45) DEFAULT NULL,
-  `postcode` varchar(15) DEFAULT NULL,
-  `latitude` double DEFAULT NULL,
-  `longitude` double DEFAULT NULL,
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `district_id` INT NOT NULL,
+  `name_en` VARCHAR(45) DEFAULT NULL,
+  `name_si` VARCHAR(45) DEFAULT NULL,
+  `name_ta` VARCHAR(45) DEFAULT NULL,
+  `sub_name_en` VARCHAR(45) DEFAULT NULL,
+  `sub_name_si` VARCHAR(45) DEFAULT NULL,
+  `sub_name_ta` VARCHAR(45) DEFAULT NULL,
+  `postcode` VARCHAR(15) DEFAULT NULL,
+  `latitude` DOUBLE DEFAULT NULL,
+  `longitude` DOUBLE DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_cities_districts1_idx` (`district_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 ;
 
 
 --

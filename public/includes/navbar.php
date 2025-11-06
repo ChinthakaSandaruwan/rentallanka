@@ -67,6 +67,21 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
             } catch (Throwable $e) { /* ignore */ }
           }
         ?>
+        <?php
+          // Notifications unread count (all roles)
+          $notifCount = 0;
+          try {
+            $uid = (int)($_SESSION['user']['user_id'] ?? 0);
+            if ($loggedIn && $uid > 0) {
+              $qn = db()->prepare('SELECT COUNT(*) AS cnt FROM notifications WHERE user_id=? AND is_read=0');
+              $qn->bind_param('i', $uid);
+              $qn->execute();
+              $nres = $qn->get_result()->fetch_assoc();
+              $qn->close();
+              $notifCount = (int)($nres['cnt'] ?? 0);
+            }
+          } catch (Throwable $e) { /* ignore */ }
+        ?>
         <!-- Right side -->
         <div class="d-flex align-items-center gap-2">
           <!-- Theme Toggle -->
@@ -87,6 +102,21 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
                 <?php endif; ?>
               </a>
             <?php endif; ?>
+
+            <?php
+              // Role-specific notifications page URL
+              $notifUrl = $base_url . '/customer/notification.php';
+              if ($role === 'admin') { $notifUrl = $base_url . '/admin/notification.php'; }
+              elseif ($role === 'owner') { $notifUrl = $base_url . '/owner/notification.php'; }
+            ?>
+            <a href="<?= $notifUrl ?>" class="btn btn-outline-secondary position-relative btn-sm" title="Notifications">
+              <i class="bi bi-bell"></i>
+              <?php if ($notifCount > 0): ?>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  <?= $notifCount ?>
+                </span>
+              <?php endif; ?>
+            </a>
 
             <div class="dropdown">
               <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">

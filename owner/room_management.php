@@ -131,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $room_type = $_POST['room_type'] ?? 'other';
             $description = trim($_POST['description'] ?? '');
             $beds = (int)($_POST['beds'] ?? 1);
+            $total_people_count = (int)($_POST['total_people_count'] ?? 1);
             $price_per_day = (float)($_POST['price_per_day'] ?? 0);
             $status = 'pending';
             $allowed_types = ['single','double','suite','dorm','other'];
@@ -142,9 +143,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $address = trim($_POST['address'] ?? '');
             $postal_code = trim($_POST['postal_code'] ?? '');
 
-            if ($title !== '' && $price_per_day >= 0 && $beds >= 0 && $province_id > 0 && $district_id > 0 && $city_id > 0 && $postal_code !== '') {
-                $ins = db()->prepare("INSERT INTO rooms (owner_id, title, room_type, description, beds, price_per_day, status) VALUES (?,?,?,?,?,?,?)");
-                $ins->bind_param('isssids', $owner_id, $title, $room_type, $description, $beds, $price_per_day, $status);
+            if ($title !== '' && $price_per_day >= 0 && $beds >= 0 && $total_people_count >= 1 && $province_id > 0 && $district_id > 0 && $city_id > 0 && $postal_code !== '') {
+                $ins = db()->prepare("INSERT INTO rooms (owner_id, title, room_type, description, beds, total_people_count, price_per_day, status) VALUES (?,?,?,?,?,?,?,?)");
+                $ins->bind_param('isssiids', $owner_id, $title, $room_type, $description, $beds, $total_people_count, $price_per_day, $status);
                 if ($ins->execute()) {
                     $new_room_id = db()->insert_id;
                     // Insert location linked to room with FK IDs
@@ -342,6 +343,10 @@ $rs->close();
                   <label class="form-label">Beds</label>
                   <input name="beds" type="number" min="0" value="1" class="form-control">
                 </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Total People Count</label>
+                <input name="total_people_count" type="number" min="1" value="1" class="form-control" required>
               </div>
               <div class="mb-3">
                 <label class="form-label">Primary Image</label>

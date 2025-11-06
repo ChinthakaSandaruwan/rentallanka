@@ -121,7 +121,6 @@ $stmt->close();
               <th>Status</th>
               <th>Price/day</th>
               <th>Created</th>
-              <th>Actions</th>
               <th>View</th>
             </tr>
           </thead>
@@ -135,28 +134,9 @@ $stmt->close();
                 <td><span class="badge bg-secondary text-uppercase"><?php echo htmlspecialchars($r['status']); ?></span></td>
                 <td><?php echo number_format((float)$r['price_per_day'], 2); ?></td>
                 <td><?php echo htmlspecialchars($r['created_at']); ?></td>
-                <td>
-                  <form method="post" class="d-flex gap-2 align-items-center">
-                    <input type="hidden" name="action" value="update_status">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                    <input type="hidden" name="room_id" value="<?php echo (int)$r['room_id']; ?>">
-                    <select name="status" class="form-select form-select-sm" style="max-width: 180px;">
-                      <?php foreach ($allowed_status as $s): ?>
-                        <option value="<?php echo htmlspecialchars($s); ?>" <?php echo ($r['status']===$s)?'selected':''; ?>><?php echo htmlspecialchars(ucfirst($s)); ?></option>
-                      <?php endforeach; ?>
-                    </select>
-                    <button type="submit" class="btn btn-sm btn-primary">Update</button>
-                  </form>
-                  <form method="post" class="d-inline-block ms-2" onsubmit="return confirm('Delete this room?');">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="room_id" value="<?php echo (int)$r['room_id']; ?>">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                  </form>
-                </td>
-                <td class="text-nowrap">
-                  <a class="btn btn-sm btn-outline-secondary" href="room_view.php?id=<?php echo (int)$r['room_id']; ?>">View</a>
-                </td>
+              <td class="text-nowrap">
+                <a class="btn btn-sm btn-outline-secondary" href="room_view.php?id=<?php echo (int)$r['room_id']; ?>">View</a>
+              </td>
               </tr>
             <?php endforeach; ?>
             <?php if (!$rows): ?>

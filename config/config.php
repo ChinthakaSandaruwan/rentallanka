@@ -1,17 +1,7 @@
 <?php
 require_once __DIR__ . '/security_bootstrap.php';
-// PayHere Configuration
-$merchant_id = "1224197"; // Replace with your Merchant ID
-$merchant_secret = "Mzg1MDk0MTE4ODMyNDU4Mjc0OTMyNjI4MjI2Nzc3MzY5MTk2NzI4NQ=="; // Replace with your Merchant Secret
-
-// URLs
+// Base URL
 $base_url = 'http://localhost/rentallanka';
-$return_url = $base_url . "/payhere_recurring/success.php";
-$cancel_url = $base_url . "/payhere_recurring/cancel.php";
-$notify_url = $base_url . "/payhere_recurring/notify.php";
-
-// Payment Mode (sandbox/live)
-$payhere_url = "https://sandbox.payhere.lk/pay/checkout"; // Use live URL in production
 
 // Database connection for XAMPP default setup
 // Adjust credentials as needed for your environment

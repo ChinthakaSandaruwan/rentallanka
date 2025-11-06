@@ -4,7 +4,7 @@
     -- Safety and consistency
     SET NAMES utf8mb4;
     SET time_zone = "+00:00";
-    SET sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+    SET sql_mode = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION';
 
     -- Create and select database
     CREATE DATABASE IF NOT EXISTS `rentallanka`
@@ -64,7 +64,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `super_admin_id` INT NOT NULL,
       `otp_code` VARCHAR(8) NOT NULL,
       `expires_at` DATETIME NOT NULL,
-      `is_verified` TINYINT(1) NOT NULL DEFAULT 0,
+      `is_verified` TINYINT NOT NULL DEFAULT 0,
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`sa_otp_id`),
       KEY `idx_sa_otp_super_admin` (`super_admin_id`),
@@ -103,10 +103,10 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `gym`INT NULL DEFAULT 0,
       `pool`INT NULL DEFAULT 0,
       `sqft` DECIMAL(10,2) NULL,
-      `has_kitchen` TINYINT(1) NOT NULL DEFAULT 0,
-      `has_parking` TINYINT(1) NOT NULL DEFAULT 0,
-      `has_water_supply` TINYINT(1) NOT NULL DEFAULT 0,
-      `has_electricity_supply` TINYINT(1) NOT NULL DEFAULT 0,
+      `has_kitchen` TINYINT NOT NULL DEFAULT 0,
+      `has_parking` TINYINT NOT NULL DEFAULT 0,
+      `has_water_supply` TINYINT NOT NULL DEFAULT 0,
+      `has_electricity_supply` TINYINT NOT NULL DEFAULT 0,
       `property_type` ENUM('house','apartment','commercial','other') NULL,
       `image` VARCHAR(255) NULL,
       `status` ENUM('available','rented','unavailable','pending') NOT NULL DEFAULT 'pending',
@@ -126,6 +126,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `room_type` ENUM('single','double','suite','dorm','other') NOT NULL DEFAULT 'other',
       `description` TEXT NULL,
       `beds` INT NOT NULL DEFAULT 1,
+`total_people_count` INT NOT NULL DEFAULT 1,
       `price_per_day` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       `status` ENUM('available','rented','unavailable','pending') NOT NULL DEFAULT 'pending',
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -161,7 +162,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `image_id` INT NOT NULL AUTO_INCREMENT,
       `room_id` INT NOT NULL,
       `image_path` VARCHAR(255) NOT NULL,
-      `is_primary` TINYINT(1) NOT NULL DEFAULT 0,
+      `is_primary` TINYINT NOT NULL DEFAULT 0,
       `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`image_id`),
       KEY `idx_room_images_room_id` (`room_id`),
@@ -173,7 +174,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `image_id` INT NOT NULL AUTO_INCREMENT,
       `property_id` INT NOT NULL,
       `image_path` VARCHAR(255) NOT NULL,
-      `is_primary` TINYINT(1) NOT NULL DEFAULT 0,
+      `is_primary` TINYINT NOT NULL DEFAULT 0,
       `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`image_id`),
       KEY `idx_property_images_property_id` (`property_id`),
@@ -191,29 +192,13 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       CONSTRAINT `fk_rps_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- Table: rentals
-    CREATE TABLE IF NOT EXISTS `rentals` (
-      `rental_id` INT NOT NULL AUTO_INCREMENT,
-      `property_id` INT NOT NULL,
-      `customer_id` INT NULL,
-      `start_date` DATE NOT NULL,
-      `end_date` DATE NULL,
-      `total_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-      `status` ENUM('active','completed','cancelled') NOT NULL DEFAULT 'active',
-      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`rental_id`),
-      KEY `idx_rentals_property_id` (`property_id`),
-      KEY `idx_rentals_customer_id` (`customer_id`),
-      KEY `idx_rentals_status` (`status`),
-      CONSTRAINT `fk_rentals_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE RESTRICT,
-      CONSTRAINT `fk_rentals_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
     -- Table: room_rentals (finalized daily room rentals)
     CREATE TABLE IF NOT EXISTS `room_rentals` (
       `room_rental_id` INT NOT NULL AUTO_INCREMENT,
       `room_id` INT NOT NULL,
       `customer_id` INT NOT NULL,
+      `child_count` INT NOT NULL DEFAULT 0,
+      `adult_count` INT NOT NULL DEFAULT 0,
       `start_date` DATE NOT NULL,
       `end_date` DATE NOT NULL,
       `total_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -225,17 +210,6 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       KEY `idx_room_rentals_status` (`status`),
       CONSTRAINT `fk_room_rentals_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE RESTRICT,
       CONSTRAINT `fk_room_rentals_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-    -- Table: payment_slips
-    CREATE TABLE IF NOT EXISTS `payment_slips` (
-      `slip_id` INT NOT NULL AUTO_INCREMENT,
-      `rental_id` INT NULL,
-      `slip_path` VARCHAR(255) NOT NULL,
-      `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`slip_id`),
-      KEY `idx_payment_slips_rental_id` (`rental_id`),
-      CONSTRAINT `fk_payment_slips_rental` FOREIGN KEY (`rental_id`) REFERENCES `rentals` (`rental_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Table: property_payment_slips (owner property creation payment slips)
@@ -355,7 +329,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `type` ENUM('system','rental','payment','other') NOT NULL DEFAULT 'system',
       `rental_id` INT NULL,
       `property_id` INT NULL,
-      `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+      `is_read` TINYINT NOT NULL DEFAULT 0,
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`notification_id`),
       KEY `idx_notifications_user_id` (`user_id`),
@@ -363,6 +337,20 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       KEY `idx_notifications_rental_id` (`rental_id`),
       KEY `idx_notifications_property_id` (`property_id`),
       CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-      CONSTRAINT `fk_notifications_rental` FOREIGN KEY (`rental_id`) REFERENCES `rentals` (`rental_id`) ON DELETE SET NULL,
       CONSTRAINT `fk_notifications_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+    -- Migration guardrails for existing databases
+    -- Ensure rooms has total_people_count (added for capacity validation)
+    SET @col_exists := (
+      SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rooms' AND COLUMN_NAME = 'total_people_count'
+    );
+    SET @ddl := IF(@col_exists = 0,
+      'ALTER TABLE `rooms` ADD COLUMN `total_people_count` INT NOT NULL DEFAULT 1;',
+      'SELECT 1;'
+    );
+    PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+    -- Optional backfill: align capacity with beds if needed
+    -- UPDATE rooms SET total_people_count = GREATEST(total_people_count, beds) WHERE total_people_count < beds;

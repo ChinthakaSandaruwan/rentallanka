@@ -86,6 +86,19 @@
         </div>
       </div>
 
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">Notification</h5>
+              <i class="bi bi-person-circle card-icon"></i>
+            </div>
+            <p class="card-text text-muted">Update your details and password.</p>
+            <a href="notification.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+
     <div class="row g-3 mt-3">
       <div class="col-12 col-lg-8">
         <div class="card h-100">
@@ -102,6 +115,8 @@
           </div>
         </div>
       </div>
+
+      
       <div class="col-12 col-lg-4">
         <div class="card h-100">
           <div class="card-header">Shortcuts</div>

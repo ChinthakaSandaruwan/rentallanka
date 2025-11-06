@@ -129,6 +129,7 @@ $sp->close();
               <dt class="col-sm-4">Type</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['room_type'] ?? ''); ?></dd>
               <dt class="col-sm-4">Status</dt><dd class="col-sm-8 text-uppercase"><span class="badge bg-secondary"><?php echo htmlspecialchars($room['status'] ?? ''); ?></span></dd>
               <dt class="col-sm-4">Beds</dt><dd class="col-sm-8"><?php echo (int)($room['beds'] ?? 0); ?></dd>
+              <dt class="col-sm-4">Max people</dt><dd class="col-sm-8"><?php echo (int)($room['total_people_count'] ?? 0); ?></dd>
               <dt class="col-sm-4">Price / day</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$room['price_per_day'], 2); ?></dd>
               <dt class="col-sm-4">Created</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['created_at'] ?? ''); ?></dd>
             </dl>

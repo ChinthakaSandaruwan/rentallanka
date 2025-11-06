@@ -4,12 +4,12 @@
 --
 
 CREATE TABLE IF NOT EXISTS `provinces` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` INT NOT NULL AUTO_INCREMENT,
   `name_en` varchar(45) NOT NULL,
   `name_si` varchar(45) DEFAULT NULL,
   `name_ta` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 ;
 
 --
 -- Dumping data for table `provinces`

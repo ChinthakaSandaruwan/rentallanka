@@ -1,4 +1,8 @@
 <?php
+ $pid = (int)($_GET['id'] ?? 0);
+ http_response_code(302);
+ header('Location: /rentallanka/public/includes/view_property.php?id=' . $pid);
+ exit;
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/auth_guard.php'; require_role('customer');
 

@@ -30,15 +30,6 @@
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
-            <h5 class="card-title">PayHere Settings</h5>
-            <p class="card-text text-muted">Manage Merchant ID, Secret, mode, and callback URLs.</p>
-            <a href="payhere_management.php" class="btn btn-primary mt-auto">Open</a>
-          </div>
-        </div>
-      </div>
-      <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card h-100">
-          <div class="card-body d-flex flex-column">
             <h5 class="card-title">Profile</h5>
             <p class="card-text text-muted">View and update your email, phone, and password.</p>
             <a href="includes/profile.php" class="btn btn-primary mt-auto">Open</a>
@@ -95,7 +86,6 @@
           <div class="card-header">Shortcuts</div>
           <div class="list-group list-group-flush">
             <a href="otp_management.php" class="list-group-item list-group-item-action">OTP Management</a>
-            <a href="payhere_management.php" class="list-group-item list-group-item-action">PayHere Settings</a>
             <a href="includes/profile.php" class="list-group-item list-group-item-action">Super Admin Profile</a>
           </div>
         </div>
