@@ -98,7 +98,7 @@
   <div class="card mb-4">
     <div class="card-body">
       <h5 class="card-title mb-3"><?= $edit ? 'Edit Package' : 'Create New Package' ?></h5>
-      <form method="post" class="row g-3">
+      <form method="post" class="row g-3 needs-validation" novalidate>
         <?php if ($edit): ?>
           <input type="hidden" name="action" value="update">
           <input type="hidden" name="package_id" value="<?= (int)$edit['package_id'] ?>">
@@ -106,45 +106,51 @@
           <input type="hidden" name="action" value="create">
         <?php endif; ?>
         <div class="col-12 col-md-6">
-          <label class="form-label">Package Name</label>
-          <input type="text" name="package_name" class="form-control" value="<?= htmlspecialchars((string)($edit['package_name'] ?? '')) ?>" required>
+          <label for="package_name" class="form-label">Package Name</label>
+          <input type="text" id="package_name" name="package_name" class="form-control" value="<?= htmlspecialchars((string)($edit['package_name'] ?? '')) ?>" maxlength="120" required>
+          <div class="invalid-feedback">Package name is required.</div>
         </div>
         <div class="col-12 col-md-3">
-          <label class="form-label">Type</label>
+          <label for="type_choice" class="form-label">Type</label>
           <?php $typeGuess = ((int)($edit['max_rooms'] ?? 0) > 0) ? 'room' : 'property'; ?>
-          <select name="type_choice" class="form-select" required>
+          <select id="type_choice" name="type_choice" class="form-select" required>
             <option value="property" <?= $typeGuess==='property'?'selected':'' ?>>Property</option>
             <option value="room" <?= $typeGuess==='room'?'selected':'' ?>>Room</option>
           </select>
+          <div class="invalid-feedback">Please select a type.</div>
         </div>
         <div class="col-12 col-md-3">
-          <label class="form-label">Duration</label>
+          <label for="duration_choice" class="form-label">Duration</label>
           <?php $durGuess = (string)($edit['package_type'] ?? 'monthly'); ?>
-          <select name="duration_choice" class="form-select" required>
+          <select id="duration_choice" name="duration_choice" class="form-select" required>
             <option value="monthly" <?= $durGuess==='monthly'?'selected':'' ?>>Monthly</option>
             <option value="yearly" <?= $durGuess==='yearly'?'selected':'' ?>>Yearly</option>
           </select>
+          <div class="invalid-feedback">Please select a duration.</div>
         </div>
         <div class="col-12 col-md-3">
-          <label class="form-label">Max Advertising Count</label>
+          <label for="max_count" class="form-label">Max Advertising Count</label>
           <?php $maxCountGuess = (int)max((int)($edit['max_properties'] ?? 0),(int)($edit['max_rooms'] ?? 0)); ?>
-          <input type="number" name="max_count" class="form-control" value="<?= $maxCountGuess ?>" min="0" required>
+          <input type="number" id="max_count" name="max_count" class="form-control" value="<?= $maxCountGuess ?>" min="0" step="1" required>
+          <div class="invalid-feedback">Please enter a valid max count (0 or more).</div>
         </div>
         <div class="col-12 col-md-3">
-          <label class="form-label">Price (LKR)</label>
-          <input type="number" step="0.01" name="price" class="form-control" value="<?= htmlspecialchars((string)($edit['price'] ?? '0.00')) ?>" required>
+          <label for="price" class="form-label">Price (LKR)</label>
+          <input type="number" id="price" step="0.01" min="0" name="price" class="form-control" value="<?= htmlspecialchars((string)($edit['price'] ?? '0.00')) ?>" required>
+          <div class="invalid-feedback">Please enter a valid price.</div>
         </div>
         <div class="col-12 col-md-4">
-          <label class="form-label">Status</label>
+          <label for="status" class="form-label">Status</label>
           <?php $st = (string)($edit['status'] ?? 'active'); ?>
-          <select name="status" class="form-select">
+          <select id="status" name="status" class="form-select" required>
             <option value="active" <?= $st==='active'?'selected':'' ?>>Active</option>
             <option value="inactive" <?= $st==='inactive'?'selected':'' ?>>Inactive</option>
           </select>
+          <div class="invalid-feedback">Please select a status.</div>
         </div>
         <div class="col-12">
-          <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" rows="3"><?= htmlspecialchars((string)($edit['description'] ?? '')) ?></textarea>
+          <label for="description" class="form-label">Description</label>
+          <textarea id="description" name="description" class="form-control" rows="3"><?= htmlspecialchars((string)($edit['description'] ?? '')) ?></textarea>
         </div>
         <div class="col-12 d-flex gap-2 justify-content-end">
           <?php if ($edit): ?>
@@ -213,6 +219,21 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
 </body>
 </html>
 

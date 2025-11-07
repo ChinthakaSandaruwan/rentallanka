@@ -32,18 +32,7 @@
           </div>
         </div>
       </div>
-      <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card h-100">
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <h5 class="card-title mb-0">Admin Management</h5>
-              <i class="bi bi-person-gear card-icon"></i>
-            </div>
-            <p class="card-text text-muted">Create, edit, and manage admins.</p>
-            <a href="admin_management.php" class="btn btn-primary mt-auto">Open</a>
-          </div>
-        </div>
-      </div>
+
 
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
@@ -150,6 +139,19 @@
             </div>
             <p class="card-text text-muted">Manage footer.</p>
             <a href="footer_management.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">As an advertiser Management</h5>
+              <i class="bi bi-person-circle card-icon"></i>
+            </div>
+            <p class="card-text text-muted">Manage as an advertiser.</p>
+            <a href="as_an_advertiser_management.php" class="btn btn-primary mt-auto">Open</a>
           </div>
         </div>
       </div>

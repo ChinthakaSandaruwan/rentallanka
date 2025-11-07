@@ -48,10 +48,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$user) {
                     redirect_with_message($base_url . '/auth/register.php?phone=' . urlencode($phone07), 'No account found. Please register.', 'info');
                 }
+                // Allow only customer and owner via this login
+                $role = (string)($user['role'] ?? '');
+                if ($role !== 'customer' && $role !== 'owner') {
+                    $error = 'This login is only for Customers and Owners. Please use the appropriate admin login.';
+                    $stage = 'request';
+                } else {
                 $uid = (int)$user['user_id'];
                 $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                 $expires = (new DateTime('+5 minutes'))->format('Y-m-d H:i:s');
-                $stmt = db()->prepare('INSERT INTO otp_verifications (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
+                $stmt = db()->prepare('INSERT INTO user_otps (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
                 $stmt->bind_param('iss', $uid, $otp, $expires);
                 $stmt->execute();
                 $stmt->close();
@@ -62,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 smslenz_send_sms(to_e164_for_sms($phone07), $sms);
                 $info = 'OTP sent to ' . $phone07;
                 $stage = 'verify';
+                }
             }
         }
     } elseif ($action === 'verify') {
@@ -77,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Invalid OTP';
                 $stage = 'verify';
             } else {
-                $stmt = db()->prepare('SELECT o.otp_id, u.user_id, u.role, u.status FROM otp_verifications o JOIN users u ON u.user_id = o.user_id WHERE o.user_id = ? AND o.otp_code = ? AND o.is_verified = 0 AND o.expires_at >= NOW() ORDER BY o.created_at DESC LIMIT 1');
+                $stmt = db()->prepare('SELECT o.otp_id, u.user_id, u.role, u.status FROM user_otps o JOIN users u ON u.user_id = o.user_id WHERE o.user_id = ? AND o.otp_code = ? AND o.is_verified = 0 AND o.expires_at >= NOW() ORDER BY o.created_at DESC LIMIT 1');
                 $stmt->bind_param('is', $uid, $code);
                 $stmt->execute();
                 $res = $stmt->get_result();
@@ -87,8 +94,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'OTP is invalid or expired';
                     $stage = 'verify';
                 } else {
+                    // Enforce role again at verification
+                    $r = (string)($row['role'] ?? '');
+                    if ($r !== 'customer' && $r !== 'owner') {
+                        $error = 'This login is only for Customers and Owners. Please use the appropriate admin login.';
+                        $stage = 'request';
+                        unset($_SESSION['otp_stage'], $_SESSION['otp_user_id'], $_SESSION['otp_phone']);
+                    } else {
                     $otp_id = (int)$row['otp_id'];
-                    $stmt = db()->prepare('UPDATE otp_verifications SET is_verified = 1 WHERE otp_id = ?');
+                    $stmt = db()->prepare('UPDATE user_otps SET is_verified = 1 WHERE otp_id = ?');
                     $stmt->bind_param('i', $otp_id);
                     $stmt->execute();
                     $stmt->close();
@@ -101,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['role'] = $row['role'];
                     unset($_SESSION['otp_stage'], $_SESSION['otp_user_id'], $_SESSION['otp_phone']);
                     redirect_with_message($base_url . '/index.php', 'Logged in');
+                    }
                 }
             }
         }
@@ -123,8 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta http-equiv="Cache-Control" content="no-store" />
 </head>
 <body>
-    <div class="container py-5">
-        <div class="row justify-content-center">
+    <div class="container min-vh-100 d-flex align-items-center justify-content-center py-4">
+        <div class="row w-100 justify-content-center">
             <div class="col-12 col-md-6 col-lg-5">
                 <div class="card shadow-sm">
                     <div class="card-body p-4">

@@ -25,21 +25,9 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/'||$reqPath==='/index.php')?'active':'' ?>" href="<?= $base_url ?>/index.php"><i class="bi bi-house-door me-1"></i>Home</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_properties.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_properties.php"><i class="bi bi-building me-1"></i>Properties</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_rooms.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_rooms.php"><i class="bi bi-door-open me-1"></i>Rooms</a></li>
-          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/about.php')?'active':'' ?>" href="<?= $base_url ?>/about.php"><i class="bi bi-info-circle me-1"></i>About</a></li>
-          <li class="nav-item"><a class="nav-link <?= ($reqPath==='/contact.php')?'active':'' ?>" href="<?= $base_url ?>/contact.php"><i class="bi bi-envelope me-1"></i>Contact</a></li>
 
-          <?php if ($loggedIn): ?>
-            <?php if ($isSuper): ?>
-              <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/superAdmin/index.php"><i class="bi bi-shield-lock me-1"></i>Super Admin Dashboard</a></li>
-            <?php endif; ?>
-            <?php if ($role === 'admin'): ?>
-              <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/admin/index.php"><i class="bi bi-speedometer2 me-1"></i>Admin Dashboard</a></li>
-            <?php elseif ($role === 'owner'): ?>
-              <li class="nav-item"><a class="nav-link text-success" href="<?= $base_url ?>/owner/index.php"><i class="bi bi-briefcase me-1"></i>Owner Dashboard</a></li>
-            <?php elseif ($role === 'customer'): ?>
-              <li class="nav-item"><a class="nav-link text-primary" href="<?= $base_url ?>/customer/index.php"><i class="bi bi-person-badge me-1"></i>Customer Dashboard</a></li>
-            <?php endif; ?>
-            <!-- <li class="nav-item"><a class="nav-link" href="<?= $base_url ?>/public/includes/profile.php">Profile</a></li> -->
+          <?php if ($loggedIn && $isSuper): ?>
+            <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/superAdmin/index.php"><i class="bi bi-shield-lock me-1"></i>Super Admin Dashboard</a></li>
           <?php endif; ?>
         </ul>
 
@@ -84,10 +72,6 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
         ?>
         <!-- Right side -->
         <div class="d-flex align-items-center gap-2">
-          <!-- Theme Toggle -->
-          <button id="themeToggle" class="btn btn-light btn-sm" title="Toggle theme">
-            <i id="themeIcon" class="bi bi-moon"></i>
-          </button>
 
           <?php if (!$loggedIn): ?>
             <a href="<?= $base_url ?>/auth/login.php" class="btn btn-primary btn-sm">Login</a>
@@ -122,22 +106,25 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
               <?php endif; ?>
             </a>
 
+            <?php
+              if ($isSuper) {
+                $dashUrl = $base_url . '/superAdmin/index.php';
+              } else {
+                $dashUrl = $base_url . '/customer/index.php';
+                if ($role === 'admin') { $dashUrl = $base_url . '/admin/index.php'; }
+                elseif ($role === 'owner') { $dashUrl = $base_url . '/owner/index.php'; }
+              }
+            ?>
+
             <div class="dropdown">
               <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-person-circle me-1"></i> Account
               </button>
               <ul class="dropdown-menu dropdown-menu-end">
-                <?php if ($isSuper): ?>
-                  <li><a class="dropdown-item text-danger" href="<?= $base_url ?>/superAdmin/index.php"><i class="bi bi-shield-lock me-1"></i>Super Admin</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                <?php endif; ?>
-                <?php if ($role === 'admin'): ?>
-                  <li><a class="dropdown-item" href="<?= $base_url ?>/admin/index.php"><i class="bi bi-speedometer2 me-1"></i>Admin Dashboard</a></li>
-                <?php elseif ($role === 'owner'): ?>
-                  <li><a class="dropdown-item" href="<?= $base_url ?>/owner/index.php"><i class="bi bi-briefcase me-1"></i>Owner Dashboard</a></li>
-                <?php elseif ($role === 'customer'): ?>
-                  <li><a class="dropdown-item" href="<?= $base_url ?>/customer/index.php"><i class="bi bi-person-badge me-1"></i>Customer Dashboard</a></li>
-                <?php endif; ?>
+                <li><a class="dropdown-item" href="<?= $dashUrl ?>"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="<?= $base_url ?>/public/includes/as_an_advertiser.php"><i class="bi bi-briefcase me-1"></i>As an advertiser</a></li>
+                <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="<?= $base_url ?>/public/includes/profile.php"><i class="bi bi-person-lines-fill me-1"></i>Profile</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item text-danger" href="<?= $base_url ?>/auth/logout.php"><i class="bi bi-box-arrow-right me-1"></i>Logout</a></li>
@@ -148,21 +135,3 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       </div>
     </div>
   </nav>
-  <script>
-    // Theme Toggle
-    const themeToggle = document.getElementById('themeToggle');
-    const themeIcon = document.getElementById('themeIcon');
-    const htmlElement = document.documentElement;
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    htmlElement.setAttribute('data-bs-theme', savedTheme);
-    themeIcon.className = savedTheme === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
-
-    themeToggle.addEventListener('click', () => {
-      const currentTheme = htmlElement.getAttribute('data-bs-theme');
-      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-      htmlElement.setAttribute('data-bs-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-      themeIcon.className = newTheme === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
-    });
-  </script>
-

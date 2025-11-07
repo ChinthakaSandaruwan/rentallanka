@@ -96,7 +96,10 @@ if (($_GET['action'] ?? '') === 'edit') {
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1 class="h4 mb-0">Owner Management</h1>
-      <a href="../auth/logout.php" class="btn btn-outline-danger btn-sm">Logout</a>
+      <div class="d-flex align-items-center">
+        <a href="../admin/index.php" class="btn btn-outline-primary btn-sm">Dashboard</a>
+        <a href="../auth/logout.php" class="btn btn-outline-danger btn-sm ms-2">Logout</a>
+      </div>
     </div>
 
     <?php if ($flash): ?>
@@ -106,14 +109,14 @@ if (($_GET['action'] ?? '') === 'edit') {
     <?php endif; ?>
 
     <div class="mb-3">
-      <form method="get" class="row g-2">
-        <div class="col-auto">
-          <input type="text" name="q" class="form-control" placeholder="Search email or phone" value="<?php echo htmlspecialchars($q); ?>">
+      <form method="get" class="row g-2 align-items-stretch">
+        <div class="col-12 col-md-6 col-lg-4">
+          <input type="text" name="q" class="form-control" placeholder="Search email or phone" value="<?php echo htmlspecialchars($q); ?>" aria-label="Search email or phone">
         </div>
-        <div class="col-auto">
+        <div class="col-12 col-md-auto d-grid d-md-inline">
           <button type="submit" class="btn btn-outline-primary">Search</button>
           <?php if ($q !== ''): ?>
-            <a href="owner_management.php" class="btn btn-outline-secondary">Clear</a>
+            <a href="owner_management.php" class="btn btn-outline-secondary ms-md-2 mt-2 mt-md-0">Clear</a>
           <?php endif; ?>
         </div>
       </form>
@@ -122,27 +125,30 @@ if (($_GET['action'] ?? '') === 'edit') {
     <div class="card mb-4">
       <div class="card-header"><?php echo $editItem ? 'Edit Owner' : 'Create Owner'; ?></div>
       <div class="card-body">
-        <form method="post" class="row g-3">
+        <form method="post" class="row g-3 needs-validation" novalidate>
           <input type="hidden" name="action" value="<?php echo $editItem ? 'update' : 'create'; ?>">
           <?php if ($editItem): ?>
             <input type="hidden" name="user_id" value="<?php echo (int)$editItem['user_id']; ?>">
           <?php endif; ?>
 
           <div class="col-12 col-md-4">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-control" name="email" value="<?php echo htmlspecialchars($editItem['email'] ?? ''); ?>" placeholder="optional">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" class="form-control" name="email" value="<?php echo htmlspecialchars($editItem['email'] ?? ''); ?>" placeholder="optional" autocomplete="email" maxlength="120">
+            <div class="invalid-feedback">Please enter a valid email address or leave this field blank.</div>
           </div>
           <div class="col-12 col-md-4">
-            <label class="form-label">Phone<span class="text-danger">*</span></label>
-            <input type="text" class="form-control" name="phone" value="<?php echo htmlspecialchars($editItem['phone'] ?? ''); ?>" required>
+            <label for="phone" class="form-label">Phone<span class="text-danger">*</span></label>
+            <input type="text" id="phone" class="form-control" name="phone" value="<?php echo htmlspecialchars($editItem['phone'] ?? ''); ?>" inputmode="tel" placeholder="07XXXXXXXX" pattern="^0[7][01245678][0-9]{7}$" minlength="10" maxlength="10" required>
+            <div class="invalid-feedback">Enter a valid mobile number in 07XXXXXXXX</div>
           </div>
           <div class="col-12 col-md-4">
-            <label class="form-label">Status<span class="text-danger">*</span></label>
-            <select name="status" class="form-select" required>
+            <label for="status" class="form-label">Status<span class="text-danger">*</span></label>
+            <select id="status" name="status" class="form-select" required>
               <?php $statuses=['active','inactive','banned']; $sel=$editItem['status']??'active'; foreach($statuses as $s){
                 echo '<option value="'.htmlspecialchars($s).'"'.($sel===$s?' selected':'').'>'.htmlspecialchars(ucfirst($s)).'</option>'; }
               ?>
             </select>
+            <div class="invalid-feedback">Please select a status.</div>
           </div>
           <div class="col-12 d-flex gap-2">
             <button type="submit" class="btn btn-primary"><?php echo $editItem ? 'Update' : 'Create'; ?></button>
@@ -192,5 +198,20 @@ if (($_GET['action'] ?? '') === 'edit') {
   </div>
   <?php require_once __DIR__ . '/../public/includes/footer.php'; ?>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const forms = document.querySelectorAll('.needs-validation');
+      Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+          if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          form.classList.add('was-validated');
+        }, false);
+      });
+    })();
+  </script>
 </body>
 </html>

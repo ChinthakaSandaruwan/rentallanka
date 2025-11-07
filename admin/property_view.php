@@ -154,7 +154,7 @@ $gp->close();
     <?php if ($pv_ok): ?><div class="alert alert-success"><?php echo htmlspecialchars($pv_ok); ?></div><?php endif; ?>
 
     <div class="row g-4">
-      <div class="col-12 col-lg-7">
+      <div class="col-12 col-lg-7 order-lg-2">
         <div class="card">
           <div class="card-header">Overview</div>
           <div class="card-body">
@@ -221,26 +221,9 @@ $gp->close();
           </div>
         </div>
       </div>
-      <div class="col-12 col-lg-5">
-        <div class="card mb-3">
-          <div class="card-header" id="slips">Payment Slips</div>
-          <div class="list-group list-group-flush">
-            <?php foreach ($slips as $s): ?>
-              <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  #<?php echo (int)$s['slip_id']; ?>
-                  <span class="text-muted">(<?php echo htmlspecialchars($s['uploaded_at']); ?>)</span>
-                </div>
-                <a class="btn btn-sm btn-outline-primary" target="_blank" href="slip_view.php?slip_id=<?php echo (int)$s['slip_id']; ?>">Open</a>
-              </div>
-            <?php endforeach; ?>
-            <?php if (!$slips): ?>
-              <div class="list-group-item text-muted">No slips attached.</div>
-            <?php endif; ?>
-          </div>
-        </div>
+      <div class="col-12 col-lg-5 order-lg-1">
         <div class="card">
-          <div class="card-header">Image</div>
+          <div class="card-header">Images</div>
           <div class="card-body">
             <?php
               $imgUrl = $prop['image'] ?? '';

@@ -21,6 +21,25 @@
   $saved = false; $error = '';
   if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       try {
+          // Basic validations
+          $email = trim((string)($_POST['footer_email'] ?? ''));
+          $phone = trim((string)($_POST['footer_phone'] ?? ''));
+          $urlKeys = [
+            'footer_social_facebook','footer_social_twitter','footer_social_google','footer_social_instagram','footer_social_linkedin','footer_social_github'
+          ];
+          if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+              throw new Exception('Invalid email');
+          }
+          if ($phone !== '' && !preg_match('/^0[7][01245678][0-9]{7}$/', $phone)) {
+              throw new Exception('Invalid phone (use 07XXXXXXXX)');
+          }
+          foreach ($urlKeys as $uk) {
+              $u = trim((string)($_POST[$uk] ?? ''));
+              if ($u !== '' && !filter_var($u, FILTER_VALIDATE_URL)) {
+                  throw new Exception('Invalid URL provided');
+              }
+          }
+
           $fields = [
             'footer_company_name','footer_about','footer_address','footer_email','footer_phone',
             'footer_social_facebook','footer_social_twitter','footer_social_google','footer_social_instagram','footer_social_linkedin','footer_social_github',
@@ -35,7 +54,7 @@
               setting_set($k, $v);
           }
           $saved = true;
-      } catch (Throwable $e) { $error = 'Save failed'; }
+      } catch (Throwable $e) { $error = $e->getMessage() ?: 'Save failed'; }
   }
 
   $val = fn(string $k, string $d='') => (string)(setting_get($k, $d) ?? $d);
@@ -47,7 +66,7 @@
     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
   <?php endif; ?>
 
-  <form method="post" class="row g-3">
+  <form method="post" class="row g-3 needs-validation" novalidate>
     <div class="col-12 col-lg-6">
       <div class="card h-100">
         <div class="card-body">
@@ -73,13 +92,15 @@
               <label class="form-label">Address</label>
               <input type="text" name="footer_address" class="form-control" value="<?= htmlspecialchars($val('footer_address','New York, NY 10012, US')) ?>">
             </div>
-            <div class="col-6">
-              <label class="form-label">Email</label>
-              <input type="email" name="footer_email" class="form-control" value="<?= htmlspecialchars($val('footer_email','info@example.com')) ?>">
+            <div class="col-12 col-md-6">
+              <label for="footer_email" class="form-label">Email</label>
+              <input type="email" id="footer_email" name="footer_email" class="form-control" value="<?= htmlspecialchars($val('footer_email','info@example.com')) ?>" maxlength="120">
+              <div class="invalid-feedback">Please enter a valid email or leave it blank.</div>
             </div>
-            <div class="col-6">
-              <label class="form-label">Phone</label>
-              <input type="text" name="footer_phone" class="form-control" value="<?= htmlspecialchars($val('footer_phone','+ 01 234 567 88')) ?>">
+            <div class="col-12 col-md-6">
+              <label for="footer_phone" class="form-label">Phone</label>
+              <input type="text" id="footer_phone" name="footer_phone" class="form-control" value="<?= htmlspecialchars($val('footer_phone','0701234567')) ?>" inputmode="tel" placeholder="07XXXXXXXX" pattern="^0[7][01245678][0-9]{7}$" minlength="10" maxlength="10">
+              <div class="invalid-feedback">Use Sri Lankan mobile format 07XXXXXXXX.</div>
             </div>
           </div>
         </div>
@@ -92,28 +113,34 @@
           <h5 class="card-title">Social Links</h5>
           <div class="row g-3">
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">Facebook URL</label>
-              <input type="url" name="footer_social_facebook" class="form-control" value="<?= htmlspecialchars($val('footer_social_facebook','')) ?>">
+              <label for="footer_social_facebook" class="form-label">Facebook URL</label>
+              <input type="url" id="footer_social_facebook" name="footer_social_facebook" class="form-control" value="<?= htmlspecialchars($val('footer_social_facebook','')) ?>">
+              <div class="invalid-feedback">Please enter a valid URL or leave it blank.</div>
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">Twitter/X URL</label>
-              <input type="url" name="footer_social_twitter" class="form-control" value="<?= htmlspecialchars($val('footer_social_twitter','')) ?>">
+              <label for="footer_social_twitter" class="form-label">Twitter/X URL</label>
+              <input type="url" id="footer_social_twitter" name="footer_social_twitter" class="form-control" value="<?= htmlspecialchars($val('footer_social_twitter','')) ?>">
+              <div class="invalid-feedback">Please enter a valid URL or leave it blank.</div>
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">Google URL</label>
-              <input type="url" name="footer_social_google" class="form-control" value="<?= htmlspecialchars($val('footer_social_google','')) ?>">
+              <label for="footer_social_google" class="form-label">Google URL</label>
+              <input type="url" id="footer_social_google" name="footer_social_google" class="form-control" value="<?= htmlspecialchars($val('footer_social_google','')) ?>">
+              <div class="invalid-feedback">Please enter a valid URL or leave it blank.</div>
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">Instagram URL</label>
-              <input type="url" name="footer_social_instagram" class="form-control" value="<?= htmlspecialchars($val('footer_social_instagram','')) ?>">
+              <label for="footer_social_instagram" class="form-label">Instagram URL</label>
+              <input type="url" id="footer_social_instagram" name="footer_social_instagram" class="form-control" value="<?= htmlspecialchars($val('footer_social_instagram','')) ?>">
+              <div class="invalid-feedback">Please enter a valid URL or leave it blank.</div>
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">LinkedIn URL</label>
-              <input type="url" name="footer_social_linkedin" class="form-control" value="<?= htmlspecialchars($val('footer_social_linkedin','')) ?>">
+              <label for="footer_social_linkedin" class="form-label">LinkedIn URL</label>
+              <input type="url" id="footer_social_linkedin" name="footer_social_linkedin" class="form-control" value="<?= htmlspecialchars($val('footer_social_linkedin','')) ?>">
+              <div class="invalid-feedback">Please enter a valid URL or leave it blank.</div>
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">GitHub URL</label>
-              <input type="url" name="footer_social_github" class="form-control" value="<?= htmlspecialchars($val('footer_social_github','')) ?>">
+              <label for="footer_social_github" class="form-label">GitHub URL</label>
+              <input type="url" id="footer_social_github" name="footer_social_github" class="form-control" value="<?= htmlspecialchars($val('footer_social_github','')) ?>">
+              <div class="invalid-feedback">Please enter a valid URL or leave it blank.</div>
             </div>
           </div>
         </div>
@@ -146,7 +173,7 @@
           <div class="row g-3 align-items-end">
             <div class="col-12 col-md-6 col-lg-4">
               <label class="form-label">Copyright Text</label>
-              <input type="text" name="footer_copyright_text" class="form-control" value="<?= htmlspecialchars($val('footer_copyright_text','© '.date('Y').' Copyright:')) ?>">
+              <input type="text" name="footer_copyright_text" class="form-control" value="<?= htmlspecialchars($val('footer_copyright_text','&copy; '.date('Y').' Copyright:')) ?>">
             </div>
             <div class="col-12 col-md-6 col-lg-8">
               <div class="row g-3">
@@ -196,6 +223,20 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
 </body>
 </html>
-

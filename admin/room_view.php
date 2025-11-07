@@ -73,14 +73,8 @@ $rsi = $si->get_result();
 while ($row = $rsi->fetch_assoc()) { $images[] = $row; }
 $si->close();
 
-// Fetch payment slips
+// Payment slips table not used in current schema
 $slips = [];
-$sp = db()->prepare('SELECT slip_id, slip_path, uploaded_at FROM room_payment_slips WHERE room_id = ? ORDER BY slip_id DESC');
-$sp->bind_param('i', $rid);
-$sp->execute();
-$rsp = $sp->get_result();
-while ($row = $rsp->fetch_assoc()) { $slips[] = $row; }
-$sp->close();
 ?>
 <!doctype html>
 <html lang="en">
@@ -88,6 +82,7 @@ $sp->close();
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Room #<?php echo (int)$room['room_id']; ?> - Details</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -118,7 +113,7 @@ $sp->close();
     <?php if ($rv_ok): ?><div class="alert alert-success"><?php echo htmlspecialchars($rv_ok); ?></div><?php endif; ?>
 
     <div class="row g-4">
-      <div class="col-12 col-lg-7">
+      <div class="col-12 col-lg-7 order-lg-2">
         <div class="card">
           <div class="card-header">Overview</div>
           <div class="card-body">
@@ -165,30 +160,9 @@ $sp->close();
           </div>
         </div>
       </div>
-      <div class="col-12 col-lg-5">
-        <div class="card mb-3">
-          <div class="card-header" id="slips">Payment Slips</div>
-          <div class="list-group list-group-flush">
-            <?php foreach ($slips as $s): ?>
-              <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  #<?php echo (int)$s['slip_id']; ?>
-                  <span class="text-muted">(<?php echo htmlspecialchars($s['uploaded_at']); ?>)</span>
-                </div>
-                <?php 
-                  $sp = $s['slip_path'] ?? ''; 
-                  if ($sp && !preg_match('#^https?://#i', $sp)) { $sp = rtrim($GLOBALS['base_url'] ?? '', '/') . '/' . ltrim($sp, '/'); }
-                ?>
-                <a class="btn btn-sm btn-outline-primary" target="_blank" href="<?php echo htmlspecialchars($sp); ?>">Open</a>
-              </div>
-            <?php endforeach; ?>
-            <?php if (!$slips): ?>
-              <div class="list-group-item text-muted">No slips attached.</div>
-            <?php endif; ?>
-          </div>
-        </div>
+      <div class="col-12 col-lg-5 order-lg-1">
         <div class="card">
-          <div class="card-header">Image</div>
+          <div class="card-header">Images</div>
           <div class="card-body">
             <?php if ($images): ?>
               <?php 
@@ -220,6 +194,6 @@ $sp->close();
       </div>
     </div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script></body>
 </html>

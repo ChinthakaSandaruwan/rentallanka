@@ -1,12 +1,6 @@
-[07-Nov-2025 14:14:36 Asia/Colombo] [Unhandled Exception] Unknown column 'property_code' in 'field list'
-[07-Nov-2025 14:14:38 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
-[07-Nov-2025 14:14:44 Asia/Colombo] [Unhandled Exception] Unknown column 'property_code' in 'field list'
-[07-Nov-2025 14:14:46 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
-[07-Nov-2025 14:21:31 Asia/Colombo] [Unhandled Exception] Table 'rentallanka.property_payment_slips' doesn't exist
-[07-Nov-2025 14:21:33 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
-[07-Nov-2025 14:39:34 Asia/Colombo] [Unhandled Exception] Unknown column 'slip_id' in 'field list'
-[07-Nov-2025 14:39:36 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
-[07-Nov-2025 14:39:36 Asia/Colombo] [Unhandled Exception] Unknown column 'slip_id' in 'field list'
-[07-Nov-2025 14:39:38 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
-[07-Nov-2025 14:40:07 Asia/Colombo] [Unhandled Exception] Unknown column 'slip_id' in 'field list'
-[07-Nov-2025 14:40:09 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[07-Nov-2025 17:24:33 Asia/Colombo] [as_an_advertiser] exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '\"pending\" LIMIT 1' at line 1
+[07-Nov-2025 17:24:58 Asia/Colombo] [as_an_advertiser] exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '\"pending\" LIMIT 1' at line 1
+[07-Nov-2025 17:24:59 Asia/Colombo] [as_an_advertiser] exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '\"pending\" LIMIT 1' at line 1
+[07-Nov-2025 17:26:41 Asia/Colombo] [as_adv_mgmt] upgrade failed:  uid=3
+[07-Nov-2025 17:26:47 Asia/Colombo] [as_adv_mgmt] upgrade failed:  uid=3
+[07-Nov-2025 17:27:37 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)

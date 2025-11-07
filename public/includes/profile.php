@@ -45,11 +45,19 @@ if ($display['id'] !== null) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'update_user_profile') {
-            $email = trim($_POST['email'] ?? '');
-            $phone = trim($_POST['phone'] ?? '');
+            $name = trim((string)($_POST['name'] ?? ''));
+            $email = trim((string)($_POST['email'] ?? ''));
+            $phone = trim((string)($_POST['phone'] ?? ''));
             $uid = (int)($display['id'] ?? 0);
             if ($uid <= 0) {
                 redirect_with_message($base_url . '/public/includes/profile.php', 'Invalid user', 'error');
+            }
+            // Server-side validation
+            if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                redirect_with_message($base_url . '/public/includes/profile.php', 'Invalid email', 'error');
+            }
+            if ($phone === '' || !preg_match('/^0[7][01245678][0-9]{7}$/', $phone)) {
+                redirect_with_message($base_url . '/public/includes/profile.php', 'Invalid phone number. Use 07XXXXXXXX format.', 'error');
             }
             $img_path = null;
             if (isset($_FILES['profile_image']) && is_uploaded_file($_FILES['profile_image']['tmp_name'])) {
@@ -72,16 +80,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             if ($img_path !== null) {
-                $stmt = db()->prepare('UPDATE users SET email = ?, phone = ?, profile_image = ? WHERE user_id = ?');
-                $stmt->bind_param('sssi', $email, $phone, $img_path, $uid);
+                $stmt = db()->prepare('UPDATE users SET name = ?, email = ?, phone = ?, profile_image = ? WHERE user_id = ?');
+                $stmt->bind_param('ssssi', $name, $email, $phone, $img_path, $uid);
             } else {
-                $stmt = db()->prepare('UPDATE users SET email = ?, phone = ? WHERE user_id = ?');
-                $stmt->bind_param('ssi', $email, $phone, $uid);
+                $stmt = db()->prepare('UPDATE users SET name = ?, email = ?, phone = ? WHERE user_id = ?');
+                $stmt->bind_param('sssi', $name, $email, $phone, $uid);
             }
             $stmt->execute();
             $stmt->close();
+            $_SESSION['user']['name'] = $name;
             $_SESSION['user']['phone'] = $phone;
             $_SESSION['user']['email'] = $email;
+            if ($img_path !== null) { $_SESSION['user']['profile_image'] = $img_path; }
             redirect_with_message($base_url . '/public/includes/profile.php', 'Profile updated');
     } elseif ($action === 'delete_user_account') {
             $uid = (int)($display['id'] ?? 0);
@@ -175,18 +185,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
           <hr>
           <h5 class="mb-3">Edit Profile</h5>
-          <form method="post" enctype="multipart/form-data" class="row g-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-control" name="email" value="<?= htmlspecialchars($display['email']) ?>" />
+          <form method="post" enctype="multipart/form-data" class="row g-3 needs-validation" novalidate>
+            <div class="col-12">
+              <label for="name" class="form-label">Name</label>
+              <input type="text" id="name" class="form-control" name="name" value="<?= htmlspecialchars($display['name']) ?>" maxlength="120">
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Phone</label>
-              <input type="text" class="form-control" name="phone" value="<?= htmlspecialchars($display['phone']) ?>" />
+              <label for="email" class="form-label">Email</label>
+              <input type="email" id="email" class="form-control" name="email" value="<?= htmlspecialchars($display['email']) ?>" maxlength="120">
+              <div class="invalid-feedback">Please enter a valid email or leave blank.</div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label for="phone" class="form-label">Phone</label>
+              <input type="text" id="phone" class="form-control" name="phone" value="<?= htmlspecialchars($display['phone']) ?>" inputmode="tel" placeholder="07XXXXXXXX" pattern="^0[7][01245678][0-9]{7}$" minlength="10" maxlength="10" required>
+              <div class="invalid-feedback">Enter a valid mobile number in 07XXXXXXXX format.</div>
             </div>
             <div class="col-12">
-              <label class="form-label">Profile Image</label>
-              <input type="file" class="form-control" name="profile_image" accept="image/*" />
+              <label for="profile_image" class="form-label">Profile Image</label>
+              <input type="file" id="profile_image" class="form-control" name="profile_image" accept="image/*">
             </div>
             <div class="col-12 d-flex gap-2">
               <input type="hidden" name="action" value="update_user_profile" />
@@ -203,5 +219,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
 </body>
 </html>

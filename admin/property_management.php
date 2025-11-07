@@ -143,13 +143,15 @@ $stmt->close();
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin Property Management</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
   <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
 <div class="container py-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="h3 mb-0">Property Management (Admin)</h1>
+    <a href="index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
   </div>
   <?php if ($flash): ?>
     <div class="alert <?php echo ($flash_type==='success')?'alert-success':'alert-danger'; ?>" role="alert"><?php echo htmlspecialchars($flash); ?></div>
@@ -161,22 +163,23 @@ $stmt->close();
     <div class="alert alert-danger" role="alert"><?php echo htmlspecialchars($error); ?></div>
   <?php endif; ?>
 
-  <form method="get" class="row g-2 align-items-end mb-3">
-    <div class="col-12 col-md-auto">
-      <label class="form-label mb-0">Filter status</label>
-      <select name="filter" class="form-select" onchange="this.form.submit()">
+  <form method="get" class="row g-2 align-items-end mb-3 needs-validation" novalidate>
+    <div class="col-12 col-md-4 col-lg-3">
+      <label for="filter" class="form-label mb-0">Filter status</label>
+      <select id="filter" name="filter" class="form-select" onchange="this.form.submit()" required>
         <option value="all" <?php echo $filter==='all'?'selected':''; ?>>All</option>
         <?php foreach ($allowed_status as $s): ?>
           <option value="<?php echo htmlspecialchars($s); ?>" <?php echo $filter===$s?'selected':''; ?>><?php echo htmlspecialchars(ucfirst($s)); ?></option>
         <?php endforeach; ?>
       </select>
+      <div class="invalid-feedback">Please choose a filter.</div>
     </div>
     <div class="col-12 col-md">
-      <label class="form-label mb-0">Search</label>
-      <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>" class="form-control" placeholder="Title, owner, or ID">
+      <label for="q" class="form-label mb-0">Search</label>
+      <input type="text" id="q" name="q" value="<?php echo htmlspecialchars($q); ?>" class="form-control" placeholder="Title, owner, or ID" aria-label="Search by title, owner, or ID" maxlength="120">
     </div>
-    <div class="col-12 col-md-auto">
-      <button type="submit" class="btn btn-primary w-100">Search</button>
+    <div class="col-12 col-md-auto d-grid">
+      <button type="submit" class="btn btn-primary">Search</button>
     </div>
   </form>
 
@@ -223,6 +226,21 @@ $stmt->close();
     </div>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKvVYl0ZlEFp3rG5GkHA7r4XK6tBT3M" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
 </body>
 </html>

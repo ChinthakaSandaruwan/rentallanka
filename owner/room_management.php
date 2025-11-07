@@ -292,6 +292,14 @@ $rs->execute();
 $rres = $rs->get_result();
 while ($row = $rres->fetch_assoc()) { $rooms[] = $row; }
 $rs->close();
+$pkg_info = null;
+try {
+    $q = db()->prepare("SELECT bp.remaining_rooms, bp.end_date, bp.status, bp.payment_status, p.package_name FROM bought_packages bp JOIN packages p ON p.package_id=bp.package_id WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid' ORDER BY bp.start_date DESC LIMIT 1");
+    $q->bind_param('i', $owner_id);
+    $q->execute();
+    $pkg_info = $q->get_result()->fetch_assoc();
+    $q->close();
+} catch (Throwable $e) { /* ignore */ }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -309,6 +317,23 @@ $rs->close();
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h1 class="h3 mb-0">Room Management</h1>
     </div>
+    <?php if ($pkg_info): ?>
+      <div class="alert alert-info d-flex align-items-center" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        <div>
+          <strong>Active Package:</strong> <?php echo htmlspecialchars($pkg_info['package_name'] ?? ''); ?>
+          | <strong>Remaining Room Slots:</strong> <?php echo (int)($pkg_info['remaining_rooms'] ?? 0); ?>
+          <?php if (!empty($pkg_info['end_date'])): ?>
+            | <strong>Ends:</strong> <?php echo htmlspecialchars($pkg_info['end_date']); ?>
+          <?php endif; ?>
+        </div>
+      </div>
+    <?php else: ?>
+      <div class="alert alert-warning d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <div>You don't have an active paid package with room slots. Please buy or pay for a package before posting.</div>
+      </div>
+    <?php endif; ?>
     <?php if ($flash): ?>
       <div class="alert alert-<?php echo $type === 'error' ? 'danger' : 'success'; ?>" role="alert"><?php echo htmlspecialchars($flash); ?></div>
     <?php endif; ?>

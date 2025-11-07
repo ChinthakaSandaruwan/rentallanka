@@ -18,7 +18,6 @@
       `email` VARCHAR(255) NULL,
       `nic` VARCHAR(20) NULL,
       `name` VARCHAR(100) NULL,
---  password no need (because otp login)
       `phone` VARCHAR(20) NOT NULL,
       `profile_image` VARCHAR(255) NULL,
       `role` ENUM('admin','owner','customer') NOT NULL,
@@ -163,9 +162,9 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `bedrooms` INT NULL DEFAULT 0,
       `bathrooms` INT NULL DEFAULT 0,
       `living_rooms` INT NULL DEFAULT 0,
-      `garden`INT NULL DEFAULT 0,
-      `gym`INT NULL DEFAULT 0,
-      `pool`INT NULL DEFAULT 0,
+      `garden` INT NULL DEFAULT 0,
+      `gym` INT NULL DEFAULT 0,
+      `pool` INT NULL DEFAULT 0,
       `kitchen` TINYINT NOT NULL DEFAULT 0,
       `parking` TINYINT NOT NULL DEFAULT 0,
       `water_supply` TINYINT NOT NULL DEFAULT 0,
@@ -354,3 +353,17 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
       CONSTRAINT `fk_notifications_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+    -- Table: advertiser_requests (placed after users table exists)
+DROP TABLE IF EXISTS advertiser_requests;
+CREATE TABLE IF NOT EXISTS `advertiser_requests` (
+  `request_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
+  `status` ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  `reviewed_by` INT UNSIGNED DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`request_id`),
+  KEY `idx_user_status` (`user_id`, `status`),
+  CONSTRAINT `fk_advreq_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

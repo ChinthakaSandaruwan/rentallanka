@@ -251,21 +251,11 @@
                     <input type="hidden" name="bought_package_id" value="<?= (int)$r['bought_package_id'] ?>">
                     <select name="payment_status" class="form-select form-select-sm d-inline-block" style="width: 120px;">
                       <?php $ps = (string)($r['payment_status'] ?? 'pending'); ?>
-                      <option value="pending" <?= $ps==='pending'?'selected':'' ?>>pending</option>
-                      <option value="paid" <?= $ps==='paid'?'selected':'' ?>>paid</option>
-                      <option value="failed" <?= $ps==='failed'?'selected':'' ?>>failed</option>
+                      <option value="pending" <?= $ps==='pending'?'selected':'' ?>>Pending</option>
+                      <option value="paid" <?= $ps==='paid'?'selected':'' ?>>Paid</option>
+                      <option value="failed" <?= $ps==='failed'?'selected':'' ?>>Failed</option>
                     </select>
                     <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                  </form>
-                  <form method="post" class="d-inline ms-1">
-                    <input type="hidden" name="action" value="set_package_status">
-                    <input type="hidden" name="bought_package_id" value="<?= (int)$r['bought_package_id'] ?>">
-                    <select name="status" class="form-select form-select-sm d-inline-block" style="width: 110px;">
-                      <?php $st = (string)($r['status'] ?? 'active'); ?>
-                      <option value="active" <?= $st==='active'?'selected':'' ?>>active</option>
-                      <option value="expired" <?= $st==='expired'?'selected':'' ?>>expired</option>
-                    </select>
-                    <button type="submit" class="btn btn-sm btn-outline-secondary">Apply</button>
                   </form>
                 </td>
               </tr>
