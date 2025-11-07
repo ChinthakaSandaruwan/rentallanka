@@ -251,7 +251,16 @@ $rs = db()->prepare(
             ) AS image_path,
             pr.name_en AS province_name, d.name_en AS district_name, c.name_en AS city_name
      FROM rooms r
-     LEFT JOIN locations l ON l.room_id = r.room_id
+     LEFT JOIN (
+        SELECT l1.*
+        FROM locations l1
+        JOIN (
+            SELECT room_id, MIN(location_id) AS min_id
+            FROM locations
+            WHERE room_id IS NOT NULL
+            GROUP BY room_id
+        ) pick ON pick.min_id = l1.location_id
+     ) l ON l.room_id = r.room_id
      LEFT JOIN provinces pr ON pr.id = l.province_id
      LEFT JOIN districts d ON d.id = l.district_id
      LEFT JOIN cities c ON c.id = l.city_id
