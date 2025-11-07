@@ -83,17 +83,7 @@
         </div>
       </div>
 
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card h-100 border rounded-3 shadow-sm">
-          <div class="card-body d-flex flex-column gap-2">
-            <div class="d-flex align-items-center">
-              <h5 class="card-title mb-0">Notification</h5>
-            </div>
-            <p class="card-text text-muted">Manage notifications.</p>
-            <a href="notification.php" class="btn btn-primary mt-auto">Open</a>
-          </div>
-        </div>
-      </div>
+      
     </div>
   </div>
 

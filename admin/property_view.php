@@ -54,6 +54,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $upd->execute();
                 $upd->close();
                 $pv_ok = 'Status updated and package quota deducted.';
+                if ($owner_id > 0) {
+                  $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)');
+                  $title = 'Property status updated';
+                  $msg = 'Your property #' . $pid . ' status changed to ' . $new_status;
+                  $type = 'system';
+                  $nt->bind_param('isssi', $owner_id, $title, $msg, $type, $pid);
+                  $nt->execute();
+                  $nt->close();
+                }
               } else { $pv_error = 'Update failed'; $st->close(); }
             }
           }
@@ -61,15 +70,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           // Non-approval or no transition
           $st = db()->prepare('UPDATE properties SET status = ? WHERE property_id = ?');
           $st->bind_param('si', $new_status, $pid);
-          if ($st->execute()) { $pv_ok = 'Status updated'; } else { $pv_error = 'Update failed'; }
+          if ($st->execute()) { $pv_ok = 'Status updated'; if ($owner_id > 0) { $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)'); $title = 'Property status updated'; $msg = 'Your property #' . $pid . ' status changed to ' . $new_status; $type = 'system'; $nt->bind_param('isssi', $owner_id, $title, $msg, $type, $pid); $nt->execute(); $nt->close(); } } else { $pv_error = 'Update failed'; }
           $st->close();
         }
       }
     } elseif ($action === 'delete') {
       if ($pid > 0) {
+        $ow = 0; $g = db()->prepare('SELECT owner_id FROM properties WHERE property_id=?'); $g->bind_param('i', $pid); $g->execute(); $row = $g->get_result()->fetch_assoc(); $g->close(); if ($row) { $ow = (int)$row['owner_id']; }
         $st = db()->prepare('DELETE FROM properties WHERE property_id = ?');
         $st->bind_param('i', $pid);
         if ($st->execute() && $st->affected_rows > 0) {
+          if ($ow > 0) { $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)'); $title = 'Property deleted'; $msg = 'Your property #' . $pid . ' was deleted by admin'; $type = 'system'; $nt->bind_param('isssi', $ow, $title, $msg, $type, $pid); $nt->execute(); $nt->close(); }
           redirect_with_message('property_management.php', 'Property deleted', 'success');
         } else { $pv_error = 'Delete failed'; }
         $st->close();

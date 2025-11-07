@@ -134,6 +134,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
             }
 
+            // notify an admin that owner updated the property
+            try {
+                $adm = 0; $qa = db()->query("SELECT user_id FROM users WHERE role='admin' AND status='active' ORDER BY user_id ASC LIMIT 1");
+                if ($qa && ($row = $qa->fetch_assoc())) { $adm = (int)$row['user_id']; }
+                if ($adm > 0) {
+                    $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)');
+                    $title = 'Property updated by owner';
+                    $msg = 'Owner #'.$uid.' updated property #'.$pid;
+                    $type = 'system';
+                    $nt->bind_param('isssi', $adm, $title, $msg, $type, $pid);
+                    $nt->execute();
+                    $nt->close();
+                }
+            } catch (Throwable $e) { }
             redirect_with_message('property_management.php', 'Property updated successfully.', 'success');
         } else if (isset($up)) {
             $alert = ['type'=>'danger','msg'=>'Failed to update'];

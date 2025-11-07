@@ -55,21 +55,6 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
             } catch (Throwable $e) { /* ignore */ }
           }
         ?>
-        <?php
-          // Notifications unread count (all roles)
-          $notifCount = 0;
-          try {
-            $uid = (int)($_SESSION['user']['user_id'] ?? 0);
-            if ($loggedIn && $uid > 0) {
-              $qn = db()->prepare('SELECT COUNT(*) AS cnt FROM notifications WHERE user_id=? AND is_read=0');
-              $qn->bind_param('i', $uid);
-              $qn->execute();
-              $nres = $qn->get_result()->fetch_assoc();
-              $qn->close();
-              $notifCount = (int)($nres['cnt'] ?? 0);
-            }
-          } catch (Throwable $e) { /* ignore */ }
-        ?>
         <!-- Right side -->
         <div class="d-flex align-items-center gap-2">
 
@@ -87,24 +72,14 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
               </a>
             <?php endif; ?>
 
-            <?php
-              // Role-specific notifications page URL
-              if ($isSuper) {
-                $notifUrl = $base_url . '/superAdmin/notification.php';
-              } else {
-                $notifUrl = $base_url . '/customer/notification.php';
-                if ($role === 'admin') { $notifUrl = $base_url . '/admin/notification.php'; }
-                elseif ($role === 'owner') { $notifUrl = $base_url . '/owner/notification.php'; }
-              }
-            ?>
-            <a href="<?= $notifUrl ?>" class="btn btn-outline-secondary position-relative btn-sm" title="Notifications">
-              <i class="bi bi-bell"></i>
-              <?php if ($notifCount > 0): ?>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  <?= $notifCount ?>
-                </span>
-              <?php endif; ?>
-            </a>
+
+
+            <?php if (in_array($role, ['owner','admin'], true)): ?>
+              <button type="button" class="btn btn-outline-secondary btn-sm position-relative" id="nl-bell" data-bs-toggle="modal" data-bs-target="#nlModal" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="nl-badge">0</span>
+              </button>
+            <?php endif; ?>
 
             <?php
               if ($isSuper) {
@@ -135,3 +110,92 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       </div>
     </div>
   </nav>
+  <?php if ($loggedIn && in_array($role, ['owner','admin'], true)): ?>
+  <div class="modal fade" id="nlModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Notifications</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div id="nl-list" class="list-group list-group-flush"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function(){
+      const role = <?= json_encode($role) ?>;
+      const baseUrl = <?= json_encode($base_url) ?>;
+      const currentUserId = <?= json_encode((int)($_SESSION['user']['user_id'] ?? 0)) ?>;
+      const api = baseUrl + '/notifications/between_admin_and_owner.php';
+      const badge = document.getElementById('nl-badge');
+      const listEl = document.getElementById('nl-list');
+      if (!badge || !listEl) return;
+      let csrf = '';
+
+      function rjson(r){ return r.ok ? r.json() : r.json().then(j=>Promise.reject(j)); }
+
+      function fetchCsrf(){
+        return fetch(api + '?action=csrf').then(rjson).then(j=>{ csrf = j.data.csrf_token || ''; });
+      }
+
+      function render(items){
+        listEl.innerHTML = '';
+        if (!items || items.length === 0) {
+          listEl.innerHTML = '<div class="list-group-item text-center text-muted small">No notifications</div>';
+          badge.classList.add('d-none');
+          badge.textContent = '0';
+          return;
+        }
+        let unread = 0;
+        items.forEach(it => {
+          if (String(it.is_read) === '0' || it.is_read === 0) unread++;
+          const btn = (String(it.is_read) === '0' || it.is_read === 0)
+            ? '<button class="btn btn-sm btn-outline-primary nl-mark" data-id="'+it.notification_id+'">Mark read</button>'
+            : '<span class="badge bg-secondary">Read</span>';
+          const row = document.createElement('div');
+          row.className = 'list-group-item';
+          row.innerHTML = '<div class="d-flex justify-content-between align-items-start">'
+            + '<div class="me-2"><div class="fw-semibold">'+ (it.title || 'Notification') +'</div>'
+            + '<div class="small text-muted">'+ (it.created_at || '') +'</div>'
+            + '<div class="small">'+ (it.message || '') +'</div></div>'
+            + '<div>'+ btn +'</div>'
+            + '</div>';
+          listEl.appendChild(row);
+        });
+        if (unread > 0) {
+          badge.classList.remove('d-none');
+          badge.textContent = String(unread);
+        } else {
+          badge.classList.add('d-none');
+          badge.textContent = '0';
+        }
+        listEl.querySelectorAll('.nl-mark').forEach(b => {
+          b.addEventListener('click', function(){
+            const id = this.getAttribute('data-id');
+            if (!id || !csrf) return;
+            const body = new URLSearchParams({ action: 'mark_read', notification_id: id, csrf_token: csrf });
+            fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
+              .then(rjson).then(()=> load())
+              .catch(()=>{});
+          });
+        });
+      }
+
+      function load(){
+        const params = new URLSearchParams({ action: 'list', unread_only: '0', limit: '20' });
+        if (role === 'admin' && currentUserId > 0) { params.set('owner_id', String(currentUserId)); }
+        return fetch(api + '?' + params.toString()).then(rjson).then(j => render(j.data.items || []));
+      }
+
+      fetchCsrf().then(load);
+      setInterval(load, 30000);
+      document.addEventListener('shown.bs.modal', function(e){ if (e.target && e.target.id === 'nlModal') { load(); } });
+    })();
+  </script>
+  <?php endif; ?>

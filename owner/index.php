@@ -48,19 +48,6 @@
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <h5 class="card-title mb-0">Notification</h5>
-              <i class="bi bi-person-circle card-icon"></i>
-            </div>
-            <p class="card-text text-muted">Update your details and password.</p>
-            <a href="notification.php" class="btn btn-primary mt-auto">Open</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-md-4 col-lg-4">
-        <div class="card h-100">
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">Buy Advertising Packages</h5>
               <i class="bi bi-person-circle card-icon"></i>
             </div>

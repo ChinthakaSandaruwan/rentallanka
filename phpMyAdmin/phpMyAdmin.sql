@@ -343,27 +343,30 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `type` ENUM('system','rental','payment','other') NOT NULL DEFAULT 'system',
       `rental_id` INT NULL,
       `property_id` INT NULL,
-      `is_read` TINYINT NOT NULL DEFAULT 0,
+      `is_read` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+      `read_at` DATETIME NULL,
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (`notification_id`),
       KEY `idx_notifications_user_id` (`user_id`),
       KEY `idx_notifications_is_read` (`is_read`),
       KEY `idx_notifications_rental_id` (`rental_id`),
       KEY `idx_notifications_property_id` (`property_id`),
+      KEY `idx_notifications_user_read_created` (`user_id`, `is_read`, `created_at`),
       CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
       CONSTRAINT `fk_notifications_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Table: advertiser_requests (placed after users table exists)
-DROP TABLE IF EXISTS advertiser_requests;
-CREATE TABLE IF NOT EXISTS `advertiser_requests` (
-  `request_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id` INT NOT NULL,
-  `status` ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
-  `reviewed_by` INT UNSIGNED DEFAULT NULL,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`request_id`),
-  KEY `idx_user_status` (`user_id`, `status`),
-  CONSTRAINT `fk_advreq_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    DROP TABLE IF EXISTS advertiser_requests;
+    CREATE TABLE IF NOT EXISTS `advertiser_requests` (
+      `request_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+      `user_id` INT NOT NULL,
+      `status` ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+      `reviewed_by` INT UNSIGNED DEFAULT NULL,
+      `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`request_id`),
+      KEY `idx_user_status` (`user_id`, `status`),
+      CONSTRAINT `fk_advreq_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

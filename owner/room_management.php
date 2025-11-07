@@ -226,26 +226,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                     // Payment slip not used
-                    // Notify admins about new room listing
-                    try {
-                        $owner_name = (string)($_SESSION['user']['name'] ?? 'Owner');
-                        $room_title = (string)$title;
-                        $ntitle = '🛎️ New Room Listed!';
-                        $nmsg = 'A new room titled ' . $room_title . ' has been listed by ' . $owner_name . '. Please review and approve it.';
-                        $adm = db()->query("SELECT user_id FROM users WHERE role='admin'");
-                        if ($adm) {
-                            while ($ar = $adm->fetch_assoc()) {
-                                $uid_admin = (int)$ar['user_id'];
-                                $insN = db()->prepare('INSERT INTO notifications (user_id, title, message, type, is_read) VALUES (?, ?, ?, ?, 0)');
-                                if ($insN) {
-                                    $ntype = 'system';
-                                    $insN->bind_param('isss', $uid_admin, $ntitle, $nmsg, $ntype);
-                                    $insN->execute();
-                                    $insN->close();
-                                }
-                            }
-                        }
-                    } catch (Throwable $e) { /* ignore notification errors */ }
                     // Decrement remaining room slots
                     try {
                         $upd = db()->prepare('UPDATE bought_packages SET remaining_rooms = GREATEST(remaining_rooms-1,0) WHERE bought_package_id=?');

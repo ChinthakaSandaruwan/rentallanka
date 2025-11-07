@@ -57,6 +57,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $del = db()->prepare('DELETE FROM properties WHERE property_id=? AND owner_id=?');
                 $del->bind_param('ii', $pid, $uid);
                 if ($del->execute() && $del->affected_rows > 0) {
+                    // notify an admin
+                    try { $adm = 0; $qa = db()->query("SELECT user_id FROM users WHERE role='admin' AND status='active' ORDER BY user_id ASC LIMIT 1"); if ($qa && ($row = $qa->fetch_assoc())) { $adm = (int)$row['user_id']; }
+                        if ($adm > 0) { $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)'); $title='Property deleted by owner'; $msg='Owner #'.$uid.' deleted property #'.$pid; $type='system'; $nt->bind_param('isssi', $adm, $title, $msg, $type, $pid); $nt->execute(); $nt->close(); }
+                    } catch (Throwable $e) {}
                     redirect_with_message($GLOBALS['base_url'] . '/owner/property_management.php', 'Property deleted', 'success');
                 } else {
                     $error = 'Delete failed';
@@ -190,6 +194,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Payment slip upload not used
 
+                // notify an admin of new submission
+                try { $adm = 0; $qa = db()->query("SELECT user_id FROM users WHERE role='admin' AND status='active' ORDER BY user_id ASC LIMIT 1"); if ($qa && ($row = $qa->fetch_assoc())) { $adm = (int)$row['user_id']; }
+                    if ($adm > 0) { $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)'); $title='New property submitted'; $msg='Owner #'.$uid.' submitted property #'.$new_id.' for approval'; $type='system'; $nt->bind_param('isssi', $adm, $title, $msg, $type, $new_id); $nt->execute(); $nt->close(); }
+                } catch (Throwable $e) {}
                 redirect_with_message($GLOBALS['base_url'] . '/owner/property_management.php', 'Property submitted. Awaiting admin approval.', 'success');
             } else {
                 $error = 'Failed to create property';
@@ -459,8 +467,8 @@ try {
     </div>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKvVYl0ZlEFp3rG5GkHA7r4XK6tBT3M" crossorigin="anonymous"></script>
-<script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script><script>
   function fillSelect(select, items, placeholder) {
     select.innerHTML = '';
     const ph = document.createElement('option');

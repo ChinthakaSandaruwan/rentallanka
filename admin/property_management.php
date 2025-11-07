@@ -19,10 +19,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'delete') {
             $pid = (int)($_POST['property_id'] ?? 0);
             if ($pid > 0) {
+                $ow = 0; $g = db()->prepare('SELECT owner_id FROM properties WHERE property_id=?'); $g->bind_param('i', $pid); $g->execute(); $row = $g->get_result()->fetch_assoc(); $g->close(); if ($row) { $ow = (int)$row['owner_id']; }
                 $stmt = db()->prepare('DELETE FROM properties WHERE property_id = ?');
                 $stmt->bind_param('i', $pid);
                 if ($stmt->execute()) {
                     $okmsg = 'Property deleted';
+                    if ($ow > 0) { $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)'); $title = 'Property deleted'; $msg = 'Your property #' . $pid . ' was deleted by admin'; $type = 'system'; $nt->bind_param('isssi', $ow, $title, $msg, $type, $pid); $nt->execute(); $nt->close(); }
                 } else {
                     $error = 'Delete failed';
                 }
@@ -87,6 +89,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $upd->execute();
                                 $upd->close();
                                 $okmsg = 'Status updated and package quota deducted.';
+                                if ($owner_id > 0) {
+                                    $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)');
+                                    $title = 'Property status updated';
+                                    $msg = 'Your property #' . $pid . ' status changed to ' . $new_status;
+                                    $type = 'system';
+                                    $nt->bind_param('isssi', $owner_id, $title, $msg, $type, $pid);
+                                    $nt->execute();
+                                    $nt->close();
+                                }
                             } else {
                                 $error = 'Update failed';
                                 $stmt->close();
@@ -97,7 +108,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Other transitions without quota logic
                     $stmt = db()->prepare('UPDATE properties SET status = ? WHERE property_id = ?');
                     $stmt->bind_param('si', $new_status, $pid);
-                    if ($stmt->execute()) { $okmsg = 'Status updated'; } else { $error = 'Update failed'; }
+                    if ($stmt->execute()) {
+                        $okmsg = 'Status updated';
+                        if ($owner_id > 0) {
+                            $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)');
+                            $title = 'Property status updated';
+                            $msg = 'Your property #' . $pid . ' status changed to ' . $new_status;
+                            $type = 'system';
+                            $nt->bind_param('isssi', $owner_id, $title, $msg, $type, $pid);
+                            $nt->execute();
+                            $nt->close();
+                        }
+                    } else { $error = 'Update failed'; }
                     $stmt->close();
                 }
             }
