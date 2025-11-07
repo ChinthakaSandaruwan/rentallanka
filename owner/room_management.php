@@ -90,6 +90,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $postal_code = trim($_POST['postal_code'] ?? '');
 
             if ($title !== '' && $price_per_day >= 0 && $beds >= 0 && $maximum_guests >= 1 && $province_id > 0 && $district_id > 0 && $city_id > 0 && $postal_code !== '') {
+                if (mb_strlen($title) > 150) {
+                    $flash = 'Title is too long';
+                    $type = 'error';
+                } elseif (mb_strlen($postal_code) > 10) {
+                    $flash = 'Postal code is too long';
+                    $type = 'error';
+                } elseif (mb_strlen($address) > 255) {
+                    $flash = 'Address is too long';
+                    $type = 'error';
+                } elseif ($beds < 0) {
+                    $flash = 'Beds must be non-negative';
+                    $type = 'error';
+                } elseif ($maximum_guests < 1) {
+                    $flash = 'Maximum guests must be at least 1';
+                    $type = 'error';
+                } elseif ($price_per_day < 0) {
+                    $flash = 'Price per day must be non-negative';
+                    $type = 'error';
+                } else {
                 // Enforce active and paid bought package for rooms (must be a room-type package)
                 $bp = null; $bp_id = 0; $rem_rooms = 0;
                 try {
@@ -132,6 +151,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $loc->close();
                     // Upload primary room image (optional)
                     if (!empty($_FILES['image']['name']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
+                        $imgSize = (int)($_FILES['image']['size'] ?? 0);
+                        $imgInfo = @getimagesize($_FILES['image']['tmp_name']);
+                        if ($imgSize <= 0 || $imgSize > 5242880 || $imgInfo === false) {
+                            $flash = 'Primary image must be a valid image under 5MB';
+                            $type = 'error';
+                        } else {
                         $dir = dirname(__DIR__) . '/uploads/rooms';
                         if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                         $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
@@ -155,12 +180,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
                             }
                         }
+                        }
                     }
                     // Upload gallery images (non-primary)
                     if (!empty($_FILES['gallery_images']['name']) && is_array($_FILES['gallery_images']['name'])) {
                         $count = count($_FILES['gallery_images']['name']);
                         for ($i=0; $i < $count; $i++) {
                             if (empty($_FILES['gallery_images']['name'][$i]) || !is_uploaded_file($_FILES['gallery_images']['tmp_name'][$i])) { continue; }
+                            $gSize = (int)($_FILES['gallery_images']['size'][$i] ?? 0);
+                            $gInfo = @getimagesize($_FILES['gallery_images']['tmp_name'][$i]);
+                            if ($gSize <= 0 || $gSize > 5242880 || $gInfo === false) { continue; }
                             $dir = dirname(__DIR__) . '/uploads/rooms';
                             if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                             $ext = pathinfo($_FILES['gallery_images']['name'][$i], PATHINFO_EXTENSION);
@@ -293,8 +322,8 @@ try {
               <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
               <input type="hidden" name="action" value="create">
               <div class="mb-3">
-                <label class="form-label">Title</label>
-                <input name="title" class="form-control" required>
+                  <label class="form-label">Title</label>
+                  <input name="title" class="form-control" required maxlength="150">
               </div>
               <div class="mb-3">
                 <label class="form-label">Room Type</label>
@@ -335,11 +364,11 @@ try {
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Postal Code</label>
-                  <input name="postal_code" class="form-control" required>
+                  <input name="postal_code" class="form-control" required maxlength="10">
                 </div>
                 <div class="col-12">
                   <label class="form-label">Address (optional)</label>
-                  <input name="address" class="form-control">
+                  <input name="address" class="form-control" maxlength="255">
                 </div>
               </div>
               <div class="row g-3 mb-3">
