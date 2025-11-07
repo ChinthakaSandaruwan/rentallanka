@@ -23,8 +23,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $phone = trim($_POST['phone'] ?? '');
         $status = in_array($_POST['status'] ?? 'active', ['active','inactive','banned']) ? $_POST['status'] : 'active';
         $password = (string)($_POST['password'] ?? '');
-        if ($name === '' || $email === '' || $password === '') {
-            redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'name, email and password are required', 'error');
+        if ($name === '' || mb_strlen($name) > 100) {
+            redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Enter a valid name (max 100 chars)', 'error');
+        }
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Enter a valid email', 'error');
+        }
+        if ($phone !== '' && !preg_match('/^0[7][01245678][0-9]{7}$/', preg_replace('/\D+/', '', $phone))) {
+            redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Enter a valid Sri Lanka mobile (07XXXXXXXX) or leave blank', 'error');
+        }
+        if ($password === '' || strlen($password) < 8 || strlen($password) > 128) {
+            redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Password must be 8-128 characters', 'error');
+        }
+        // Unique email
+        $ue = db()->prepare('SELECT super_admin_id FROM super_admins WHERE email = ? LIMIT 1');
+        if ($ue) {
+            $ue->bind_param('s', $email);
+            $ue->execute();
+            $er = $ue->get_result()->fetch_assoc();
+            $ue->close();
+            if ($er) {
+                redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Email already exists', 'error');
+            }
         }
         $hash = password_hash($password, PASSWORD_BCRYPT);
         $stmt = db()->prepare('INSERT INTO super_admins (email, name, password_hash, phone, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
@@ -46,7 +66,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id <= 0) {
             redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Invalid ID', 'error');
         }
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Enter a valid email', 'error');
+        }
+        if ($phone !== '' && !preg_match('/^0[7][01245678][0-9]{7}$/', preg_replace('/\D+/', '', $phone))) {
+            redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Enter a valid Sri Lanka mobile (07XXXXXXXX) or leave blank', 'error');
+        }
+        // unique email excluding self
+        $ue2 = db()->prepare('SELECT super_admin_id FROM super_admins WHERE email = ? AND super_admin_id <> ? LIMIT 1');
+        if ($ue2) {
+            $ue2->bind_param('si', $email, $id);
+            $ue2->execute();
+            $er2 = $ue2->get_result()->fetch_assoc();
+            $ue2->close();
+            if ($er2) {
+                redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Email already exists', 'error');
+            }
+        }
         if ($password !== '') {
+            if (strlen($password) < 8 || strlen($password) > 128) {
+                redirect_with_message($base_url . '/superAdmin/super_admin_management.php', 'Password must be 8-128 characters', 'error');
+            }
             $hash = password_hash($password, PASSWORD_BCRYPT);
             $stmt = db()->prepare('UPDATE super_admins SET email = ?, phone = ?, status = ?, password_hash = ? WHERE super_admin_id = ?');
             $stmt->bind_param('ssssi', $email, $phone, $status, $hash, $id);
@@ -117,8 +157,6 @@ $sa_count = count($rows);
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Super Admin Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 </head>
 <body>
 <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
@@ -143,11 +181,11 @@ $sa_count = count($rows);
               </div>
               <div>
                 <label class="form-label">Email</label>
-                <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($edit_row['email']) ?>" required>
+                <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($edit_row['email']) ?>" maxlength="255" required>
               </div>
               <div>
                 <label class="form-label">Phone</label>
-                <input type="text" name="phone" class="form-control" value="<?= htmlspecialchars($edit_row['phone']) ?>">
+                <input type="text" name="phone" class="form-control" value="<?= htmlspecialchars($edit_row['phone']) ?>" inputmode="tel" pattern="^0[7][01245678][0-9]{7}$" maxlength="10" placeholder="07XXXXXXXX">
               </div>
               <div>
                 <label class="form-label">Status</label>
@@ -159,7 +197,7 @@ $sa_count = count($rows);
               </div>
               <div>
                 <label class="form-label">New Password (optional)</label>
-                <input type="password" name="password" class="form-control" placeholder="Leave blank to keep current">
+                <input type="password" name="password" class="form-control" placeholder="Leave blank to keep current" minlength="8" maxlength="128">
               </div>
               <input type="hidden" name="action" value="update_sa">
               <input type="hidden" name="super_admin_id" value="<?= (int)$edit_row['super_admin_id'] ?>">
@@ -175,15 +213,15 @@ $sa_count = count($rows);
               <form method="post" class="vstack gap-3">
                 <div>
                   <label class="form-label">name</label>
-                  <input type="text" name="name" class="form-control" required>
+                  <input type="text" name="name" class="form-control" maxlength="100" required>
                 </div>
                 <div>
                   <label class="form-label">Email</label>
-                  <input type="email" name="email" class="form-control" required>
+                  <input type="email" name="email" class="form-control" maxlength="255" required>
                 </div>
                 <div>
                   <label class="form-label">Phone</label>
-                  <input type="text" name="phone" class="form-control">
+                  <input type="text" name="phone" class="form-control" inputmode="tel" pattern="^0[7][01245678][0-9]{7}$" maxlength="10" placeholder="07XXXXXXXX">
                 </div>
                 <div>
                   <label class="form-label">Status</label>
@@ -195,7 +233,7 @@ $sa_count = count($rows);
                 </div>
                 <div>
                   <label class="form-label">Password</label>
-                  <input type="password" name="password" class="form-control" required>
+                  <input type="password" name="password" class="form-control" minlength="8" maxlength="128" required>
                 </div>
                 <input type="hidden" name="action" value="create_sa">
                 <button class="btn btn-primary" type="submit">Create</button>

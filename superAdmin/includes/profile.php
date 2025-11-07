@@ -12,6 +12,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
+        if ($name === '' || mb_strlen($name) > 100) {
+            redirect_with_message($base_url . '/superAdmin/includes/profile.php', 'Enter a valid name (max 100 chars)', 'error');
+        }
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            redirect_with_message($base_url . '/superAdmin/includes/profile.php', 'Enter a valid email', 'error');
+        }
+        if ($phone !== '' && !preg_match('/^0[7][01245678][0-9]{7}$/', preg_replace('/\D+/', '', $phone))) {
+            redirect_with_message($base_url . '/superAdmin/includes/profile.php', 'Enter a valid Sri Lanka mobile (07XXXXXXXX) or leave blank', 'error');
+        }
+        // Enforce email uniqueness among super_admins (excluding self)
+        $ck = db()->prepare('SELECT super_admin_id FROM super_admins WHERE email = ? AND super_admin_id <> ? LIMIT 1');
+        if ($ck) {
+            $ck->bind_param('si', $email, $sid);
+            $ck->execute();
+            $dup = $ck->get_result()->fetch_assoc();
+            $ck->close();
+            if ($dup) {
+                redirect_with_message($base_url . '/superAdmin/includes/profile.php', 'Email is already used by another super admin', 'error');
+            }
+        }
         $stmt = db()->prepare('UPDATE super_admins SET name = ?, email = ?, phone = ? WHERE super_admin_id = ?');
         $stmt->bind_param('sssi', $name, $email, $phone, $sid);
         $stmt->execute();
@@ -22,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pwd2 = (string)($_POST['confirm_password'] ?? '');
         if ($pwd === '' || $pwd !== $pwd2) {
             redirect_with_message($base_url . '/superAdmin/includes/profile.php', 'Password mismatch', 'error');
+        }
+        if (strlen($pwd) < 8 || strlen($pwd) > 128) {
+            redirect_with_message($base_url . '/superAdmin/includes/profile.php', 'Password must be 8-128 characters', 'error');
         }
         $hash = password_hash($pwd, PASSWORD_BCRYPT);
         $stmt = db()->prepare('UPDATE super_admins SET password_hash = ? WHERE super_admin_id = ?');
@@ -91,15 +114,15 @@ $stmt->close();
           <form method="post" class="row g-3">
             <div class="col-12 col-md-6">
               <label class="form-label">Name</label>
-              <input type="text" class="form-control" name="name" value="<?= htmlspecialchars($sa['name'] ?? '') ?>">
+              <input type="text" class="form-control" name="name" value="<?= htmlspecialchars($sa['name'] ?? '') ?>" maxlength="100" required>
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label">Email</label>
-              <input type="email" class="form-control" name="email" value="<?= htmlspecialchars($sa['email'] ?? '') ?>">
+              <input type="email" class="form-control" name="email" value="<?= htmlspecialchars($sa['email'] ?? '') ?>" maxlength="255" required>
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label">Phone</label>
-              <input type="text" class="form-control" name="phone" value="<?= htmlspecialchars($sa['phone'] ?? '') ?>">
+              <input type="text" class="form-control" name="phone" value="<?= htmlspecialchars($sa['phone'] ?? '') ?>" inputmode="tel" pattern="^0[7][01245678][0-9]{7}$" maxlength="10" placeholder="07XXXXXXXX">
             </div>
             <div class="col-12">
               <input type="hidden" name="action" value="update_profile">
@@ -111,11 +134,11 @@ $stmt->close();
           <form method="post" class="row g-3">
             <div class="col-12 col-md-6">
               <label class="form-label">New Password</label>
-              <input type="password" class="form-control" name="new_password" required>
+              <input type="password" class="form-control" name="new_password" minlength="8" maxlength="128" required>
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label">Confirm Password</label>
-              <input type="password" class="form-control" name="confirm_password" required>
+              <input type="password" class="form-control" name="confirm_password" minlength="8" maxlength="128" required>
             </div>
             <div class="col-12">
               <input type="hidden" name="action" value="change_password">
