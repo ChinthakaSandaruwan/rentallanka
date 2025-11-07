@@ -119,10 +119,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($rem_props <= 0) {
                 redirect_with_message($GLOBALS['base_url'] . '/owner/buy_advertising_packages.php', 'Your package does not have remaining property slots.', 'error');
             }
-            $stmt = db()->prepare('INSERT INTO properties (owner_id, title, description, price_per_month, bedrooms, bathrooms, living_rooms, garden, gym, pool, sqft, kitchen, parking, water_supply, electricity_supply, property_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $property_code = 'TEMP-' . bin2hex(random_bytes(4));
+            $stmt = db()->prepare('INSERT INTO properties (owner_id, property_code, title, description, price_per_month, bedrooms, bathrooms, living_rooms, garden, gym, pool, sqft, kitchen, parking, water_supply, electricity_supply, property_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             $stmt->bind_param(
-                'issdiiiiiidiiiis',
+                'isssdiiiiiidiiiis',
                 $uid,
+                $property_code,
                 $title,
                 $description,
                 $price_per_month,
@@ -143,7 +145,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $new_id = db()->insert_id;
                 $stmt->close();
 
-                // Optional: property_code column may not exist; skip updating it and compute on the fly when displaying
+                // Update property_code to a friendly code using the new ID
+                try {
+                    $final_code = 'PROP-' . str_pad((string)$new_id, 6, '0', STR_PAD_LEFT);
+                    $upc = db()->prepare('UPDATE properties SET property_code=? WHERE property_id=?');
+                    $upc->bind_param('si', $final_code, $new_id);
+                    $upc->execute();
+                    $upc->close();
+                } catch (Throwable $e) { /* ignore */ }
 
                 // Insert location linked by FK IDs
                 $loc = db()->prepare('INSERT INTO locations (property_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)');

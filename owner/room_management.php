@@ -160,10 +160,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($rem_rooms <= 0) {
                     redirect_with_message($GLOBALS['base_url'] . '/owner/buy_advertising_packages.php', 'Your package does not have remaining room slots.', 'error');
                 }
-                $ins = db()->prepare("INSERT INTO rooms (owner_id, title, room_type, description, beds, maximum_guests, price_per_day, status) VALUES (?,?,?,?,?,?,?,?)");
-                $ins->bind_param('isssiids', $owner_id, $title, $room_type, $description, $beds, $maximum_guests, $price_per_day, $status);
+                $room_code = 'TEMP-' . bin2hex(random_bytes(4));
+                $ins = db()->prepare("INSERT INTO rooms (owner_id, room_code, title, room_type, description, beds, maximum_guests, price_per_day, status) VALUES (?,?,?,?,?,?,?,?,?)");
+                $ins->bind_param('issssiids', $owner_id, $room_code, $title, $room_type, $description, $beds, $maximum_guests, $price_per_day, $status);
                 if ($ins->execute()) {
                     $new_room_id = db()->insert_id;
+                    // set a friendly code after insert
+                    try {
+                        $final_code = 'ROOM-' . str_pad((string)$new_room_id, 6, '0', STR_PAD_LEFT);
+                        $upc = db()->prepare('UPDATE rooms SET room_code=? WHERE room_id=?');
+                        $upc->bind_param('si', $final_code, $new_room_id);
+                        $upc->execute();
+                        $upc->close();
+                    } catch (Throwable $e) { /* ignore */ }
                     // Insert location linked to room with FK IDs
                     $loc = db()->prepare('INSERT INTO locations (room_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)');
                     $loc->bind_param('iiiiss', $new_room_id, $province_id, $district_id, $city_id, $address, $postal_code);
@@ -416,11 +425,11 @@ try {
               <table class="table table-striped table-hover mb-0 align-middle">
                 <thead class="table-light">
                   <tr>
-                    <th>Image</th>
-                    <th>Title & Type</th>
-                    <th>Location</th>
-                    <th>Price/day</th>
+                    <th>Code</th>
+                    <th>ID</th>
+                    <th>Title</th>
                     <th>Status</th>
+                    <th>Price/day</th>
                     <th>Created</th>
                     <th>Actions</th>
                   </tr>
@@ -428,9 +437,6 @@ try {
                 <tbody>
                   <?php foreach ($rooms as $r): ?>
                     <?php
-                      $img = $r['image_path'] ?? '';
-                      if ($img && !preg_match('#^https?://#i', $img) && $img[0] !== '/') { $img = '/' . ltrim($img, '/'); }
-                      $loc = trim(implode(', ', array_filter([($r['city_name'] ?? ''), ($r['district_name'] ?? ''), ($r['province_name'] ?? '')])));
                       $s = strtolower(trim((string)($r['status'] ?? '')));
                       $badge = 'bg-secondary';
                       if ($s === 'available') $badge = 'bg-success';
@@ -438,22 +444,19 @@ try {
                       elseif ($s === 'rented' || $s === 'unavailable') $badge = 'bg-danger';
                     ?>
                     <tr>
-                      <td style="width: 72px;">
-                        <?php if ($img): ?>
-                          <img src="<?php echo htmlspecialchars($img); ?>" alt="" class="rounded" style="width:64px;height:48px;object-fit:cover;">
-                        <?php else: ?>
-                          <div class="bg-light border rounded d-inline-block" style="width:64px;height:48px;"></div>
-                        <?php endif; ?>
-                      </td>
-                      <td>
-                        <div class="fw-semibold mb-0"><?php echo htmlspecialchars($r['title']); ?></div>
-                        <div class="text-muted small"><?php echo htmlspecialchars(ucfirst($r['room_type'] ?? '')); ?> • Beds: <?php echo (int)$r['beds']; ?></div>
-                      </td>
-                      <td class="text-muted small"><?php echo $loc ? htmlspecialchars($loc) : '-'; ?></td>
-                      <td class="fw-semibold"><?php echo number_format((float)$r['price_per_day'], 2); ?></td>
+                      <td><?php echo 'ROOM-' . str_pad((string)$r['room_id'], 6, '0', STR_PAD_LEFT); ?></td>
+                      <td><?php echo (int)$r['room_id']; ?></td>
+                      <td><?php echo htmlspecialchars($r['title']); ?></td>
                       <td><span class="badge <?php echo $badge; ?> text-uppercase"><?php echo htmlspecialchars($r['status']); ?></span></td>
+                      <td class="fw-semibold"><?php echo number_format((float)$r['price_per_day'], 2); ?></td>
                       <td class="text-muted small"><?php echo htmlspecialchars($r['created_at']); ?></td>
                       <td class="text-nowrap">
+                        <?php $can_edit = (strtotime((string)$r['created_at']) + 24*3600) > time(); ?>
+                        <?php if ($can_edit): ?>
+                          <a class="btn btn-sm btn-outline-primary me-1" href="room_edit.php?id=<?php echo (int)$r['room_id']; ?>">Edit</a>
+                        <?php else: ?>
+                          <button class="btn btn-sm btn-outline-secondary me-1" type="button" disabled title="Editing locked after 24 hours">Edit</button>
+                        <?php endif; ?>
                         <form method="post" class="d-inline" onsubmit="return confirm('Delete this room?');">
                           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                           <input type="hidden" name="action" value="delete">
