@@ -140,3 +140,4 @@ Stack trace:
 #0 [internal function]: {closure}()
 #1 {main}
   thrown in C:\xampp\htdocs\rentallanka\config\config.php on line 52
+[07-Nov-2025 22:23:52 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
