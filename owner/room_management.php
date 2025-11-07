@@ -90,10 +90,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $postal_code = trim($_POST['postal_code'] ?? '');
 
             if ($title !== '' && $price_per_day >= 0 && $beds >= 0 && $maximum_guests >= 1 && $province_id > 0 && $district_id > 0 && $city_id > 0 && $postal_code !== '') {
-                // Enforce active and paid bought package for rooms
+                // Enforce active and paid bought package for rooms (must be a room-type package)
                 $bp = null; $bp_id = 0; $rem_rooms = 0;
                 try {
-                    $q = db()->prepare("SELECT bought_package_id, remaining_rooms, end_date FROM bought_packages WHERE user_id=? AND status='active' AND payment_status='paid' AND (end_date IS NULL OR end_date>=NOW()) ORDER BY start_date DESC LIMIT 1");
+                    $q = db()->prepare("SELECT bp.bought_package_id, bp.remaining_rooms, bp.end_date
+                                         FROM bought_packages bp
+                                         JOIN packages p ON p.package_id = bp.package_id
+                                         WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid'
+                                           AND (bp.end_date IS NULL OR bp.end_date>=NOW())
+                                           AND COALESCE(p.max_rooms,0) > 0
+                                         ORDER BY bp.start_date DESC LIMIT 1");
                     $q->bind_param('i', $owner_id);
                     $q->execute();
                     $bp = $q->get_result()->fetch_assoc();
@@ -229,7 +235,12 @@ while ($row = $rres->fetch_assoc()) { $rooms[] = $row; }
 $rs->close();
 $pkg_info = null;
 try {
-    $q = db()->prepare("SELECT bp.remaining_rooms, bp.end_date, bp.status, bp.payment_status, p.package_name FROM bought_packages bp JOIN packages p ON p.package_id=bp.package_id WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid' ORDER BY bp.start_date DESC LIMIT 1");
+    $q = db()->prepare("SELECT bp.remaining_rooms, bp.end_date, bp.status, bp.payment_status, p.package_name
+                        FROM bought_packages bp
+                        JOIN packages p ON p.package_id=bp.package_id
+                        WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid'
+                          AND COALESCE(p.max_rooms,0) > 0
+                        ORDER BY bp.start_date DESC LIMIT 1");
     $q->bind_param('i', $owner_id);
     $q->execute();
     $pkg_info = $q->get_result()->fetch_assoc();

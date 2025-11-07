@@ -103,10 +103,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($province_id <= 0 || $district_id <= 0 || $city_id <= 0 || $postal_code === '') {
             $error = 'Location (province, district, city, postal code) is required';
         } else {
-            // Enforce active and paid bought package for properties
+            // Enforce active and paid bought package for properties (must be a property-type package)
             $bp = null; $bp_id = 0; $rem_props = 0;
             try {
-                $q = db()->prepare("SELECT bought_package_id, remaining_properties, end_date FROM bought_packages WHERE user_id=? AND status='active' AND payment_status='paid' AND (end_date IS NULL OR end_date>=NOW()) ORDER BY start_date DESC LIMIT 1");
+                $q = db()->prepare("SELECT bp.bought_package_id, bp.remaining_properties, bp.end_date
+                                     FROM bought_packages bp
+                                     JOIN packages p ON p.package_id = bp.package_id
+                                     WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid'
+                                       AND (bp.end_date IS NULL OR bp.end_date>=NOW())
+                                       AND COALESCE(p.max_properties,0) > 0
+                                     ORDER BY bp.start_date DESC LIMIT 1");
                 $q->bind_param('i', $uid);
                 $q->execute();
                 $bp = $q->get_result()->fetch_assoc();
@@ -227,10 +233,15 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// Fetch current active & paid package info to show remaining property slots
+// Fetch current active & paid PROPERTY package info to show remaining property slots
 $pkg_info = null;
 try {
-    $q = db()->prepare("SELECT bp.remaining_properties, bp.end_date, bp.status, bp.payment_status, p.package_name FROM bought_packages bp JOIN packages p ON p.package_id=bp.package_id WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid' ORDER BY bp.start_date DESC LIMIT 1");
+    $q = db()->prepare("SELECT bp.remaining_properties, bp.end_date, bp.status, bp.payment_status, p.package_name
+                        FROM bought_packages bp
+                        JOIN packages p ON p.package_id=bp.package_id
+                        WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid'
+                          AND COALESCE(p.max_properties,0) > 0
+                        ORDER BY bp.start_date DESC LIMIT 1");
     $q->bind_param('i', $uid);
     $q->execute();
     $pkg_info = $q->get_result()->fetch_assoc();
