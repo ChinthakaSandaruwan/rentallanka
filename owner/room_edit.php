@@ -13,7 +13,7 @@ if ($rid <= 0) {
     redirect_with_message('room_management.php', 'Invalid room ID', 'error');
 }
 
-$room = null; $loc = null;
+$room = null; $loc = null; $images = [];
 try {
     $rs = db()->prepare('SELECT * FROM rooms WHERE room_id=? AND owner_id=? LIMIT 1');
     $rs->bind_param('ii', $rid, $uid);
@@ -26,6 +26,13 @@ try {
         $ls->execute();
         $loc = $ls->get_result()->fetch_assoc();
         $ls->close();
+        // Load images
+        $is = db()->prepare('SELECT image_id, image_path, is_primary FROM room_images WHERE room_id=? ORDER BY is_primary DESC, image_id DESC');
+        $is->bind_param('i', $rid);
+        $is->execute();
+        $rs = $is->get_result();
+        while ($row = $rs->fetch_assoc()) { $images[] = $row; }
+        $is->close();
     }
 } catch (Throwable $e) { }
 if (!$room) { redirect_with_message('room_management.php', 'Room not found', 'error'); }
@@ -43,6 +50,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (!hash_equals($_SESSION['csrf_token'], $token)) {
         $alert = ['type'=>'danger','msg'=>'Invalid request'];
     } else {
+        $action = $_POST['action'] ?? 'update';
+        if ($action === 'delete_image') {
+            $imgId = (int)($_POST['image_id'] ?? 0);
+            if ($imgId > 0) {
+                $del = db()->prepare('DELETE FROM room_images WHERE image_id=? AND room_id=?');
+                $del->bind_param('ii', $imgId, $rid);
+                if ($del->execute() && $del->affected_rows > 0) {
+                    $del->close();
+                    redirect_with_message('room_edit.php?id=' . $rid, 'Image deleted', 'success');
+                }
+                if ($del) { $del->close(); }
+            }
+            $alert = ['type'=>'danger','msg'=>'Failed to delete image'];
+        } else {
         $title = trim($_POST['title'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $room_type = $_POST['room_type'] ?? 'other';
@@ -61,6 +82,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $alert = ['type'=>'danger','msg'=>'Title, price and guests are required'];
         } elseif ($province_id <= 0 || $district_id <= 0 || $city_id <= 0 || $postal_code === '') {
             $alert = ['type'=>'danger','msg'=>'Location (province, district, city, postal code) is required'];
+        } elseif (mb_strlen($title) > 150) {
+            $alert = ['type'=>'danger','msg'=>'Title is too long'];
+        } elseif (mb_strlen($postal_code) > 10) {
+            $alert = ['type'=>'danger','msg'=>'Postal code is too long'];
+        } elseif (mb_strlen($address) > 255) {
+            $alert = ['type'=>'danger','msg'=>'Address is too long'];
+        } elseif ($beds < 0) {
+            $alert = ['type'=>'danger','msg'=>'Beds must be non-negative'];
+        } elseif ($maximum_guests < 1) {
+            $alert = ['type'=>'danger','msg'=>'Maximum guests must be at least 1'];
+        } elseif ($price_per_day < 0) {
+            $alert = ['type'=>'danger','msg'=>'Price per day must be non-negative'];
         } else {
             $up = db()->prepare('UPDATE rooms SET title=?, description=?, room_type=?, beds=?, maximum_guests=?, price_per_day=? WHERE room_id=? AND owner_id=?');
             $up->bind_param('sssiidii', $title, $description, $room_type, $beds, $maximum_guests, $price_per_day, $rid, $uid);
@@ -82,6 +115,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 } catch (Throwable $e) { }
 
                 if (!empty($_FILES['image']['name']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
+                    $imgSize = (int)($_FILES['image']['size'] ?? 0);
+                    $imgInfo = @getimagesize($_FILES['image']['tmp_name']);
+                    if ($imgSize <= 0 || $imgSize > 5242880 || $imgInfo === false) {
+                        $alert = ['type'=>'danger','msg'=>'Primary image must be a valid image under 5MB'];
+                    } else {
                     $dir = dirname(__DIR__) . '/uploads/rooms'; if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                     $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
                     $fname = 'room_' . $rid . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext);
@@ -91,12 +129,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                         $pi = db()->prepare('INSERT INTO room_images (room_id, image_path, is_primary) VALUES (?, ?, 1)');
                         if ($pi) { $pi->bind_param('is', $rid, $rel); $pi->execute(); $pi->close(); }
                     }
+                    }
                 }
                 if (!empty($_FILES['gallery_images']['name']) && is_array($_FILES['gallery_images']['name'])) {
                     $count = count($_FILES['gallery_images']['name']);
                     $dir = dirname(__DIR__) . '/uploads/rooms'; if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                     for ($i=0; $i<$count; $i++) {
                         if (empty($_FILES['gallery_images']['name'][$i]) || !is_uploaded_file($_FILES['gallery_images']['tmp_name'][$i])) { continue; }
+                        $gSize = (int)($_FILES['gallery_images']['size'][$i] ?? 0);
+                        $gInfo = @getimagesize($_FILES['gallery_images']['tmp_name'][$i]);
+                        if ($gSize <= 0 || $gSize > 5242880 || $gInfo === false) { continue; }
                         $ext = pathinfo($_FILES['gallery_images']['name'][$i], PATHINFO_EXTENSION);
                         $fname = 'room_' . $rid . '_' . ($i+1) . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext);
                         $dest = $dir . '/' . $fname;
@@ -115,6 +157,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             }
         }
     }
+}
 }
 
 [$flash, $flash_type] = get_flash();
@@ -140,9 +183,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
   <form method="post" enctype="multipart/form-data" class="row g-3">
     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+    <input type="hidden" name="action" value="update">
     <div class="col-12 col-md-6">
       <label class="form-label">Title</label>
-      <input name="title" class="form-control" value="<?php echo htmlspecialchars($room['title'] ?? ''); ?>" required>
+      <input name="title" class="form-control" value="<?php echo htmlspecialchars($room['title'] ?? ''); ?>" required maxlength="150">
     </div>
     <div class="col-12">
       <label class="form-label">Description</label>
@@ -188,12 +232,40 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     </div>
     <div class="col-12 col-md-8">
       <label class="form-label">Postal Code</label>
-      <input name="postal_code" class="form-control" value="<?php echo htmlspecialchars((string)($loc['postal_code'] ?? '')); ?>" required>
+      <input name="postal_code" class="form-control" value="<?php echo htmlspecialchars((string)($loc['postal_code'] ?? '')); ?>" required maxlength="10">
     </div>
     <div class="col-12">
       <label class="form-label">Address</label>
-      <input name="address" class="form-control" value="<?php echo htmlspecialchars((string)($loc['address'] ?? '')); ?>">
+      <input name="address" class="form-control" value="<?php echo htmlspecialchars((string)($loc['address'] ?? '')); ?>" maxlength="255">
     </div>
+
+    <?php if ($images): ?>
+    <div class="col-12">
+      <label class="form-label d-block">Current Images</label>
+      <div class="row g-3">
+        <?php foreach ($images as $img): ?>
+          <div class="col-6 col-md-3">
+            <div class="card h-100">
+              <img src="<?php echo htmlspecialchars($img['image_path']); ?>" class="card-img-top" alt="room image">
+              <div class="card-body p-2">
+                <?php if ((int)($img['is_primary'] ?? 0) === 1): ?>
+                  <span class="badge text-bg-primary">Primary</span>
+                <?php endif; ?>
+              </div>
+              <div class="card-footer p-2 text-end">
+                <form method="post" class="d-inline" onsubmit="return confirm('Delete this image?');">
+                  <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                  <input type="hidden" name="action" value="delete_image">
+                  <input type="hidden" name="image_id" value="<?php echo (int)$img['image_id']; ?>">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <div class="col-12">
       <label class="form-label">Replace Primary Image (optional)</label>

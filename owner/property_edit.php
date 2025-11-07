@@ -14,7 +14,7 @@ if ($pid <= 0) {
 }
 
 // Load property owned by user
-$prop = null; $loc = null;
+$prop = null; $loc = null; $images = [];
 try {
     $ps = db()->prepare('SELECT * FROM properties WHERE property_id=? AND owner_id=? LIMIT 1');
     $ps->bind_param('ii', $pid, $uid);
@@ -27,6 +27,13 @@ try {
         $ls->execute();
         $loc = $ls->get_result()->fetch_assoc();
         $ls->close();
+        // Load images
+        $is = db()->prepare('SELECT image_id, image_path, is_primary FROM property_images WHERE property_id=? ORDER BY is_primary DESC, image_id DESC');
+        $is->bind_param('i', $pid);
+        $is->execute();
+        $rs = $is->get_result();
+        while ($row = $rs->fetch_assoc()) { $images[] = $row; }
+        $is->close();
     }
 } catch (Throwable $e) { /* ignore */ }
 if (!$prop) { redirect_with_message('property_management.php', 'Property not found', 'error'); }
@@ -45,6 +52,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (!hash_equals($_SESSION['csrf_token'], $token)) {
         $alert = ['type'=>'danger','msg'=>'Invalid request'];
     } else {
+        $action = $_POST['action'] ?? 'update';
+        if ($action === 'delete_image') {
+            $imgId = (int)($_POST['image_id'] ?? 0);
+            if ($imgId > 0) {
+                $del = db()->prepare('DELETE FROM property_images WHERE image_id=? AND property_id=?');
+                $del->bind_param('ii', $imgId, $pid);
+                if ($del->execute() && $del->affected_rows > 0) {
+                    $del->close();
+                    redirect_with_message('property_edit.php?id=' . $pid, 'Image deleted', 'success');
+                }
+                if ($del) { $del->close(); }
+            }
+            $alert = ['type'=>'danger','msg'=>'Failed to delete image'];
+        } else {
         // Collect fields
         $title = trim($_POST['title'] ?? '');
         $description = trim($_POST['description'] ?? '');
@@ -73,6 +94,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $alert = ['type'=>'danger','msg'=>'Title and price are required'];
         } elseif ($province_id <= 0 || $district_id <= 0 || $city_id <= 0 || $postal_code === '') {
             $alert = ['type'=>'danger','msg'=>'Location (province, district, city, postal code) is required'];
+        } elseif (mb_strlen($title) > 255) {
+            $alert = ['type'=>'danger','msg'=>'Title is too long'];
+        } elseif (mb_strlen($postal_code) > 10) {
+            $alert = ['type'=>'danger','msg'=>'Postal code is too long'];
+        } elseif (mb_strlen($address) > 255) {
+            $alert = ['type'=>'danger','msg'=>'Address is too long'];
+        } elseif ($bedrooms < 0 || $bathrooms < 0 || $living_rooms < 0) {
+            $alert = ['type'=>'danger','msg'=>'Numeric values must be non-negative'];
+        } elseif (!is_null($sqft) && $sqft < 0) {
+            $alert = ['type'=>'danger','msg'=>'Area must be non-negative'];
         } else {
             // Update properties table (align schema field names)
             $up = db()->prepare('UPDATE properties SET title=?, description=?, price_per_month=?, bedrooms=?, bathrooms=?, living_rooms=?, garden=?, gym=?, pool=?, sqft=?, kitchen=?, parking=?, water_supply=?, electricity_supply=?, property_type=? WHERE property_id=? AND owner_id=?');
@@ -97,6 +128,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
             // Optional: handle new images
             if (!empty($_FILES['image']['name']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
+                $imgSize = (int)($_FILES['image']['size'] ?? 0);
+                $imgInfo = @getimagesize($_FILES['image']['tmp_name']);
+                if ($imgSize <= 0 || $imgSize > 5242880 || $imgInfo === false) {
+                    $alert = ['type'=>'danger','msg'=>'Primary image must be a valid image under 5MB'];
+                } else {
                 $dir = dirname(__DIR__) . '/uploads/properties'; if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                 $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
                 $fname = 'prop_' . $pid . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext);
@@ -117,12 +153,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                         $ins->bind_param('is', $pid, $rel); $ins->execute(); $ins->close();
                     }
                 }
+                }
             }
             if (!empty($_FILES['gallery_images']['name']) && is_array($_FILES['gallery_images']['name'])) {
                 $count = count($_FILES['gallery_images']['name']);
                 $dir = dirname(__DIR__) . '/uploads/properties'; if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                 for ($i=0; $i<$count; $i++) {
                     if (empty($_FILES['gallery_images']['name'][$i]) || !is_uploaded_file($_FILES['gallery_images']['tmp_name'][$i])) { continue; }
+                    $gSize = (int)($_FILES['gallery_images']['size'][$i] ?? 0);
+                    $gInfo = @getimagesize($_FILES['gallery_images']['tmp_name'][$i]);
+                    if ($gSize <= 0 || $gSize > 5242880 || $gInfo === false) { continue; }
                     $ext = pathinfo($_FILES['gallery_images']['name'][$i], PATHINFO_EXTENSION);
                     $fname = 'prop_' . $pid . '_' . ($i+1) . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext);
                     $dest = $dir . '/' . $fname;
@@ -155,6 +195,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
     }
 }
+}
 
 [$flash, $flash_type] = get_flash();
 ?>
@@ -178,6 +219,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
   <form method="post" enctype="multipart/form-data" class="row g-3">
     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+    <input type="hidden" name="action" value="update">
     <div class="col-12 col-md-6">
       <label class="form-label">Title</label>
       <input name="title" class="form-control" value="<?php echo htmlspecialchars($prop['title'] ?? ''); ?>" required>
@@ -286,6 +328,34 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       <label class="form-label">Address</label>
       <input name="address" class="form-control" value="<?php echo htmlspecialchars((string)($loc['address'] ?? '')); ?>">
     </div>
+
+    <?php if ($images): ?>
+    <div class="col-12">
+      <label class="form-label d-block">Current Images</label>
+      <div class="row g-3">
+        <?php foreach ($images as $img): ?>
+          <div class="col-6 col-md-3">
+            <div class="card h-100">
+              <img src="<?php echo htmlspecialchars($img['image_path']); ?>" class="card-img-top" alt="property image">
+              <div class="card-body p-2">
+                <?php if ((int)($img['is_primary'] ?? 0) === 1): ?>
+                  <span class="badge text-bg-primary">Primary</span>
+                <?php endif; ?>
+              </div>
+              <div class="card-footer p-2 text-end">
+                <form method="post" class="d-inline" onsubmit="return confirm('Delete this image?');">
+                  <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                  <input type="hidden" name="action" value="delete_image">
+                  <input type="hidden" name="image_id" value="<?php echo (int)$img['image_id']; ?>">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <div class="col-12">
       <label class="form-label">Replace Primary Image (optional)</label>

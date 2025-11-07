@@ -230,6 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $type = 'error';
                 }
                 $ins->close();
+                }
             } else {
                 $flash = 'Please fill all required fields (including location)';
                 $type = 'error';
