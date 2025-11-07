@@ -60,37 +60,18 @@
     </div>
 
     <div class="row g-3 mt-3">
-      <div class="col-12 col-lg-8">
+      <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
-          <div class="card-header">System Info</div>
-          <div class="card-body">
-            <div class="row text-center g-3">
-              <div class="col-6 col-md-3">
-                <div class="p-3 bg-light rounded">OTP: <span class="fw-semibold"><?= (int)setting_get('otp_enabled','1') ? 'Enabled' : 'Disabled' ?></span></div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="p-3 bg-light rounded">OTP Len: <span class="fw-semibold"><?= (int)setting_get('otp_length','6') ?></span></div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="p-3 bg-light rounded">Expiry: <span class="fw-semibold"><?= (int)setting_get('otp_expiry_minutes','5') ?>m</span></div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="p-3 bg-light rounded">Attempts: <span class="fw-semibold"><?= (int)setting_get('otp_max_attempts','5') ?></span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-12 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header">Shortcuts</div>
-          <div class="list-group list-group-flush">
-            <a href="otp_management.php" class="list-group-item list-group-item-action">OTP Management</a>
-            <a href="includes/profile.php" class="list-group-item list-group-item-action">Super Admin Profile</a>
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">Uploads Management</h5>
+            <p class="card-text text-muted">Manage uploaded files and images.</p>
+            <a href="uploads_management.php" class="btn btn-primary mt-auto">Open</a>
           </div>
         </div>
       </div>
     </div>
+
+   
   </div>
 
   <?php require_once __DIR__ . '/../public/includes/footer.php'; ?>

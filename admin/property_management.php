@@ -53,14 +53,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($pid <= 0 || !in_array($new_status, $allowed_status, true)) {
                 $error = 'Bad input';
             } else {
-                $stmt = db()->prepare('UPDATE properties SET status = ? WHERE property_id = ?');
-                $stmt->bind_param('si', $new_status, $pid);
-                if ($stmt->execute()) {
-                    $okmsg = 'Status updated';
+                // Fetch current status and owner
+                $owner_id = 0; $cur_status = '';
+                $g = db()->prepare('SELECT status, owner_id FROM properties WHERE property_id=?');
+                $g->bind_param('i', $pid);
+                $g->execute();
+                $r = $g->get_result()->fetch_assoc();
+                $g->close();
+                if ($r) { $cur_status = (string)$r['status']; $owner_id = (int)$r['owner_id']; }
+
+                if ($new_status === 'available' && $cur_status !== 'available') {
+                    // Require active paid package with remaining_properties > 0
+                    $bp = null; $bp_id = 0; $rem = 0;
+                    $q = db()->prepare("SELECT bought_package_id, remaining_properties FROM bought_packages WHERE user_id=? AND status='active' AND payment_status='paid' AND (end_date IS NULL OR end_date>=NOW()) ORDER BY start_date DESC LIMIT 1");
+                    $q->bind_param('i', $owner_id);
+                    $q->execute();
+                    $bp = $q->get_result()->fetch_assoc();
+                    $q->close();
+                    if (!$bp) {
+                        $error = 'Owner has no active paid package.';
+                    } else {
+                        $bp_id = (int)$bp['bought_package_id']; $rem = (int)$bp['remaining_properties'];
+                        if ($rem <= 0) {
+                            $error = 'No remaining property slots in owner\'s package.';
+                        } else {
+                            // Update then decrement
+                            $stmt = db()->prepare('UPDATE properties SET status = ? WHERE property_id = ?');
+                            $stmt->bind_param('si', $new_status, $pid);
+                            if ($stmt->execute()) {
+                                $stmt->close();
+                                $upd = db()->prepare('UPDATE bought_packages SET remaining_properties = GREATEST(remaining_properties-1,0) WHERE bought_package_id=?');
+                                $upd->bind_param('i', $bp_id);
+                                $upd->execute();
+                                $upd->close();
+                                $okmsg = 'Status updated and package quota deducted.';
+                            } else {
+                                $error = 'Update failed';
+                                $stmt->close();
+                            }
+                        }
+                    }
                 } else {
-                    $error = 'Update failed';
+                    // Other transitions without quota logic
+                    $stmt = db()->prepare('UPDATE properties SET status = ? WHERE property_id = ?');
+                    $stmt->bind_param('si', $new_status, $pid);
+                    if ($stmt->execute()) { $okmsg = 'Status updated'; } else { $error = 'Update failed'; }
+                    $stmt->close();
                 }
-                $stmt->close();
             }
         }
     }

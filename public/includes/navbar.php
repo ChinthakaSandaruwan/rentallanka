@@ -105,9 +105,13 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
 
             <?php
               // Role-specific notifications page URL
-              $notifUrl = $base_url . '/customer/notification.php';
-              if ($role === 'admin') { $notifUrl = $base_url . '/admin/notification.php'; }
-              elseif ($role === 'owner') { $notifUrl = $base_url . '/owner/notification.php'; }
+              if ($isSuper) {
+                $notifUrl = $base_url . '/superAdmin/notification.php';
+              } else {
+                $notifUrl = $base_url . '/customer/notification.php';
+                if ($role === 'admin') { $notifUrl = $base_url . '/admin/notification.php'; }
+                elseif ($role === 'owner') { $notifUrl = $base_url . '/owner/notification.php'; }
+              }
             ?>
             <a href="<?= $notifUrl ?>" class="btn btn-outline-secondary position-relative btn-sm" title="Notifications">
               <i class="bi bi-bell"></i>

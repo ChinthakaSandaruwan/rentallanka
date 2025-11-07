@@ -9,10 +9,11 @@ $sid = (int)$_SESSION['super_admin_id'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'update_profile') {
+        $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
-        $stmt = db()->prepare('UPDATE super_admins SET email = ?, phone = ? WHERE super_admin_id = ?');
-        $stmt->bind_param('ssi', $email, $phone, $sid);
+        $stmt = db()->prepare('UPDATE super_admins SET name = ?, email = ?, phone = ? WHERE super_admin_id = ?');
+        $stmt->bind_param('sssi', $name, $email, $phone, $sid);
         $stmt->execute();
         $stmt->close();
         redirect_with_message($base_url . '/superAdmin/includes/profile.php', 'Profile updated');
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Load current SA data
-$stmt = db()->prepare('SELECT name, email, phone, created_at, last_login_at, last_login_ip FROM super_admins WHERE super_admin_id = ? LIMIT 1');
+$stmt = db()->prepare('SELECT name, email, phone, status, created_at, last_login_at, last_login_ip FROM super_admins WHERE super_admin_id = ? LIMIT 1');
 $stmt->bind_param('i', $sid);
 $stmt->execute();
 $res = $stmt->get_result();
@@ -74,14 +75,21 @@ $stmt->close();
           </div>
 
           <ul class="list-group mb-4">
+            <li class="list-group-item d-flex justify-content-between"><span>ID</span><span><?= (int)$sid ?></span></li>
+            <li class="list-group-item d-flex justify-content-between"><span>Name</span><span><?= htmlspecialchars($sa['name'] ?? '-') ?></span></li>
             <li class="list-group-item d-flex justify-content-between"><span>Email</span><span><?= htmlspecialchars($sa['email'] ?? '-') ?></span></li>
             <li class="list-group-item d-flex justify-content-between"><span>Phone</span><span><?= htmlspecialchars($sa['phone'] ?? '-') ?></span></li>
+            <li class="list-group-item d-flex justify-content-between"><span>Status</span><span><?= htmlspecialchars($sa['status'] ?? '-') ?></span></li>
             <li class="list-group-item d-flex justify-content-between"><span>Last Login</span><span><?= htmlspecialchars($sa['last_login_at'] ?: '-') ?> <?= $sa['last_login_ip'] ? '(' . htmlspecialchars($sa['last_login_ip']) . ')' : '' ?></span></li>
             <li class="list-group-item d-flex justify-content-between"><span>Created</span><span><?= htmlspecialchars($sa['created_at'] ?? '-') ?></span></li>
           </ul>
 
           <h5 class="mb-3">Edit Profile</h5>
           <form method="post" class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Name</label>
+              <input type="text" class="form-control" name="name" value="<?= htmlspecialchars($sa['name'] ?? '') ?>">
+            </div>
             <div class="col-12 col-md-6">
               <label class="form-label">Email</label>
               <input type="email" class="form-control" name="email" value="<?= htmlspecialchars($sa['email'] ?? '') ?>">

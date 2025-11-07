@@ -48,8 +48,6 @@ function norm_url($p) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $start = trim($_POST['start_date'] ?? '');
   $end = trim($_POST['end_date'] ?? '');
-  $child_count = (int)($_POST['child_count'] ?? 0);
-  $adult_count = (int)($_POST['adult_count'] ?? 0);
   $cust_id = (int)($_SESSION['user']['user_id'] ?? 0);
   if (!$cust_id || !$room) {
     redirect_with_message($GLOBALS['base_url'] . '/index.php', 'Invalid request', 'error');
@@ -67,14 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
   if (!$start || !$end || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end) || strtotime($end) < strtotime($start)) {
     redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Invalid dates', 'error');
-  }
-  // validate people counts
-  if ($child_count < 0 || $adult_count < 0) {
-    redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Invalid people counts', 'error');
-  }
-  $capacity = (int)($room['total_people_count'] ?? 0);
-  if ($capacity > 0 && ($child_count + $adult_count) > $capacity) {
-    redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'People exceed room capacity', 'error');
   }
   // calculate totals
   $days = (int)max(1, round((strtotime($end) - strtotime($start)) / 86400));
@@ -136,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <dt class="col-sm-4">Owner</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['owner_name'] ?? ''); ?></dd>
             <dt class="col-sm-4">Type</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['room_type'] ?? ''); ?></dd>
             <dt class="col-sm-4">Beds</dt><dd class="col-sm-8"><?php echo (int)$room['beds']; ?></dd>
-            <dt class="col-sm-4">Max people</dt><dd class="col-sm-8"><?php echo (int)($room['total_people_count'] ?? 0); ?></dd>
+            <dt class="col-sm-4">Max guests</dt><dd class="col-sm-8"><?php echo (int)($room['maximum_guests'] ?? 0); ?></dd>
             <dt class="col-sm-4">Price / day</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$room['price_per_day'], 2); ?></dd>
           </dl>
           <div class="mt-3">
@@ -158,17 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <input type="date" name="end_date" class="form-control" min="<?php echo date('Y-m-d'); ?>" required>
               <div class="form-text">Same-day stay is allowed.</div>
             </div>
-            <div class="col-6 col-md-3">
-              <label class="form-label">Children</label>
-              <input type="number" name="child_count" class="form-control" min="0" value="0" max="<?php echo (int)($room['total_people_count'] ?? 0); ?>">
-            </div>
-            <div class="col-6 col-md-3">
-              <label class="form-label">Adults</label>
-              <input type="number" name="adult_count" class="form-control" min="0" value="1" max="<?php echo (int)($room['total_people_count'] ?? 0); ?>">
-            </div>
-            <div class="col-12 text-muted small">
-              Maximum people allowed: <strong><?php echo (int)($room['total_people_count'] ?? 0); ?></strong>
-            </div>
+            <!-- People counts removed per spec; capacity available as info above -->
             <div class="col-12">
               <button type="submit" class="btn btn-primary">Continue</button>
               <span class="text-muted ms-2">(Form submission wiring pending)</span>
@@ -208,29 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <?php require_once __DIR__ . '/footer.php'; ?>
 <script>
-  (function(){
-    var form = document.getElementById('rent-form');
-    if (!form) return;
-    var child = form.querySelector('input[name="child_count"]');
-    var adult = form.querySelector('input[name="adult_count"]');
-    var max = <?php echo (int)($room['total_people_count'] ?? 0); ?>;
-    var errorEl = document.createElement('div');
-    errorEl.className = 'text-danger small';
-    errorEl.style.display = 'none';
-    errorEl.textContent = 'Total people exceeds maximum allowed (' + max + ').';
-    form.appendChild(errorEl);
-    function validate(){
-      var c = parseInt(child.value || '0', 10);
-      var a = parseInt(adult.value || '0', 10);
-      var total = (isNaN(c)?0:c) + (isNaN(a)?0:a);
-      var ok = total >= 1 && (max <= 0 || total <= max);
-      errorEl.style.display = ok ? 'none' : '';
-      return ok;
-    }
-    child.addEventListener('input', validate);
-    adult.addEventListener('input', validate);
-    form.addEventListener('submit', function(e){ if (!validate()) { e.preventDefault(); e.stopPropagation(); } });
-  })();
+  (function(){ /* people validation removed */ })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -131,10 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $room_type = $_POST['room_type'] ?? 'other';
             $description = trim($_POST['description'] ?? '');
             $beds = (int)($_POST['beds'] ?? 1);
-            $total_people_count = (int)($_POST['total_people_count'] ?? 1);
+            $maximum_guests = (int)($_POST['maximum_guests'] ?? 1);
             $price_per_day = (float)($_POST['price_per_day'] ?? 0);
             $status = 'pending';
-            $allowed_types = ['single','double','suite','dorm','other'];
+            $allowed_types = ['single','double','twin','suite','deluxe','family','studio','dorm','apartment','villa','penthouse','shared','conference','meeting','other'];
             if (!in_array($room_type, $allowed_types, true)) { $room_type = 'other'; }
             // Location fields (FK IDs)
             $province_id = (int)($_POST['province_id'] ?? 0);
@@ -143,9 +143,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $address = trim($_POST['address'] ?? '');
             $postal_code = trim($_POST['postal_code'] ?? '');
 
-            if ($title !== '' && $price_per_day >= 0 && $beds >= 0 && $total_people_count >= 1 && $province_id > 0 && $district_id > 0 && $city_id > 0 && $postal_code !== '') {
-                $ins = db()->prepare("INSERT INTO rooms (owner_id, title, room_type, description, beds, total_people_count, price_per_day, status) VALUES (?,?,?,?,?,?,?,?)");
-                $ins->bind_param('isssiids', $owner_id, $title, $room_type, $description, $beds, $total_people_count, $price_per_day, $status);
+            if ($title !== '' && $price_per_day >= 0 && $beds >= 0 && $maximum_guests >= 1 && $province_id > 0 && $district_id > 0 && $city_id > 0 && $postal_code !== '') {
+                // Enforce active and paid bought package for rooms
+                $bp = null; $bp_id = 0; $rem_rooms = 0;
+                try {
+                    $q = db()->prepare("SELECT bought_package_id, remaining_rooms, end_date FROM bought_packages WHERE user_id=? AND status='active' AND payment_status='paid' AND (end_date IS NULL OR end_date>=NOW()) ORDER BY start_date DESC LIMIT 1");
+                    $q->bind_param('i', $owner_id);
+                    $q->execute();
+                    $bp = $q->get_result()->fetch_assoc();
+                    $q->close();
+                    if ($bp) { $bp_id = (int)$bp['bought_package_id']; $rem_rooms = (int)$bp['remaining_rooms']; }
+                } catch (Throwable $e) { /* ignore */ }
+                if ($bp_id <= 0) {
+                    redirect_with_message($GLOBALS['base_url'] . '/owner/buy_advertising_packages.php', 'Please buy a room package and complete payment before adding a room.', 'error');
+                }
+                if ($rem_rooms <= 0) {
+                    redirect_with_message($GLOBALS['base_url'] . '/owner/buy_advertising_packages.php', 'Your package does not have remaining room slots.', 'error');
+                }
+                $ins = db()->prepare("INSERT INTO rooms (owner_id, title, room_type, description, beds, maximum_guests, price_per_day, status) VALUES (?,?,?,?,?,?,?,?)");
+                $ins->bind_param('isssiids', $owner_id, $title, $room_type, $description, $beds, $maximum_guests, $price_per_day, $status);
                 if ($ins->execute()) {
                     $new_room_id = db()->insert_id;
                     // Insert location linked to room with FK IDs
@@ -209,21 +225,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
                     }
-                    // Upload payment slip (required)
-                    if (!empty($_FILES['payment_slip']['name']) && is_uploaded_file($_FILES['payment_slip']['tmp_name'])) {
-                        $dir2 = dirname(__DIR__) . '/uploads/room_slips';
-                        if (!is_dir($dir2)) { @mkdir($dir2, 0775, true); }
-                        $ext2 = pathinfo($_FILES['payment_slip']['name'], PATHINFO_EXTENSION);
-                        $fname2 = 'rps_' . $new_room_id . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext2);
-                        $dest2 = $dir2 . '/' . $fname2;
-                        if (move_uploaded_file($_FILES['payment_slip']['tmp_name'], $dest2)) {
-                            $rel2 = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/room_slips/' . $fname2;
-                            $slipIns = db()->prepare('INSERT INTO room_payment_slips (room_id, slip_path) VALUES (?, ?)');
-                            $slipIns->bind_param('is', $new_room_id, $rel2);
-                            $slipIns->execute();
-                            $slipIns->close();
+                    // Payment slip not used
+                    // Notify admins about new room listing
+                    try {
+                        $owner_name = (string)($_SESSION['user']['name'] ?? 'Owner');
+                        $room_title = (string)$title;
+                        $ntitle = '🛎️ New Room Listed!';
+                        $nmsg = 'A new room titled ' . $room_title . ' has been listed by ' . $owner_name . '. Please review and approve it.';
+                        $adm = db()->query("SELECT user_id FROM users WHERE role='admin'");
+                        if ($adm) {
+                            while ($ar = $adm->fetch_assoc()) {
+                                $uid_admin = (int)$ar['user_id'];
+                                $insN = db()->prepare('INSERT INTO notifications (user_id, title, message, type, is_read) VALUES (?, ?, ?, ?, 0)');
+                                if ($insN) {
+                                    $ntype = 'system';
+                                    $insN->bind_param('isss', $uid_admin, $ntitle, $nmsg, $ntype);
+                                    $insN->execute();
+                                    $insN->close();
+                                }
+                            }
                         }
-                    }
+                    } catch (Throwable $e) { /* ignore notification errors */ }
+                    // Decrement remaining room slots
+                    try {
+                        $upd = db()->prepare('UPDATE bought_packages SET remaining_rooms = GREATEST(remaining_rooms-1,0) WHERE bought_package_id=?');
+                        $upd->bind_param('i', $bp_id);
+                        $upd->execute();
+                        $upd->close();
+                    } catch (Throwable $e) { /* ignore */ }
                     $flash = 'Room submitted. Awaiting admin approval.';
                     $type = 'success';
                 } else {
@@ -303,8 +332,18 @@ $rs->close();
                 <select name="room_type" class="form-select">
                   <option value="single">Single</option>
                   <option value="double">Double</option>
+                  <option value="twin">Twin</option>
                   <option value="suite">Suite</option>
+                  <option value="deluxe">Deluxe</option>
+                  <option value="family">Family</option>
+                  <option value="studio">Studio</option>
                   <option value="dorm">Dorm</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="villa">Villa</option>
+                  <option value="penthouse">Penthouse</option>
+                  <option value="shared">Shared</option>
+                  <option value="conference">Conference</option>
+                  <option value="meeting">Meeting</option>
                   <option value="other" selected>Other</option>
                 </select>
               </div>
@@ -345,8 +384,8 @@ $rs->close();
                 </div>
               </div>
               <div class="mb-3">
-                <label class="form-label">Total People Count</label>
-                <input name="total_people_count" type="number" min="1" value="1" class="form-control" required>
+                <label class="form-label">Maximum Guests</label>
+                <input name="maximum_guests" type="number" min="1" value="1" class="form-control" required>
               </div>
               <div class="mb-3">
                 <label class="form-label">Primary Image</label>
@@ -360,10 +399,7 @@ $rs->close();
                 <label class="form-label">Room Image</label>
                 <input type="file" name="image_legacy" accept="image/*" class="form-control d-none">
               </div>
-              <div class="mb-3">
-                <label class="form-label">Payment Slip</label>
-                <input type="file" name="payment_slip" accept="image/*,application/pdf" class="form-control" required>
-              </div>
+              
               <button type="submit" class="btn btn-primary">Add Room</button>
             </form>
           </div>

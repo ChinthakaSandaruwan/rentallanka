@@ -21,10 +21,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if ($pid <= 0 || !in_array($new_status, $allowed_status, true)) {
         $pv_error = 'Bad input';
       } else {
-        $st = db()->prepare('UPDATE properties SET status = ? WHERE property_id = ?');
-        $st->bind_param('si', $new_status, $pid);
-        if ($st->execute()) { $pv_ok = 'Status updated'; } else { $pv_error = 'Update failed'; }
-        $st->close();
+        // Get current status and owner
+        $cur = null; $owner_id = 0; $cur_status = '';
+        $g = db()->prepare('SELECT status, owner_id FROM properties WHERE property_id=?');
+        $g->bind_param('i', $pid);
+        $g->execute();
+        $r = $g->get_result()->fetch_assoc();
+        $g->close();
+        if ($r) { $cur_status = (string)$r['status']; $owner_id = (int)$r['owner_id']; }
+        if ($new_status === 'available' && $cur_status !== 'available') {
+          // Require active paid package with remaining_properties > 0
+          $bp = null; $bp_id = 0; $rem = 0;
+          $q = db()->prepare("SELECT bought_package_id, remaining_properties FROM bought_packages WHERE user_id=? AND status='active' AND payment_status='paid' AND (end_date IS NULL OR end_date>=NOW()) ORDER BY start_date DESC LIMIT 1");
+          $q->bind_param('i', $owner_id);
+          $q->execute();
+          $bp = $q->get_result()->fetch_assoc();
+          $q->close();
+          if (!$bp) {
+            $pv_error = 'Owner has no active paid package.';
+          } else {
+            $bp_id = (int)$bp['bought_package_id']; $rem = (int)$bp['remaining_properties'];
+            if ($rem <= 0) {
+              $pv_error = 'No remaining property slots in owner\'s package.';
+            } else {
+              // Update status then decrement
+              $st = db()->prepare('UPDATE properties SET status = ? WHERE property_id = ?');
+              $st->bind_param('si', $new_status, $pid);
+              if ($st->execute()) {
+                $st->close();
+                $upd = db()->prepare('UPDATE bought_packages SET remaining_properties = GREATEST(remaining_properties-1,0) WHERE bought_package_id=?');
+                $upd->bind_param('i', $bp_id);
+                $upd->execute();
+                $upd->close();
+                $pv_ok = 'Status updated and package quota deducted.';
+              } else { $pv_error = 'Update failed'; $st->close(); }
+            }
+          }
+        } else {
+          // Non-approval or no transition
+          $st = db()->prepare('UPDATE properties SET status = ? WHERE property_id = ?');
+          $st->bind_param('si', $new_status, $pid);
+          if ($st->execute()) { $pv_ok = 'Status updated'; } else { $pv_error = 'Update failed'; }
+          $st->close();
+        }
       }
     } elseif ($action === 'delete') {
       if ($pid > 0) {
@@ -64,14 +103,8 @@ if (!$prop) {
   redirect_with_message('property_management.php', 'Property not found', 'error');
 }
 
-// Fetch payment slips
+// Payment slips not used / table may not exist; skip querying
 $slips = [];
-$sp = db()->prepare('SELECT slip_id, slip_path, uploaded_at FROM property_payment_slips WHERE property_id = ? ORDER BY slip_id DESC');
-$sp->bind_param('i', $pid);
-$sp->execute();
-$rsp = $sp->get_result();
-while ($row = $rsp->fetch_assoc()) { $slips[] = $row; }
-$sp->close();
 
 // Fetch property images (primary first)
 $gallery = [];
@@ -151,10 +184,10 @@ $gp->close();
               <?php if (array_key_exists('pool', $prop)): ?>
                 <dt class="col-sm-4">Pool</dt><dd class="col-sm-8"><?php echo ((int)$prop['pool'] ? 'Yes' : 'No'); ?></dd>
               <?php endif; ?>
-              <dt class="col-sm-4">Kitchen</dt><dd class="col-sm-8"><?php echo ((int)($prop['has_kitchen'] ?? 0) ? 'Yes' : 'No'); ?></dd>
-              <dt class="col-sm-4">Parking</dt><dd class="col-sm-8"><?php echo ((int)($prop['has_parking'] ?? 0) ? 'Yes' : 'No'); ?></dd>
-              <dt class="col-sm-4">Water</dt><dd class="col-sm-8"><?php echo ((int)($prop['has_water_supply'] ?? 0) ? 'Yes' : 'No'); ?></dd>
-              <dt class="col-sm-4">Electricity</dt><dd class="col-sm-8"><?php echo ((int)($prop['has_electricity_supply'] ?? 0) ? 'Yes' : 'No'); ?></dd>
+              <dt class="col-sm-4">Kitchen</dt><dd class="col-sm-8"><?php echo ((int)($prop['kitchen'] ?? 0) ? 'Yes' : 'No'); ?></dd>
+              <dt class="col-sm-4">Parking</dt><dd class="col-sm-8"><?php echo ((int)($prop['parking'] ?? 0) ? 'Yes' : 'No'); ?></dd>
+              <dt class="col-sm-4">Water</dt><dd class="col-sm-8"><?php echo ((int)($prop['water_supply'] ?? 0) ? 'Yes' : 'No'); ?></dd>
+              <dt class="col-sm-4">Electricity</dt><dd class="col-sm-8"><?php echo ((int)($prop['electricity_supply'] ?? 0) ? 'Yes' : 'No'); ?></dd>
             </dl>
             <div class="mt-3">
               <div class="fw-semibold mb-1">Description</div>

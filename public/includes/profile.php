@@ -1,13 +1,12 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
 
-$isSuper = isset($_SESSION['super_admin_id']) && (int)$_SESSION['super_admin_id'] > 0;
 $loggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
-if (!$isSuper && !$loggedIn) {
+if (!$loggedIn) {
     redirect_with_message($base_url . '/auth/login.php', 'Please log in first', 'error');
 }
 
-$role = $_SESSION['role'] ?? ($isSuper ? 'super_admin' : '');
+$role = $_SESSION['role'] ?? '';
 $user = $_SESSION['user'] ?? null; // for non-super users
 
 // Prepare display data
@@ -23,8 +22,8 @@ $display = [
     'created_at' => '',
 ];
 
-// For non-super users, refresh details from DB (including profile_image)
-if (!$isSuper && $display['id'] !== null) {
+// Refresh details from DB (including profile_image) for logged-in user
+if ($display['id'] !== null) {
     $uid = (int)$display['id'];
     $stmtU = db()->prepare('SELECT name, nic, email, phone, profile_image, role, status, created_at FROM users WHERE user_id = ? LIMIT 1');
     $stmtU->bind_param('i', $uid);
@@ -43,51 +42,9 @@ if (!$isSuper && $display['id'] !== null) {
     $stmtU->close();
 }
 
-if ($isSuper) {
-    $sid = (int)$_SESSION['super_admin_id'];
-    $stmt = db()->prepare('SELECT name, email, phone, status, created_at FROM super_admins WHERE super_admin_id = ? LIMIT 1');
-    $stmt->bind_param('i', $sid);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $sa = $res->fetch_assoc();
-    $stmt->close();
-    if ($sa) {
-        $display['role'] = 'super_admin';
-        $display['name'] = (string)($sa['name'] ?? '');
-        $display['email'] = (string)($sa['email'] ?? '');
-        $display['phone'] = (string)($sa['phone'] ?? '');
-        $display['id'] = $sid;
-        $display['status'] = (string)($sa['status'] ?? '');
-        $display['created_at'] = (string)($sa['created_at'] ?? '');
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
-    if ($isSuper) {
-        if ($action === 'update_super_admin_profile') {
-            $email = trim($_POST['email'] ?? '');
-            $phone = trim($_POST['phone'] ?? '');
-            $stmt = db()->prepare('UPDATE super_admins SET email = ?, phone = ? WHERE super_admin_id = ?');
-            $stmt->bind_param('ssi', $email, $phone, $display['id']);
-            $stmt->execute();
-            $stmt->close();
-            redirect_with_message($base_url . '/public/includes/profile.php', 'Profile updated');
-        } elseif ($action === 'change_super_admin_password') {
-            $pwd = (string)($_POST['new_password'] ?? '');
-            $pwd2 = (string)($_POST['confirm_password'] ?? '');
-            if ($pwd === '' || $pwd !== $pwd2) {
-                redirect_with_message($base_url . '/public/includes/profile.php', 'Password mismatch', 'error');
-            }
-            $hash = password_hash($pwd, PASSWORD_BCRYPT);
-            $stmt = db()->prepare('UPDATE super_admins SET password_hash = ? WHERE super_admin_id = ?');
-            $stmt->bind_param('si', $hash, $display['id']);
-            $stmt->execute();
-            $stmt->close();
-            redirect_with_message($base_url . '/public/includes/profile.php', 'Password changed');
-        }
-    } else {
-        if ($action === 'update_user_profile') {
+    if ($action === 'update_user_profile') {
             $email = trim($_POST['email'] ?? '');
             $phone = trim($_POST['phone'] ?? '');
             $uid = (int)($display['id'] ?? 0);
@@ -126,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user']['phone'] = $phone;
             $_SESSION['user']['email'] = $email;
             redirect_with_message($base_url . '/public/includes/profile.php', 'Profile updated');
-        } elseif ($action === 'delete_user_account') {
+    } elseif ($action === 'delete_user_account') {
             $uid = (int)($display['id'] ?? 0);
             if ($uid <= 0) {
                 redirect_with_message($base_url . '/public/includes/profile.php', 'Invalid user', 'error');
@@ -137,7 +94,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
             session_destroy();
             redirect_with_message($base_url . '/index.php', 'Account deleted');
-        }
     }
 }
 ?>
@@ -161,8 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="mb-3 d-flex align-items-center gap-2">
             <?php
               $badgeClass = 'bg-secondary';
-              if ($display['role'] === 'super_admin') $badgeClass = 'bg-danger';
-              elseif ($display['role'] === 'admin') $badgeClass = 'bg-danger';
+              if ($display['role'] === 'admin') $badgeClass = 'bg-danger';
               elseif ($display['role'] === 'owner') $badgeClass = 'bg-success';
               elseif ($display['role'] === 'customer') $badgeClass = 'bg-primary';
             ?>
@@ -172,11 +127,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
           </div>
           <div class="text-center mb-3">
-            <?php if (!$isSuper && !empty($display['profile_image'])): ?>
+            <?php if (!empty($display['profile_image'])): ?>
               <img src="<?= $base_url . '/' . ltrim($display['profile_image'], '/') ?>" alt="Profile" class="rounded-circle" style="width: 96px; height:96px; object-fit: cover;">
             <?php else: ?>
               <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" style="width:96px;height:96px;color:white;">
-                <span style="font-weight:600;"><?= $isSuper ? 'SA' : 'No Image' ?></span>
+                <span style="font-weight:600;">No Image</span>
               </div>
             <?php endif; ?>
           </div>
@@ -209,9 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
           <div class="d-flex flex-wrap gap-2 mt-3">
             <a class="btn btn-secondary" href="<?= $base_url ?>/">Home</a>
-            <?php if ($display['role'] === 'super_admin'): ?>
-              <a class="btn btn-outline-danger" href="<?= $base_url ?>/superAdmin/index.php">Super Admin Dashboard</a>
-            <?php elseif ($display['role'] === 'admin'): ?>
+            <?php if ($display['role'] === 'admin'): ?>
               <a class="btn btn-outline-danger" href="<?= $base_url ?>/admin/index.php">Admin Dashboard</a>
             <?php elseif ($display['role'] === 'owner'): ?>
               <a class="btn btn-outline-success" href="<?= $base_url ?>/owner/index.php">Owner Dashboard</a>
@@ -220,40 +173,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             <a class="btn btn-outline-danger ms-auto" href="<?= $base_url ?>/auth/logout.php">Logout</a>
           </div>
-
-          <?php if ($display['role'] === 'super_admin'): ?>
-          <hr>
-          <h5 class="mb-3">Edit Profile</h5>
-          <form method="post" class="row g-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-control" name="email" value="<?= htmlspecialchars($display['email']) ?>" />
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label">Phone</label>
-              <input type="text" class="form-control" name="phone" value="<?= htmlspecialchars($display['phone']) ?>" />
-            </div>
-            <div class="col-12">
-              <input type="hidden" name="action" value="update_super_admin_profile" />
-              <button class="btn btn-primary" type="submit">Save</button>
-            </div>
-          </form>
-          <h5 class="mt-4">Change Password</h5>
-          <form method="post" class="row g-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label">New Password</label>
-              <input type="password" class="form-control" name="new_password" required />
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label">Confirm Password</label>
-              <input type="password" class="form-control" name="confirm_password" required />
-            </div>
-            <div class="col-12">
-              <input type="hidden" name="action" value="change_super_admin_password" />
-              <button class="btn btn-warning" type="submit">Change Password</button>
-            </div>
-          </form>
-          <?php else: ?>
           <hr>
           <h5 class="mb-3">Edit Profile</h5>
           <form method="post" enctype="multipart/form-data" class="row g-3">
@@ -277,7 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endif; ?>
             </div>
           </form>
-          <?php endif; ?>
+
         </div>
       </div>
     </div>

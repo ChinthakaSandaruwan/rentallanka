@@ -62,6 +62,33 @@
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">Packages Management</h5>
+              <i class="bi bi-person-gear card-icon"></i>
+            </div>
+            <p class="card-text text-muted">Create, edit, and manage packages.</p>
+            <a href="packages_management.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+
+      
+          <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">Bought Packages Management</h5>
+              <i class="bi bi-person-gear card-icon"></i>
+            </div>
+            <p class="card-text text-muted">Create, edit, and manage bought packages.</p>
+            <a href="bought_packages_management.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">Profile</h5>
               <i class="bi bi-person-circle card-icon"></i>
             </div>
@@ -99,18 +126,7 @@
         </div>
       </div>
 
-      <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card h-100">
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <h5 class="card-title mb-0">Location Management</h5>
-              <i class="bi bi-person-circle card-icon"></i>
-            </div>
-            <p class="card-text text-muted">Manage locations.</p>
-            <a href="location_management.php" class="btn btn-primary mt-auto">Open</a>
-          </div>
-        </div>
-      </div>
+     
 
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
@@ -125,45 +141,26 @@
         </div>
       </div>
 
-
-    </div>
-
-
-
-    <div class="row g-3 mt-3">
-      <div class="col-12 col-lg-8">
+      <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
-          <div class="card-header">Info</div>
-          <div class="card-body">
-            <div class="row text-center g-3">
-              <div class="col-6 col-md-3">
-                <div class="p-3 bg-light rounded">Role: <span class="fw-semibold">Admin</span></div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="p-3 bg-light rounded">Logged in</div>
-              </div>
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">Footer Management</h5>
+              <i class="bi bi-person-circle card-icon"></i>
             </div>
+            <p class="card-text text-muted">Manage footer.</p>
+            <a href="footer_management.php" class="btn btn-primary mt-auto">Open</a>
           </div>
         </div>
       </div>
 
 
-
-
-      <div class="col-12 col-lg-4">
-        <div class="card h-100">
-          <div class="card-header">Shortcuts</div>
-          <div class="list-group list-group-flush">
-            <a href="customer_management.php" class="list-group-item list-group-item-action">Customer Management</a>
-            <a href="admin_management.php" class="list-group-item list-group-item-action">Admin Management</a>
-            <a href="property_management.php" class="list-group-item list-group-item-action">Property Management</a>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <?php require_once __DIR__ . '/../public/includes/footer.php'; ?>
+
+
+   
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

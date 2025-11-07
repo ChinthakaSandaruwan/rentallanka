@@ -1,7 +1,12 @@
-[06-Nov-2025 16:44:24 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
-[06-Nov-2025 16:44:31 Asia/Colombo] mailer_send: PHPMailer not found. Install phpmailer/phpmailer via Composer or place PHPMailer src in php_mailer/PHPMailer
-[06-Nov-2025 17:14:04 Asia/Colombo] [2025-11-06 17:14:04] Uncaught Exception: mysqli_sql_exception: Duplicate entry 'chinthakasw000@gmail.com' for key 'users.uk_users_email' in C:\xampp\htdocs\rentallanka\auth\register.php:62
-
-[06-Nov-2025 17:14:16 Asia/Colombo] [2025-11-06 17:14:16] Uncaught Exception: mysqli_sql_exception: Duplicate entry 'chinthakasw000@gmail.com' for key 'users.uk_users_email' in C:\xampp\htdocs\rentallanka\auth\register.php:62
-
-[06-Nov-2025 17:17:15 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[07-Nov-2025 14:14:36 Asia/Colombo] [Unhandled Exception] Unknown column 'property_code' in 'field list'
+[07-Nov-2025 14:14:38 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[07-Nov-2025 14:14:44 Asia/Colombo] [Unhandled Exception] Unknown column 'property_code' in 'field list'
+[07-Nov-2025 14:14:46 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[07-Nov-2025 14:21:31 Asia/Colombo] [Unhandled Exception] Table 'rentallanka.property_payment_slips' doesn't exist
+[07-Nov-2025 14:21:33 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[07-Nov-2025 14:39:34 Asia/Colombo] [Unhandled Exception] Unknown column 'slip_id' in 'field list'
+[07-Nov-2025 14:39:36 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[07-Nov-2025 14:39:36 Asia/Colombo] [Unhandled Exception] Unknown column 'slip_id' in 'field list'
+[07-Nov-2025 14:39:38 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[07-Nov-2025 14:40:07 Asia/Colombo] [Unhandled Exception] Unknown column 'slip_id' in 'field list'
+[07-Nov-2025 14:40:09 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)

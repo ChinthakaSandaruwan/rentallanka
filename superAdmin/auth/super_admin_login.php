@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../../config/config.php';
 
 function sa_normalize_phone_07(string $phone): string {
     $p = preg_replace('/\D+/', '', $phone);
@@ -13,46 +13,46 @@ function sa_to_e164(string $phone07): string {
 
 $error = '';
 $info = '';
-$stage = $_SESSION['sa_stage'] ?? 'credentials';
+$stage = $_SESSION['sa_stage'] ?? 'phone';
 $pending = $_SESSION['sa_pending'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
-    if ($action === 'login') {
-        $name = trim($_POST['name'] ?? '');
-        $password = (string)($_POST['password'] ?? '');
-        $stmt = db()->prepare('SELECT super_admin_id, name, password_hash, phone, status FROM super_admins WHERE name = ? LIMIT 1');
-        $stmt->bind_param('s', $name);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $sa = $res->fetch_assoc();
-        $stmt->close();
-        if (!$sa || $sa['status'] !== 'active') {
-            $error = 'Invalid credentials';
-            $stage = 'credentials';
+    if ($action === 'send_otp') {
+        $phone_input = trim($_POST['phone'] ?? '');
+        $phone07 = sa_normalize_phone_07($phone_input);
+        if ($phone07 === '') {
+            $error = 'Enter a valid phone number starting with 07';
+            $stage = 'phone';
         } else {
-            $ok = password_verify($password, (string)$sa['password_hash']);
-            if (!$ok) {
-                $error = 'Invalid credentials';
-                $stage = 'credentials';
+            $stmt = db()->prepare('SELECT super_admin_id, name, phone, status, password_hash FROM super_admins WHERE phone = ? LIMIT 1');
+            $stmt->bind_param('s', $phone07);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $sa = $res->fetch_assoc();
+            $stmt->close();
+            if (!$sa || $sa['status'] !== 'active') {
+                $error = 'No active super admin found for this phone';
+                $stage = 'phone';
             } else {
-                $otp_globally_enabled = (int)setting_get('otp_enabled', '1') === 1;
-                if (!$otp_globally_enabled) {
-                    $_SESSION['super_admin_id'] = (int)$sa['super_admin_id'];
-                    unset($_SESSION['sa_stage'], $_SESSION['sa_pending']);
-                    redirect_with_message($base_url . '/superAdmin/index.php', 'Logged in (OTP disabled)');
-                }
-                $otp_len = max(4, min(8, (int)setting_get('otp_length', '6')));
-                $otp_exp_min = max(1, min(60, (int)setting_get('otp_expiry_minutes', '5')));
-                $max = (10 ** $otp_len) - 1;
-                $otp_num = random_int(0, $max);
-                $otp = str_pad((string)$otp_num, $otp_len, '0', STR_PAD_LEFT);
-                $expires_at = (new DateTime('+' . $otp_exp_min . ' minutes'))->getTimestamp();
-                $phone07 = sa_normalize_phone_07((string)$sa['phone']);
-                if ($phone07 === '') {
-                    $error = 'No valid phone linked to this account';
+                $has_password = isset($sa['password_hash']) && (string)$sa['password_hash'] !== '';
+                if ($has_password) {
+                    $_SESSION['sa_stage'] = 'credentials';
+                    $_SESSION['sa_pending'] = [
+                        'super_admin_id' => (int)$sa['super_admin_id'],
+                        'name' => (string)$sa['name'],
+                        'phone07' => $phone07,
+                        'attempts' => 0,
+                    ];
                     $stage = 'credentials';
+                    $info = 'Enter username and password to continue';
                 } else {
+                    $otp_len = max(4, min(8, (int)setting_get('otp_length', '6')));
+                    $otp_exp_min = max(1, min(60, (int)setting_get('otp_expiry_minutes', '5')));
+                    $max = (10 ** $otp_len) - 1;
+                    $otp_num = random_int(0, $max);
+                    $otp = str_pad((string)$otp_num, $otp_len, '0', STR_PAD_LEFT);
+                    $expires_at = (new DateTime('+' . $otp_exp_min . ' minutes'))->getTimestamp();
                     $_SESSION['sa_stage'] = 'otp';
                     $_SESSION['sa_pending'] = [
                         'super_admin_id' => (int)$sa['super_admin_id'],
@@ -62,7 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'expires_ts' => $expires_at,
                         'attempts' => 0,
                     ];
-                    
                     $exp_dt = (new DateTime('+' . $otp_exp_min . ' minutes'))->format('Y-m-d H:i:s');
                     $stmt2 = db()->prepare('INSERT INTO super_admin_otps (super_admin_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
                     $sid = (int)$sa['super_admin_id'];
@@ -77,12 +76,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+    } elseif ($action === 'login') {
+        // Verify username/password for the selected super admin, then send OTP
+        $pending = $_SESSION['sa_pending'] ?? null;
+        $name = trim($_POST['name'] ?? '');
+        $password = (string)($_POST['password'] ?? '');
+        if (!$pending || $name === '' || $password === '') {
+            $error = 'Invalid request';
+            $stage = 'phone';
+            unset($_SESSION['sa_stage'], $_SESSION['sa_pending']);
+        } else {
+            $sid = (int)$pending['super_admin_id'];
+            $stmt = db()->prepare('SELECT super_admin_id, name, password_hash, phone, status FROM super_admins WHERE super_admin_id = ? AND name = ? LIMIT 1');
+            $stmt->bind_param('is', $sid, $name);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $sa = $res->fetch_assoc();
+            $stmt->close();
+            if (!$sa || $sa['status'] !== 'active' || !(isset($sa['password_hash']) && (string)$sa['password_hash'] !== '')) {
+                $error = 'Invalid credentials';
+                $stage = 'credentials';
+            } else {
+                $ok = password_verify($password, (string)$sa['password_hash']);
+                if (!$ok) {
+                    $error = 'Invalid credentials';
+                    $stage = 'credentials';
+                } else {
+                    $otp_len = max(4, min(8, (int)setting_get('otp_length', '6')));
+                    $otp_exp_min = max(1, min(60, (int)setting_get('otp_expiry_minutes', '5')));
+                    $max = (10 ** $otp_len) - 1;
+                    $otp_num = random_int(0, $max);
+                    $otp = str_pad((string)$otp_num, $otp_len, '0', STR_PAD_LEFT);
+                    $expires_at = (new DateTime('+' . $otp_exp_min . ' minutes'))->getTimestamp();
+                    $_SESSION['sa_stage'] = 'otp';
+                    $_SESSION['sa_pending'] = [
+                        'super_admin_id' => (int)$sa['super_admin_id'],
+                        'name' => (string)$sa['name'],
+                        'phone07' => sa_normalize_phone_07((string)$sa['phone']),
+                        'otp' => $otp,
+                        'expires_ts' => $expires_at,
+                        'attempts' => 0,
+                    ];
+                    $exp_dt = (new DateTime('+' . $otp_exp_min . ' minutes'))->format('Y-m-d H:i:s');
+                    $stmt2 = db()->prepare('INSERT INTO super_admin_otps (super_admin_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
+                    $sid2 = (int)$sa['super_admin_id'];
+                    $stmt2->bind_param('iss', $sid2, $otp, $exp_dt);
+                    $stmt2->execute();
+                    $stmt2->close();
+                    $prefix = trim((string)setting_get('otp_sms_prefix', 'OTP'));
+                    $sms = ($prefix !== '' ? ($prefix . ' ') : '') . $otp . ' (expires in ' . $otp_exp_min . ' min)';
+                    $phone07 = sa_normalize_phone_07((string)$sa['phone']);
+                    if ($phone07 !== '') {
+                        smslenz_send_sms(sa_to_e164($phone07), $sms);
+                    }
+                    $info = 'OTP sent to ' . ($phone07 ?: 'linked number');
+                    $stage = 'otp';
+                }
+            }
+        }
     } elseif ($action === 'verify_otp') {
         $code = trim($_POST['otp'] ?? '');
         $pending = $_SESSION['sa_pending'] ?? null;
         if (!$pending) {
             $error = 'Session expired. Please log in again';
-            $stage = 'credentials';
+            $stage = 'phone';
             unset($_SESSION['sa_stage'], $_SESSION['sa_pending']);
         } elseif (!preg_match('/^\d+$/', $code)) {
             $error = 'Invalid OTP';
@@ -92,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $now = time();
             if ($pending['attempts'] >= $max_attempts) {
                 $error = 'Too many attempts. Please log in again';
-                $stage = 'credentials';
+                $stage = 'phone';
                 unset($_SESSION['sa_stage'], $_SESSION['sa_pending']);
             } else {
                 $sid = (int)$pending['super_admin_id'];
@@ -118,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtu->close();
                     $_SESSION['super_admin_id'] = $sid;
                     unset($_SESSION['sa_stage'], $_SESSION['sa_pending']);
-                    redirect_with_message($base_url . '/superAdmin/index.php', 'Logged in');
+                    redirect_with_message($base_url . '/superAdmin/includes/profile.php', 'Logged in');
                 }
             }
         }
@@ -126,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pending = $_SESSION['sa_pending'] ?? null;
         if (!$pending) {
             $error = 'Session expired. Please log in again';
-            $stage = 'credentials';
+            $stage = 'phone';
             unset($_SESSION['sa_stage'], $_SESSION['sa_pending']);
         } else {
             $otp_len = max(4, min(8, (int)setting_get('otp_length', '6')));
@@ -151,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'reset') {
         unset($_SESSION['sa_stage'], $_SESSION['sa_pending']);
-        $stage = 'credentials';
+        $stage = 'phone';
     }
 }
 
@@ -186,10 +243,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="alert alert-success"><?php echo htmlspecialchars($info); ?></div>
                         <?php endif; ?>
 
-                        <?php if ($stage === 'credentials'): ?>
+                        <?php if ($stage === 'phone'): ?>
                         <form method="post" class="vstack gap-3">
                             <div>
-                                <label class="form-label">name</label>
+                                <label class="form-label">Phone number</label>
+                                <input type="text" class="form-control" name="phone" placeholder="07XXXXXXXX" required />
+                            </div>
+                            <input type="hidden" name="action" value="send_otp" />
+                            <button type="submit" class="btn btn-primary w-100">Send OTP</button>
+                        </form>
+                        <?php elseif ($stage === 'credentials'): ?>
+                        <form method="post" class="vstack gap-3">
+                            <div>
+                                <label class="form-label">Username</label>
                                 <input type="text" class="form-control" name="name" required />
                             </div>
                             <div>

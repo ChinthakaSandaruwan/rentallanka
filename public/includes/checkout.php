@@ -57,12 +57,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $insr = db()->prepare('INSERT INTO room_rentals (room_id, customer_id, start_date, end_date, total_price, status) VALUES (?, ?, ?, ?, ?, "active")');
         $insr->bind_param('iissd', $it['room_id'], $customer_id, $start, $end, $total);
         $insr->execute();
+        $booking_id = (int)db()->insert_id;
         $insr->close();
         // Mark room rented
         $upr = db()->prepare('UPDATE rooms SET status="rented" WHERE room_id=?');
         $upr->bind_param('i', $it['room_id']);
         $upr->execute();
         $upr->close();
+        // Send notifications (admin, owner, customer)
+        try {
+          $customer_name = (string)($_SESSION['user']['name'] ?? 'Customer');
+          $room_title = (string)($it['room_title'] ?? 'Room');
+          // Admins
+          $ntitleA = '📘 New Booking Received!';
+          $nmsgA = 'A new booking (ID: ' . $booking_id . ') has been made by ' . $customer_name . ' for ' . $room_title . '. Check and verify details.';
+          if ($adm = db()->query("SELECT user_id FROM users WHERE role='admin'")) {
+            while ($ar = $adm->fetch_assoc()) {
+              if ($insN = db()->prepare('INSERT INTO notifications (user_id, title, message, type, is_read) VALUES (?, ?, ?, ?, 0)')) {
+                $ntype = 'rental';
+                $uid_admin = (int)$ar['user_id'];
+                $insN->bind_param('isss', $uid_admin, $ntitleA, $nmsgA, $ntype);
+                $insN->execute();
+                $insN->close();
+              }
+            }
+          }
+          // Owner
+          $owner_id = 0;
+          if ($stOwn = db()->prepare('SELECT owner_id FROM rooms WHERE room_id=? LIMIT 1')) {
+            $stOwn->bind_param('i', $it['room_id']);
+            $stOwn->execute();
+            $rowOwn = $stOwn->get_result()->fetch_assoc();
+            $stOwn->close();
+            $owner_id = (int)($rowOwn['owner_id'] ?? 0);
+          }
+          if ($owner_id > 0) {
+            if ($insO = db()->prepare('INSERT INTO notifications (user_id, title, message, type, is_read) VALUES (?, ?, ?, ?, 0)')) {
+              $ntitleO = '🛎️ New Booking Request!';
+              $nmsgO = 'You’ve received a new booking request from ' . $customer_name . ' for your room ' . $room_title . ' (Check-in: ' . $start . ', Check-out: ' . $end . '). Please review and respond.';
+              $ntype = 'rental';
+              $insO->bind_param('isss', $owner_id, $ntitleO, $nmsgO, $ntype);
+              $insO->execute();
+              $insO->close();
+            }
+          }
+          // Customer
+          if ($insC = db()->prepare('INSERT INTO notifications (user_id, title, message, type, is_read) VALUES (?, ?, ?, ?, 0)')) {
+            $ntitleC = '📩 Booking Request Submitted!';
+            $nmsgC = 'Your booking request for ' . $room_title . ' has been received successfully. You’ll get a confirmation once the owner approves it.';
+            $ntype = 'rental';
+            $insC->bind_param('isss', $customer_id, $ntitleC, $nmsgC, $ntype);
+            $insC->execute();
+            $insC->close();
+          }
+        } catch (Throwable $e) { /* ignore notification errors */ }
       }
     }
     // Close cart

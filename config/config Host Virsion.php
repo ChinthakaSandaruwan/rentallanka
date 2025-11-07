@@ -1,14 +1,14 @@
 <?php
 require_once __DIR__ . '/security_bootstrap.php';
 // Base URL
-$base_url = 'http://localhost/rentallanka';
+$base_url = 'https://www.rentallanka.com';
 
 // Database connection for XAMPP default setup
 // Adjust credentials as needed for your environment
-define('DB_HOST', '127.0.0.1');
-define('DB_USER', 'root');
-define('DB_PASS', '123321555');
-define('DB_NAME', 'rentallanka');
+define('DB_HOST', 'localhost');
+define('DB_USER', 'rentalla_rentallanka');
+define('DB_PASS', 'SUMBN2003cs#10020');
+define('DB_NAME', 'rentalla_rentallanka');
 
 $smslenz_user_id = getenv('SMSLENZ_USER_ID') ?: '';
 $smslenz_api_key = getenv('SMSLENZ_API_KEY') ?: '';
@@ -19,43 +19,6 @@ $__session_status = function_exists('session_status') ? session_status() : PHP_S
 if ($__session_status === PHP_SESSION_NONE) {
     session_start();
 }
-
-/**
- * Install global handlers to automatically raise system alerts
- * for unhandled exceptions, severe PHP errors, and fatal shutdowns.
- */
-function install_system_alert_handlers(): void {
-    static $installed = false;
-    if ($installed) return; $installed = true;
-
-    set_exception_handler(function (Throwable $ex) {
-        error_log('[Unhandled Exception] ' . $ex->getMessage());
-        // Keep message concise to avoid leaking sensitive data
-        send_system_alert('Unhandled Exception', $ex->getMessage());
-    });
-
-    set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) {
-        // Only alert on severe, user-actionable errors
-        $severe = [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
-        if (in_array($errno, $severe, true)) {
-            $msg = $errstr . ' in ' . $errfile . ':' . $errline;
-            send_system_alert('PHP Error', $msg);
-        }
-        // Return false to allow normal PHP handling as well
-        return false;
-    });
-
-    register_shutdown_function(function () {
-        $e = error_get_last();
-        if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
-            $msg = $e['message'] . ' in ' . $e['file'] . ':' . $e['line'];
-            send_system_alert('Fatal Error', $msg);
-        }
-    });
-}
-
-// Ensure handlers are active for all requests including CLI scripts that include config.php
-install_system_alert_handlers();
 
 $mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if ($mysqli->connect_errno) {
@@ -149,55 +112,5 @@ function smslenz_send_sms(string $to, string $message): array {
     } catch (Throwable $e) {
     }
     return ['ok' => $ok, 'http' => $http, 'errno' => $errno, 'error' => $error, 'body' => $response];
-}
-
-/**
- * Create notifications for all admin users.
- */
-function notify_admins(string $title, string $message, string $type = 'system'): void {
-    try {
-        $res = db()->query("SELECT user_id FROM users WHERE role='admin'");
-        if ($res) {
-            while ($row = $res->fetch_assoc()) {
-                $uid = (int)$row['user_id'];
-                if ($stmt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, is_read) VALUES (?, ?, ?, ?, 0)')) {
-                    $stmt->bind_param('isss', $uid, $title, $message, $type);
-                    $stmt->execute();
-                    $stmt->close();
-                }
-            }
-        }
-    } catch (Throwable $e) {
-        error_log('[notify_admins] failed: ' . $e->getMessage());
-    }
-}
-
-/**
- * Send a system alert to Super Admins.
- * - Creates admin notifications so it’s visible in the app.
- * - Attempts SMS to all super admins using stored 07XXXXXXXX numbers.
- */
-function send_system_alert(string $alert_type, string $alert_message): void {
-    $title = '⚠️ System Alert!';
-    $msg = 'A new system alert has been generated: ' . $alert_type . ' – ' . $alert_message . '. Please check and resolve the issue immediately.';
-    // In-app visibility via Admin notifications
-    notify_admins($title, $msg, 'system');
-
-    // SMS Super Admins if phone is present
-    try {
-        $q = db()->query('SELECT phone FROM super_admins WHERE status="active"');
-        if ($q) {
-            while ($sa = $q->fetch_assoc()) {
-                $p = (string)($sa['phone'] ?? '');
-                $p = preg_replace('/\D+/', '', $p);
-                if (preg_match('/^07\d{8}$/', $p)) {
-                    $to = '+94' . substr($p, 1);
-                    smslenz_send_sms($to, 'ALERT: ' . $alert_type . ' - ' . $alert_message);
-                }
-            }
-        }
-    } catch (Throwable $e) {
-        error_log('[send_system_alert] SMS step failed: ' . $e->getMessage());
-    }
 }
 

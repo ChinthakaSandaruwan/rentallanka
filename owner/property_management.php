@@ -87,7 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $has_parking = isset($_POST['has_parking']) ? 1 : 0;
         $has_water_supply = isset($_POST['has_water_supply']) ? 1 : 0;
         $has_electricity_supply = isset($_POST['has_electricity_supply']) ? 1 : 0;
-        $allowed_types = ['house','apartment','room','commercial','other'];
+        // Align with DB enum values
+        $allowed_types = ['apartment','house','villa','duplex','studio','penthouse','bungalow','townhouse','farmhouse','office','shop','warehouse','land','commercial_building','industrial','hotel','guesthouse','resort','other'];
         $property_type = $_POST['property_type'] ?? 'other';
         if (!in_array($property_type, $allowed_types, true)) {
             $property_type = 'other';
@@ -98,7 +99,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($province_id <= 0 || $district_id <= 0 || $city_id <= 0 || $postal_code === '') {
             $error = 'Location (province, district, city, postal code) is required';
         } else {
-            $stmt = db()->prepare('INSERT INTO properties (owner_id, title, description, price_per_month, bedrooms, bathrooms, living_rooms, garden, gym, pool, sqft, has_kitchen, has_parking, has_water_supply, has_electricity_supply, property_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            // Enforce active and paid bought package for properties
+            $bp = null; $bp_id = 0; $rem_props = 0;
+            try {
+                $q = db()->prepare("SELECT bought_package_id, remaining_properties, end_date FROM bought_packages WHERE user_id=? AND status='active' AND payment_status='paid' AND (end_date IS NULL OR end_date>=NOW()) ORDER BY start_date DESC LIMIT 1");
+                $q->bind_param('i', $uid);
+                $q->execute();
+                $bp = $q->get_result()->fetch_assoc();
+                $q->close();
+                if ($bp) { $bp_id = (int)$bp['bought_package_id']; $rem_props = (int)$bp['remaining_properties']; }
+            } catch (Throwable $e) { /* ignore */ }
+            if ($bp_id <= 0) {
+                redirect_with_message($GLOBALS['base_url'] . '/owner/buy_advertising_packages.php', 'Please buy a property package and complete payment before adding a property.', 'error');
+            }
+            if ($rem_props <= 0) {
+                redirect_with_message($GLOBALS['base_url'] . '/owner/buy_advertising_packages.php', 'Your package does not have remaining property slots.', 'error');
+            }
+            $stmt = db()->prepare('INSERT INTO properties (owner_id, title, description, price_per_month, bedrooms, bathrooms, living_rooms, garden, gym, pool, sqft, kitchen, parking, water_supply, electricity_supply, property_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             $stmt->bind_param(
                 'issdiiiiiidiiiis',
                 $uid,
@@ -122,12 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $new_id = db()->insert_id;
                 $stmt->close();
 
-                // Generate a unique human-friendly property code (e.g., PROP-000123)
-                $code = 'PROP-' . str_pad((string)$new_id, 6, '0', STR_PAD_LEFT);
-                $upc = db()->prepare('UPDATE properties SET property_code = ? WHERE property_id = ?');
-                $upc->bind_param('si', $code, $new_id);
-                $upc->execute();
-                $upc->close();
+                // Optional: property_code column may not exist; skip updating it and compute on the fly when displaying
 
                 // Insert location linked by FK IDs
                 $loc = db()->prepare('INSERT INTO locations (property_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)');
@@ -176,21 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                // Handle payment slip upload
-                if (!empty($_FILES['payment_slip']['name']) && is_uploaded_file($_FILES['payment_slip']['tmp_name'])) {
-                    $dir2 = dirname(__DIR__) . '/uploads/property_slips';
-                    if (!is_dir($dir2)) { @mkdir($dir2, 0775, true); }
-                    $ext2 = pathinfo($_FILES['payment_slip']['name'], PATHINFO_EXTENSION);
-                    $fname2 = 'pps_' . $new_id . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext2);
-                    $dest2 = $dir2 . '/' . $fname2;
-                    if (move_uploaded_file($_FILES['payment_slip']['tmp_name'], $dest2)) {
-                        $rel2 = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/property_slips/' . $fname2;
-                        $insps = db()->prepare('INSERT INTO property_payment_slips (property_id, slip_path) VALUES (?, ?)');
-                        $insps->bind_param('is', $new_id, $rel2);
-                        $insps->execute();
-                        $insps->close();
-                    }
-                }
+                // Payment slip upload not used
 
                 redirect_with_message($GLOBALS['base_url'] . '/owner/property_management.php', 'Property submitted. Awaiting admin approval.', 'success');
             } else {
@@ -203,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $props = [];
-$stmt = db()->prepare('SELECT property_id, property_code, title, status, created_at, price_per_month FROM properties WHERE owner_id = ? ORDER BY property_id DESC');
+$stmt = db()->prepare('SELECT property_id, title, status, created_at, price_per_month FROM properties WHERE owner_id = ? ORDER BY property_id DESC');
 $stmt->bind_param('i', $uid);
 $stmt->execute();
 $res = $stmt->get_result();
@@ -211,6 +209,17 @@ while ($row = $res->fetch_assoc()) {
     $props[] = $row;
 }
 $stmt->close();
+
+// Fetch current active & paid package info to show remaining property slots
+$pkg_info = null;
+try {
+    $q = db()->prepare("SELECT bp.remaining_properties, bp.end_date, bp.status, bp.payment_status, p.package_name FROM bought_packages bp JOIN packages p ON p.package_id=bp.package_id WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid' ORDER BY bp.start_date DESC LIMIT 1");
+    $q->bind_param('i', $uid);
+    $q->execute();
+    $pkg_info = $q->get_result()->fetch_assoc();
+    $q->close();
+} catch (Throwable $e) { /* ignore */ }
+
 [$flash, $flash_type] = get_flash();
 ?>
 <!doctype html>
@@ -231,6 +240,23 @@ $stmt->close();
   </div>
   <?php if ($flash): ?>
     <div class="alert <?php echo ($flash_type==='success')?'alert-success':'alert-danger'; ?>" role="alert"><?php echo htmlspecialchars($flash); ?></div>
+  <?php endif; ?>
+  <?php if ($pkg_info): ?>
+    <div class="alert alert-info d-flex align-items-center" role="alert">
+      <i class="bi bi-info-circle me-2"></i>
+      <div>
+        <strong>Active Package:</strong> <?php echo htmlspecialchars($pkg_info['package_name'] ?? ''); ?>
+        | <strong>Remaining Property Slots:</strong> <?php echo (int)($pkg_info['remaining_properties'] ?? 0); ?>
+        <?php if (!empty($pkg_info['end_date'])): ?>
+          | <strong>Ends:</strong> <?php echo htmlspecialchars($pkg_info['end_date']); ?>
+        <?php endif; ?>
+      </div>
+    </div>
+  <?php else: ?>
+    <div class="alert alert-warning d-flex align-items-center" role="alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      <div>You don't have an active paid package with property slots. Please buy or pay for a package before posting.</div>
+    </div>
   <?php endif; ?>
   <?php if ($error): ?>
     <div class="alert alert-danger" role="alert"><?php echo htmlspecialchars($error); ?></div>
@@ -339,11 +365,25 @@ $stmt->close();
             <div class="mb-3">
               <label class="form-label">Property type</label>
               <select name="property_type" class="form-select">
-                <option value="house">House</option>
                 <option value="apartment">Apartment</option>
-                <option value="room">Room</option>
-                <option value="commercial">Commercial</option>
-                <option value="other">Other</option>
+                <option value="house">House</option>
+                <option value="villa">Villa</option>
+                <option value="duplex">Duplex</option>
+                <option value="studio">Studio</option>
+                <option value="penthouse">Penthouse</option>
+                <option value="bungalow">Bungalow</option>
+                <option value="townhouse">Townhouse</option>
+                <option value="farmhouse">Farmhouse</option>
+                <option value="office">Office</option>
+                <option value="shop">Shop</option>
+                <option value="warehouse">Warehouse</option>
+                <option value="land">Land</option>
+                <option value="commercial_building">Commercial Building</option>
+                <option value="industrial">Industrial</option>
+                <option value="hotel">Hotel</option>
+                <option value="guesthouse">Guesthouse</option>
+                <option value="resort">Resort</option>
+                <option value="other" selected>Other</option>
               </select>
             </div>
             <div class="mb-3">
@@ -358,11 +398,7 @@ $stmt->close();
               <label class="form-label">Gallery Images</label>
               <input type="file" name="gallery_images[]" accept="image/*" class="form-control" multiple>
             </div>
-            <div class="mb-3">
-              <label class="form-label">Payment Slip</label>
-              <input type="file" name="payment_slip" accept="image/*,application/pdf" class="form-control" required>
-              <div class="form-text">Upload slip for listing payment.</div>
-            </div>
+            
             <button type="submit" class="btn btn-primary">Submit for Approval</button>
             <p class="text-muted mt-2 mb-0"><small>Status will be pending until admin approves.</small></p>
           </form>
@@ -390,13 +426,19 @@ $stmt->close();
               <tbody>
                 <?php foreach ($props as $p): ?>
                   <tr>
-                    <td><?php echo htmlspecialchars($p['property_code'] ?? ''); ?></td>
+                    <td><?php echo 'PROP-' . str_pad((string)$p['property_id'], 6, '0', STR_PAD_LEFT); ?></td>
                     <td><?php echo (int)$p['property_id']; ?></td>
                     <td><?php echo htmlspecialchars($p['title']); ?></td>
                     <td><span class="badge bg-secondary text-uppercase"><?php echo htmlspecialchars($p['status']); ?></span></td>
                     <td><?php echo number_format((float)$p['price_per_month'], 2); ?></td>
                     <td><?php echo htmlspecialchars($p['created_at']); ?></td>
                     <td class="text-nowrap">
+                      <?php $can_edit = (strtotime((string)$p['created_at']) + 24*3600) > time(); ?>
+                      <?php if ($can_edit): ?>
+                        <a class="btn btn-sm btn-outline-primary me-1" href="property_edit.php?id=<?php echo (int)$p['property_id']; ?>">Edit</a>
+                      <?php else: ?>
+                        <button class="btn btn-sm btn-outline-secondary me-1" type="button" disabled title="Editing locked after 24 hours">Edit</button>
+                      <?php endif; ?>
                       <form method="post" class="d-inline" onsubmit="return confirm('Delete this property?');">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                         <input type="hidden" name="action" value="delete">
