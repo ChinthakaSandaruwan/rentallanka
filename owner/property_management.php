@@ -102,6 +102,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Title and price are required';
         } elseif ($province_id <= 0 || $district_id <= 0 || $city_id <= 0 || $postal_code === '') {
             $error = 'Location (province, district, city, postal code) is required';
+        } elseif (mb_strlen($title) > 255) {
+            $error = 'Title is too long';
+        } elseif (mb_strlen($postal_code) > 10) {
+            $error = 'Postal code is too long';
+        } elseif (mb_strlen($address) > 255) {
+            $error = 'Address is too long';
+        } elseif ($bedrooms < 0 || $bathrooms < 0 || $living_rooms < 0) {
+            $error = 'Numeric values must be non-negative';
+        } elseif (!is_null($sqft) && $sqft < 0) {
+            $error = 'Area must be non-negative';
         } else {
             // Enforce active and paid bought package for properties (must be a property-type package)
             $bp = null; $bp_id = 0; $rem_props = 0;
@@ -168,6 +178,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Handle primary image upload
                 if (!empty($_FILES['image']['name']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
+                    $imgSize = (int)($_FILES['image']['size'] ?? 0);
+                    $imgInfo = @getimagesize($_FILES['image']['tmp_name']);
+                    if ($imgSize <= 0 || $imgSize > 5242880 || $imgInfo === false) {
+                        $error = 'Primary image must be a valid image under 5MB';
+                        redirect_with_message($GLOBALS['base_url'] . '/owner/property_management.php', $error, 'error');
+                    }
                     $dir = dirname(__DIR__) . '/uploads/properties';
                     if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                     $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
@@ -192,6 +208,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $count = count($_FILES['gallery_images']['name']);
                     for ($i=0; $i < $count; $i++) {
                         if (empty($_FILES['gallery_images']['name'][$i]) || !is_uploaded_file($_FILES['gallery_images']['tmp_name'][$i])) { continue; }
+                        $gSize = (int)($_FILES['gallery_images']['size'][$i] ?? 0);
+                        $gInfo = @getimagesize($_FILES['gallery_images']['tmp_name'][$i]);
+                        if ($gSize <= 0 || $gSize > 5242880 || $gInfo === false) { continue; }
                         $dir = dirname(__DIR__) . '/uploads/properties';
                         if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                         $ext = pathinfo($_FILES['gallery_images']['name'][$i], PATHINFO_EXTENSION);
@@ -297,7 +316,7 @@ try {
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
             <div class="mb-3">
               <label class="form-label">Title</label>
-              <input name="title" class="form-control" required>
+              <input name="title" class="form-control" required maxlength="255">
             </div>
             <div class="mb-3">
               <label class="form-label">Description</label>
@@ -318,11 +337,11 @@ try {
               </div>
               <div class="col-md-6">
                 <label class="form-label">Postal Code</label>
-                <input name="postal_code" class="form-control" required>
+                <input name="postal_code" class="form-control" required maxlength="10">
               </div>
               <div class="col-12">
                 <label class="form-label">Address</label>
-                <input name="address" class="form-control">
+                <input name="address" class="form-control" maxlength="255">
               </div>
             </div>
             <div class="mb-3">
