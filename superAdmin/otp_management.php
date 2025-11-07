@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'invalidate') {
         $otp_id = (int)($_POST['otp_id'] ?? 0);
         if ($otp_id > 0) {
-            $stmt = db()->prepare('UPDATE otp_verifications SET expires_at = NOW() WHERE otp_id = ?');
+            $stmt = db()->prepare('UPDATE user_otps SET expires_at = NOW() WHERE otp_id = ?');
             $stmt->bind_param('i', $otp_id);
             $stmt->execute();
             $stmt->close();
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $otp_num = random_int(0, $max);
                 $otp = str_pad((string)$otp_num, $otp_length, '0', STR_PAD_LEFT);
                 $expires = (new DateTime('+' . $otp_expiry_minutes . ' minutes'))->format('Y-m-d H:i:s');
-                $stmt = db()->prepare('INSERT INTO otp_verifications (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
+                $stmt = db()->prepare('INSERT INTO user_otps (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
                 $stmt->bind_param('iss', $user_id, $otp, $expires);
                 $stmt->execute();
                 $stmt->close();
@@ -123,7 +123,7 @@ if ($q !== '') {
 }
 
 $sql = 'SELECT o.otp_id, o.user_id, o.otp_code, o.expires_at, o.is_verified, o.created_at, u.phone, u.email, u.role
-        FROM otp_verifications o
+        FROM user_otps o
         JOIN users u ON u.user_id = o.user_id ' . $where . ' 
         ORDER BY o.created_at DESC
         LIMIT 200';
@@ -140,14 +140,12 @@ $stmt->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OTP Management</title>
       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 </head>
 <body>
     <div class="container py-4">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h2 class="h4 mb-0">OTP Management</h2>
-            <a href="index.php" class="btn btn-outline-secondary btn-sm">Back</a>
+            <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
         </div>
         <?php if ($message): ?>
             <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>

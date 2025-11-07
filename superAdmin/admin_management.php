@@ -102,9 +102,10 @@ if ($rc) { $rr = $rc->fetch_assoc(); $admin_count = (int)($rr['c'] ?? 0); }
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1 class="h4 mb-0">Admin Management</h1>
-      <div class="d-flex align-items-center">
-        <a href="../admin/index.php" class="btn btn-outline-primary btn-sm">Dashboard</a>
-        <a href="../auth/logout.php" class="btn btn-outline-danger btn-sm ms-2">Logout</a>
+      <div class="d-flex align-items-center gap-2">
+        <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+        <a href="../admin/index.php" class="btn btn-outline-primary btn-sm">Admin Panel</a>
+        <a href="../auth/logout.php" class="btn btn-outline-danger btn-sm">Logout</a>
       </div>
     </div>
 

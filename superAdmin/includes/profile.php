@@ -61,7 +61,10 @@ $stmt->close();
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h3 class="mb-0">Super Admin Profile</h3>
-            <span class="badge bg-danger">SUPER ADMIN</span>
+            <div class="d-flex align-items-center gap-2">
+              <a href="../index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+              <span class="badge bg-danger">SUPER ADMIN</span>
+            </div>
           </div>
           <?php if ($flash): ?>
             <div class="alert alert-<?= $flash_type === 'error' ? 'danger' : 'success' ?> mb-3"><?= htmlspecialchars($flash) ?></div>

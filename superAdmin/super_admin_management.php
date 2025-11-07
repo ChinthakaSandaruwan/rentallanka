@@ -125,7 +125,7 @@ $sa_count = count($rows);
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h4 mb-0">Super Admin Management</h1>
-    <a class="btn btn-outline-secondary btn-sm" href="index.php">Back</a>
+    <a class="btn btn-outline-secondary btn-sm" href="index.php">Back to Dashboard</a>
   </div>
   <?php if ($flash): ?><div class="alert alert-<?= $flash_type === 'error' ? 'danger' : 'success' ?>"><?= htmlspecialchars($flash) ?></div><?php endif; ?>
 

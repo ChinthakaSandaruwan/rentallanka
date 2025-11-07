@@ -153,6 +153,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'clean') {
         $n = um_clean($uploads_root);
         redirect_with_message($base_url . '/superAdmin/uploads_management.php?p=' . urlencode($rel), 'Cleaned ' . $n . ' items');
+    } elseif ($action === 'delete_all') {
+        // Delete all contents inside the CURRENT directory, but keep the directory itself
+        $removed = 0;
+        $scan = @scandir($current_dir) ?: [];
+        foreach ($scan as $entry) {
+            if ($entry === '.' || $entry === '..') { continue; }
+            $path = $current_dir . DIRECTORY_SEPARATOR . $entry;
+            if (is_dir($path)) { um_rrmdir($path); $removed++; }
+            elseif (is_file($path)) { if (@unlink($path)) { $removed++; } }
+        }
+        redirect_with_message($base_url . '/superAdmin/uploads_management.php?p=' . urlencode($rel), 'Deleted all items in current folder (' . (int)$removed . ' removed)');
     }
 }
 
@@ -183,10 +194,15 @@ if ($rel !== '') {
 <div class="container py-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h3 class="mb-0">Uploads Management</h3>
-    <div class="btn-group">
+    <div class="d-flex align-items-center gap-2">
+      <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
       <form method="post" class="d-inline">
         <input type="hidden" name="action" value="clean">
-        <button class="btn btn-outline-secondary" type="submit" onclick="return confirm('Clean zero-byte files and empty folders?');">Clean</button>
+        <button class="btn btn-outline-secondary btn-sm" type="submit" onclick="return confirm('Clean zero-byte files and empty folders?');">Clean</button>
+      </form>
+      <form method="post" class="d-inline">
+        <input type="hidden" name="action" value="delete_all">
+        <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Delete ALL files and folders inside the current folder? This cannot be undone.');">Delete All</button>
       </form>
     </div>
   </div>

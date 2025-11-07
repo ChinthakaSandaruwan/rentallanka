@@ -302,7 +302,7 @@ try {
   <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
   <div class="container py-4">
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <h1 class="h3 mb-0">Room Management</h1>
+      <h1 class="h3 mb-0">Room Management</h1>     
     </div>
     <?php if ($pkg_info): ?>
       <div class="alert alert-info d-flex align-items-center" role="alert">

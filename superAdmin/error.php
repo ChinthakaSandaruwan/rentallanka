@@ -54,6 +54,7 @@ if (file_exists($logFile)) {
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h4 mb-0">Error Log Viewer</h1>
     <div class="d-flex gap-2">
+      <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
       <form method="post" class="d-inline">
         <input type="hidden" name="action" value="clear" />
         <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Clear error log?')">Clear Log</button>
