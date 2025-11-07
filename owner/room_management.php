@@ -59,69 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'delete') {
             $rid = (int)($_POST['room_id'] ?? 0);
             if ($rid > 0) {
-                $conn = db();
-                try {
-                    // Verify room belongs to this owner
-                    $chk = $conn->prepare('SELECT 1 FROM rooms WHERE room_id=? AND owner_id=?');
-                    $chk->bind_param('ii', $rid, $owner_id);
-                    $chk->execute();
-                    $has = $chk->get_result()->fetch_assoc();
-                    $chk->close();
-                    if (!$has) {
-                        $flash = 'Room not found';
-                        $type = 'error';
-                    } else {
-                        $conn->begin_transaction();
-                        // Delete dependent rows that may have RESTRICT FKs
-                        $stmt = $conn->prepare('DELETE FROM cart_items WHERE room_id=?');
-                        $stmt->bind_param('i', $rid);
-                        $stmt->execute();
-                        $stmt->close();
-
-                        $stmt = $conn->prepare('DELETE FROM room_images WHERE room_id=?');
-                        $stmt->bind_param('i', $rid);
-                        $stmt->execute();
-                        $stmt->close();
-
-                        // Delete rentals associated with this room
-                        $stmt = $conn->prepare('DELETE FROM room_rentals WHERE room_id=?');
-                        $stmt->bind_param('i', $rid);
-                        $stmt->execute();
-                        $stmt->close();
-
-                        $stmt = $conn->prepare('DELETE FROM room_payment_slips WHERE room_id=?');
-                        $stmt->bind_param('i', $rid);
-                        $stmt->execute();
-                        $stmt->close();
-
-                        $stmt = $conn->prepare('DELETE FROM locations WHERE room_id=?');
-                        $stmt->bind_param('i', $rid);
-                        $stmt->execute();
-                        $stmt->close();
-
-                        // Finally delete the room
-                        $del = $conn->prepare('DELETE FROM rooms WHERE room_id=? AND owner_id=?');
-                        $del->bind_param('ii', $rid, $owner_id);
-                        $del->execute();
-                        $deleted = ($del->affected_rows > 0);
-                        $del->close();
-
-                        if ($deleted) {
-                            $conn->commit();
-                            $flash = 'Room deleted';
-                            $type = 'success';
-                        } else {
-                            $conn->rollback();
-                            $flash = 'Delete failed';
-                            $type = 'error';
-                        }
-                    }
-                } catch (mysqli_sql_exception $e) {
-                    if ($conn && $conn->errno === 0) { /* no-op */ }
-                    if ($conn) { $conn->rollback(); }
-                    $flash = 'Delete failed due to related records. Please remove related items first.';
+                $del = db()->prepare('DELETE FROM rooms WHERE room_id=? AND owner_id=?');
+                $del->bind_param('ii', $rid, $owner_id);
+                if ($del->execute() && $del->affected_rows > 0) {
+                    redirect_with_message($GLOBALS['base_url'] . '/owner/room_management.php', 'Room deleted', 'success');
+                } else {
+                    $flash = 'Delete failed';
                     $type = 'error';
                 }
+                $del->close();
             } else {
                 $flash = 'Bad input';
                 $type = 'error';
