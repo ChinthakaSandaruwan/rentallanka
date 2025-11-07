@@ -154,6 +154,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
     -- Table: properties
     CREATE TABLE IF NOT EXISTS `properties` (
       `property_id` INT NOT NULL AUTO_INCREMENT,
+      `property_code` VARCHAR(255) NOT NULL,
       `owner_id` INT NULL,
       `title` VARCHAR(255) NOT NULL,
       `description` TEXT NULL,
@@ -185,6 +186,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
 
     CREATE TABLE IF NOT EXISTS `rooms` (
       `room_id` INT NOT NULL AUTO_INCREMENT,
+      `room_code` VARCHAR(255) NOT NULL,
       `owner_id` INT NOT NULL,
       `title` VARCHAR(150) NOT NULL,
       `description` TEXT NULL,
