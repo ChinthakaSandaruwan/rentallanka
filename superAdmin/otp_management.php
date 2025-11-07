@@ -39,23 +39,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $otp_expiry_minutes = max(1, min(60, (int)($_POST['otp_expiry_minutes'] ?? 5)));
         $otp_max_attempts = max(1, min(20, (int)($_POST['otp_max_attempts'] ?? 5)));
         $otp_sms_prefix = trim($_POST['otp_sms_prefix'] ?? '');
-        setting_set('otp_enabled', (string)$otp_enabled);
-        setting_set('otp_dev_mode', (string)$otp_dev_mode);
-        setting_set('otp_length', (string)$otp_length);
-        setting_set('otp_expiry_minutes', (string)$otp_expiry_minutes);
-        setting_set('otp_max_attempts', (string)$otp_max_attempts);
-        setting_set('otp_sms_prefix', $otp_sms_prefix);
-        $message = 'OTP settings saved';
+        if (strlen($otp_sms_prefix) > 32) {
+            $error = 'SMS Prefix must be 32 characters or less';
+        } else {
+            setting_set('otp_enabled', (string)$otp_enabled);
+            setting_set('otp_dev_mode', (string)$otp_dev_mode);
+            setting_set('otp_length', (string)$otp_length);
+            setting_set('otp_expiry_minutes', (string)$otp_expiry_minutes);
+            setting_set('otp_max_attempts', (string)$otp_max_attempts);
+            setting_set('otp_sms_prefix', $otp_sms_prefix);
+            $message = 'OTP settings saved';
+        }
     } elseif ($action === 'save_sms_settings') {
         $sms_user_id = trim($_POST['sms_user_id'] ?? '');
         $sms_api_key = trim($_POST['sms_api_key'] ?? '');
         $sms_sender_id = trim($_POST['sms_sender_id'] ?? '');
         $sms_base_url = trim($_POST['sms_base_url'] ?? '');
-        setting_set('sms_user_id', $sms_user_id);
-        setting_set('sms_api_key', $sms_api_key);
-        setting_set('sms_sender_id', $sms_sender_id);
-        setting_set('sms_base_url', $sms_base_url);
-        $message = 'SMS API settings saved';
+        $valid = true;
+        if ($sms_user_id === '' || $sms_api_key === '') {
+            $error = 'SMS User ID and API Key are required';
+            $valid = false;
+        }
+        if ($sms_sender_id !== '' && !preg_match('/^[A-Za-z0-9]{3,11}$/', $sms_sender_id)) {
+            $error = 'Sender ID must be 3-11 letters/numbers';
+            $valid = false;
+        }
+        if ($sms_base_url === '' || !preg_match('#^https?://[^\s]+$#i', $sms_base_url)) {
+            $error = 'Enter a valid API Base URL starting with http or https';
+            $valid = false;
+        }
+        if ($valid) {
+            setting_set('sms_user_id', $sms_user_id);
+            setting_set('sms_api_key', $sms_api_key);
+            setting_set('sms_sender_id', $sms_sender_id);
+            setting_set('sms_base_url', $sms_base_url);
+            $message = 'SMS API settings saved';
+        }
     } elseif ($action === 'clear_sms_settings') {
         $keys = ['sms_user_id','sms_api_key','sms_sender_id','sms_base_url'];
         $in = implode(',', array_fill(0, count($keys), '?'));
