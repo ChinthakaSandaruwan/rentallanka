@@ -181,5 +181,39 @@ if ($action === 'mark_read') {
     json_ok(['notification_id' => $nid]);
 }
 
+// Route: delete notification (owner can delete own, admin can delete any)
+// POST: action=delete, notification_id, csrf_token
+if ($action === 'delete') {
+    if ($method !== 'POST') { json_err('Method not allowed', 405); }
+    $token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'], $token)) { json_err('Invalid CSRF token', 403); }
+    $nid = (int)($_POST['notification_id'] ?? 0);
+    if ($nid <= 0) { json_err('notification_id required', 422); }
+
+    $st = db()->prepare('SELECT user_id FROM notifications WHERE notification_id=?');
+    $st->bind_param('i', $nid);
+    $st->execute();
+    $rs = $st->get_result();
+    $row = $rs->fetch_assoc();
+    $st->close();
+    if (!$row) { json_err('Not found', 404); }
+    $owner_user_id = (int)$row['user_id'];
+
+    if ($role === 'owner') {
+        if ($owner_user_id !== $current_user_id) { json_err('Forbidden', 403); }
+    } elseif ($role === 'admin') {
+    } else {
+        json_err('Forbidden', 403);
+    }
+
+    $del = db()->prepare('DELETE FROM notifications WHERE notification_id=?');
+    $del->bind_param('i', $nid);
+    $ok = $del->execute();
+    $err = $del->error;
+    $del->close();
+    if (!$ok) { json_err('Delete failed: ' . $err, 500); }
+    json_ok(['notification_id' => $nid]);
+}
+
 json_err('Unknown action', 400);
 

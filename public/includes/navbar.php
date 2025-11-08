@@ -112,7 +112,7 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
   </nav>
   <?php if ($loggedIn && in_array($role, ['owner','admin'], true)): ?>
   <div class="modal fade" id="nlModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable modal-sm">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Notifications</h5>
@@ -155,16 +155,17 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
         let unread = 0;
         items.forEach(it => {
           if (String(it.is_read) === '0' || it.is_read === 0) unread++;
-          const btn = (String(it.is_read) === '0' || it.is_read === 0)
+          const readBtn = (String(it.is_read) === '0' || it.is_read === 0)
             ? '<button class="btn btn-sm btn-outline-primary nl-mark" data-id="'+it.notification_id+'">Mark read</button>'
-            : '<span class="badge bg-secondary">Read</span>';
+            : '<span class="badge bg-secondary me-2">Read</span>';
+          const delBtn = '<button class="btn btn-sm btn-outline-danger nl-del ms-2" data-id="'+it.notification_id+'">Delete</button>';
           const row = document.createElement('div');
           row.className = 'list-group-item';
           row.innerHTML = '<div class="d-flex justify-content-between align-items-start">'
             + '<div class="me-2"><div class="fw-semibold">'+ (it.title || 'Notification') +'</div>'
             + '<div class="small text-muted">'+ (it.created_at || '') +'</div>'
             + '<div class="small">'+ (it.message || '') +'</div></div>'
-            + '<div>'+ btn +'</div>'
+            + '<div class="d-flex align-items-center">'+ readBtn + delBtn +'</div>'
             + '</div>';
           listEl.appendChild(row);
         });
@@ -180,6 +181,16 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
             const id = this.getAttribute('data-id');
             if (!id || !csrf) return;
             const body = new URLSearchParams({ action: 'mark_read', notification_id: id, csrf_token: csrf });
+            fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
+              .then(rjson).then(()=> load())
+              .catch(()=>{});
+          });
+        });
+        listEl.querySelectorAll('.nl-del').forEach(b => {
+          b.addEventListener('click', function(){
+            const id = this.getAttribute('data-id');
+            if (!id || !csrf) return;
+            const body = new URLSearchParams({ action: 'delete', notification_id: id, csrf_token: csrf });
             fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
               .then(rjson).then(()=> load())
               .catch(()=>{});
