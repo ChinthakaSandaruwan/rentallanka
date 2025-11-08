@@ -1,2 +1,4 @@
 [07-Nov-2025 22:48:39 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
 [07-Nov-2025 22:48:42 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[08-Nov-2025 09:24:19 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
+[08-Nov-2025 10:13:49 Asia/Colombo] [smslenz_send_sms] url=https://smslenz.lk/api/send-sms http=500 errno=0 ok=0 err=SMS credentials not configured (sms_user_id/api_key)
