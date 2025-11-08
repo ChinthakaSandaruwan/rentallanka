@@ -42,49 +42,6 @@ function norm_url($p) {
   if (preg_match('#^https?://#i', $p)) return $p;
   return '/' . ltrim($p, '/');
 }
-
-// Handle POST (add to cart) for monthly property rental
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $start = trim($_POST['start_date'] ?? '');
-  $end = trim($_POST['end_date'] ?? '');
-  $cust_id = (int)($_SESSION['user']['user_id'] ?? 0);
-  if (!$cust_id || !$prop) {
-    redirect_with_message($GLOBALS['base_url'] . '/index.php', 'Invalid request', 'error');
-  }
-  if (!$start || !$end || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end) || strtotime($end) <= strtotime($start)) {
-    redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_property.php?id=' . (int)$pid, 'Invalid dates', 'error');
-  }
-  // ensure cart
-  $cart_id = 0;
-  $c = db()->prepare('SELECT cart_id FROM carts WHERE customer_id=? AND status="active" LIMIT 1');
-  $c->bind_param('i', $cust_id);
-  $c->execute();
-  $cres = $c->get_result()->fetch_assoc();
-  $c->close();
-  if ($cres) { $cart_id = (int)$cres['cart_id']; }
-  if ($cart_id <= 0) {
-    $ci = db()->prepare('INSERT INTO carts (customer_id, status) VALUES (?, "active")');
-    $ci->bind_param('i', $cust_id);
-    $ci->execute();
-    $cart_id = (int)db()->insert_id;
-    $ci->close();
-  }
-  // calculate months (ceil days/30)
-  $days = (int)max(1, round((strtotime($end) - strtotime($start)) / 86400));
-  $months = (int)max(1, ceil($days / 30));
-  $price = (float)$prop['price_per_month'];
-  $total = $price * $months;
-  // insert cart item
-  $it = db()->prepare('INSERT INTO cart_items (cart_id, room_id, property_id, item_type, start_date, end_date, quantity, meal_plan, price, total_price) VALUES (?, NULL, ?, "monthly_property", ?, ?, 1, "none", ?, ?)');
-  $it->bind_param('iissdd', $cart_id, $pid, $start, $end, $price, $total);
-  if ($it->execute()) {
-    $it->close();
-    redirect_with_message($GLOBALS['base_url'] . '/index.php', 'Added property to cart', 'success');
-  } else {
-    $it->close();
-    redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_property.php?id=' . (int)$pid, 'Failed to add to cart', 'error');
-  }
-}
 ?>
 <!doctype html>
 <html lang="en">

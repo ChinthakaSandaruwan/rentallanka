@@ -66,38 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!$start || !$end || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end) || strtotime($end) < strtotime($start)) {
     redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Invalid dates', 'error');
   }
-  // calculate totals
-  $days = (int)max(1, round((strtotime($end) - strtotime($start)) / 86400));
-  $price = (float)$room['price_per_day'];
-  $total = $price * $days;
-  // ensure active cart
-  $cart_id = 0;
-  $c = db()->prepare('SELECT cart_id FROM carts WHERE customer_id=? AND status="active" LIMIT 1');
-  $c->bind_param('i', $cust_id);
-  $c->execute();
-  $cres = $c->get_result()->fetch_assoc();
-  $c->close();
-  if ($cres) { $cart_id = (int)$cres['cart_id']; }
-  if ($cart_id <= 0) {
-    $ci = db()->prepare('INSERT INTO carts (customer_id, status) VALUES (?, "active")');
-    $ci->bind_param('i', $cust_id);
-    $ci->execute();
-    $cart_id = (int)db()->insert_id;
-    $ci->close();
-  }
-  // insert cart item (daily_room)
-  $it = db()->prepare('INSERT INTO cart_items (cart_id, room_id, property_id, item_type, start_date, end_date, quantity, meal_plan, price, total_price) VALUES (?, ?, NULL, "daily_room", ?, ?, 1, "none", ?, ?)');
-  if (!$it) {
-    redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Server error while preparing cart item.', 'error');
-  }
-  $it->bind_param('iissdd', $cart_id, $rid, $start, $end, $price, $total);
-  if ($it->execute()) {
-    $it->close();
-    redirect_with_message($GLOBALS['base_url'] . '/public/includes/cart.php', 'Added room to cart', 'success');
-  } else {
-    $it->close();
-    redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Failed to add to cart', 'error');
-  }
+  redirect_with_message($GLOBALS['base_url'] . '/public/includes/rent_room.php?id=' . (int)$rid, 'Request received. Please contact owner to proceed.', 'success');
 }
 ?>
 <!doctype html>

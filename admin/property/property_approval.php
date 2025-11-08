@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../public/includes/auth_guard.php';
+require_once __DIR__ . '/../../public/includes/auth_guard.php';
 require_role('admin');
 
 if (empty($_SESSION['csrf_token'])) {
@@ -119,13 +119,12 @@ while ($res && ($r = $res->fetch_assoc())) { $rows[] = $r; }
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 </head>
 <body>
-  <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
+  <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
   <div class="container py-4">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h1 class="h3 mb-0">Property Approval</h1>
       <div class="d-flex gap-2">
-        <a href="property_management.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list-task me-1"></i>Manage</a>
-        <a href="index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+        <a href="../index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
       </div>
     </div>
     <?php if ($flash): ?>

@@ -1,5 +1,5 @@
-<?php require_once __DIR__ . '/../public/includes/auth_guard.php'; require_role('admin'); ?>
-<?php require_once __DIR__ . '/../config/config.php'; ?>
+<?php require_once __DIR__ . '/../../public/includes/auth_guard.php'; require_role('admin'); ?>
+<?php require_once __DIR__ . '/../../config/config.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,11 +10,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
-<?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
+<?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Packages Management</h1>
-    <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+    <a href="../index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
   </div>
 
   <?php

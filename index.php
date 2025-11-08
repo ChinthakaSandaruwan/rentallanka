@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Bootstrap demo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
- 
+    <style>
+      html, body { width: 100%; overflow-x: hidden; }
+      @media (max-width: 576px) {
+        .container, .container-fluid { overflow-x: hidden; }
+      }
+    </style>
 </head>
   <body class="overflow-x-hidden">
 

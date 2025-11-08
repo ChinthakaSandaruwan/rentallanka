@@ -42,13 +42,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Fetch customers to display
+$q = trim($_GET['q'] ?? '');
+$status_filter = $_GET['status'] ?? '';
+$wheres = ["role='customer'"];
+$params = [];
+$types = '';
+if ($q !== '') {
+  $wheres[] = "(name LIKE ? OR email LIKE ? OR phone LIKE ? OR nic LIKE ?)";
+  $like = '%' . $q . '%';
+  $params[] = $like; $params[] = $like; $params[] = $like; $params[] = $like;
+  $types .= 'ssss';
+}
+if (in_array($status_filter, ['active','inactive','banned'], true)) {
+  $wheres[] = 'status = ?';
+  $params[] = $status_filter;
+  $types .= 's';
+}
+$sql = 'SELECT user_id, name, email, phone, status FROM users WHERE ' . implode(' AND ', $wheres) . ' ORDER BY user_id DESC';
 $customers = [];
-$result = db()->query("SELECT user_id, name, email, phone, status FROM users WHERE role='customer' ORDER BY user_id DESC");
-if ($result) {
-  while ($row = $result->fetch_assoc()) {
-    $customers[] = $row;
+if ($types !== '') {
+  $stmt = db()->prepare($sql);
+  if ($stmt) {
+    $stmt->bind_param($types, ...$params);
+    if ($stmt->execute()) {
+      $res = $stmt->get_result();
+      while ($row = $res->fetch_assoc()) { $customers[] = $row; }
+      $res->free();
+    }
+    $stmt->close();
   }
-  $result->close();
+} else {
+  $result = db()->query($sql);
+  if ($result) {
+    while ($row = $result->fetch_assoc()) { $customers[] = $row; }
+    $result->close();
+  }
 }
 ?>
 <!DOCTYPE html>
@@ -77,6 +105,27 @@ if ($result) {
     <div class="card">
       <div class="card-header">Customers</div>
       <div class="card-body p-0">
+        <form method="get" class="p-3 border-bottom bg-light">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="q">Search</label>
+              <input type="text" id="q" name="q" class="form-control" placeholder="name, email, phone, NIC" value="<?php echo htmlspecialchars($q ?? ''); ?>">
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label" for="status">Status</label>
+              <select id="status" name="status" class="form-select">
+                <option value="">Any</option>
+                <option value="active" <?php echo ($status_filter==='active')?'selected':''; ?>>Active</option>
+                <option value="inactive" <?php echo ($status_filter==='inactive')?'selected':''; ?>>Inactive</option>
+                <option value="banned" <?php echo ($status_filter==='banned')?'selected':''; ?>>Banned</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
+              <button type="submit" class="btn btn-primary mt-3 mt-md-0"><i class="bi bi-search me-1"></i>Filter</button>
+              <a href="customer_delete.php" class="btn btn-outline-secondary mt-3 mt-md-0">Reset</a>
+            </div>
+          </div>
+        </form>
         <div class="table-responsive">
           <table class="table table-striped table-hover mb-0 align-middle">
             <thead class="table-light">

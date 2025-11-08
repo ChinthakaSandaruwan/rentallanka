@@ -10,6 +10,22 @@ if (empty($_SESSION['csrf_token'])) {
 $search = trim($_GET['q'] ?? '');
 $status_filter = $_GET['status'] ?? '';
 
+// Inline view selection
+$view_id = (int)($_GET['view'] ?? 0);
+$view_customer = null;
+if ($view_id > 0) {
+  $stmtV = db()->prepare("SELECT user_id, name, email, phone, nic, status, profile_image FROM users WHERE user_id = ? AND role='customer' LIMIT 1");
+  if ($stmtV) {
+    $stmtV->bind_param('i', $view_id);
+    if ($stmtV->execute()) {
+      $resV = $stmtV->get_result();
+      $view_customer = $resV->fetch_assoc();
+      $resV->free();
+    }
+    $stmtV->close();
+  }
+}
+
 // Build query
 $params = [];
 $wheres = ["role='customer'"];
@@ -64,9 +80,6 @@ if ($types !== '') {
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1 class="h4 mb-0">Customers</h1>
       <div class="d-flex align-items-center gap-2">
-        <a href="customer_create.php" class="btn btn-success btn-sm"><i class="bi bi-plus-lg me-1"></i>Create</a>
-        <a href="customer_update.php" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil-square me-1"></i>Update</a>
-        <a href="customer_delete.php" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Delete</a>
         <a href="../index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
       </div>
     </div>
@@ -90,6 +103,53 @@ if ($types !== '') {
         <a href="customer_read.php" class="btn btn-outline-secondary mt-3 mt-md-0">Reset</a>
       </div>
     </form>
+
+    <?php if ($view_customer): ?>
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Customer Details</span>
+        <a class="btn btn-sm btn-outline-secondary" href="customer_read.php">Close</a>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-12 text-center">
+            <?php $img = (string)($view_customer['profile_image'] ?? ''); ?>
+            <?php if ($img !== ''): ?>
+              <img src="<?php echo $base_url . '/' . ltrim($img, '/'); ?>" alt="Profile" class="rounded-circle border" style="width:96px;height:96px;object-fit:cover;">
+            <?php else: ?>
+              <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" style="width:96px;height:96px;color:white;">
+                <span style="font-weight:600;">No Image</span>
+              </div>
+            <?php endif; ?>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label">Name</label>
+            <div class="form-control bg-light"><?php echo htmlspecialchars($view_customer['name'] ?? ''); ?></div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label">NIC</label>
+            <div class="form-control bg-light"><?php echo htmlspecialchars($view_customer['nic'] ?? ''); ?></div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label">Email</label>
+            <div class="form-control bg-light"><?php echo htmlspecialchars($view_customer['email'] ?? ''); ?></div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label">Phone</label>
+            <div class="form-control bg-light"><?php echo htmlspecialchars($view_customer['phone'] ?? ''); ?></div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label">Status</label>
+            <div>
+              <span class="badge bg-<?php echo ($view_customer['status']==='active'?'success':($view_customer['status']==='inactive'?'secondary':'danger')); ?>">
+                <?php echo htmlspecialchars($view_customer['status'] ?? ''); ?>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <div class="card">
       <div class="card-header">Customer List</div>
@@ -124,7 +184,7 @@ if ($types !== '') {
                       </span>
                     </td>
                     <td>
-                      <a class="btn btn-sm btn-outline-secondary" href="customer_update.php?user_id=<?php echo (int)$c['user_id']; ?>">
+                      <a class="btn btn-sm btn-outline-secondary" href="customer_read.php?view=<?php echo (int)$c['user_id']; ?>">
                         <i class="bi bi-eye me-1"></i>View
                       </a>
                     </td>

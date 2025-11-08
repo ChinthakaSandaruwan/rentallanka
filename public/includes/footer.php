@@ -20,6 +20,14 @@ $social = [
   ['k'=>'footer_social_linkedin','icon'=>'bi-linkedin'],
   ['k'=>'footer_social_github','icon'=>'bi-github'],
 ];
+// Normalize URLs to include base_url when not absolute
+$base = rtrim($GLOBALS['base_url'] ?? '', '/');
+$resolve = function(string $u) use ($base): string {
+  $u = trim($u);
+  if ($u === '') return '#';
+  if (preg_match('#^https?://#i', $u)) return $u;
+  return $base . '/' . ltrim($u, '/');
+};
 ?>
 <!-- Bootstrap Icons CDN -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -71,7 +79,7 @@ $social = [
         <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mb-4">
           <!-- Links -->
           <h6 class="text-uppercase fw-bold mb-4">Products</h6>
-          <?php foreach ($links_products as $line): $parts = explode('|', $line, 2); $label=trim($parts[0]??''); $url=trim($parts[1]??'#'); if ($label==='') continue; ?>
+          <?php foreach ($links_products as $line): $parts = explode('|', $line, 2); $label=trim($parts[0]??''); $url=$resolve((string)($parts[1]??'#')); if ($label==='') continue; ?>
           <p><a href="<?= htmlspecialchars($url) ?>" class="text-reset"><?= htmlspecialchars($label) ?></a></p>
           <?php endforeach; ?>
         </div>
@@ -83,7 +91,7 @@ $social = [
         <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mb-4">
           <!-- Links -->
           <h6 class="text-uppercase fw-bold mb-4">Useful links</h6>
-          <?php foreach ($links_useful as $line): $parts = explode('|', $line, 2); $label=trim($parts[0]??''); $url=trim($parts[1]??'#'); if ($label==='') continue; ?>
+          <?php foreach ($links_useful as $line): $parts = explode('|', $line, 2); $label=trim($parts[0]??''); $url=$resolve((string)($parts[1]??'#')); if ($label==='') continue; ?>
           <p><a href="<?= htmlspecialchars($url) ?>" class="text-reset"><?= htmlspecialchars($label) ?></a></p>
           <?php endforeach; ?>
         </div>

@@ -15,7 +15,7 @@ $flash_type = 'success';
 // Load existing customer
 $customer = null;
 if ($user_id > 0) {
-  $stmt = db()->prepare('SELECT user_id, email, nic, name, phone, status FROM users WHERE user_id = ? AND role = ?');
+  $stmt = db()->prepare('SELECT user_id, email, nic, name, phone, status, profile_image FROM users WHERE user_id = ? AND role = ?');
   if ($stmt) {
     $stmt->bind_param('is', $user_id, $role);
     if ($stmt->execute()) {
@@ -42,31 +42,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
     $status = $_POST['status'] ?? 'active';
+    $img_path = null;
 
     $valid = true;
     if ($name === '') { $valid = false; }
     if ($phone === '' || !preg_match('/^0[7][01245678][0-9]{7}$/', $phone)) { $valid = false; }
     if (!in_array($status, ['active','inactive','banned'], true)) { $valid = false; }
 
+    if (isset($_FILES['profile_image']) && is_uploaded_file($_FILES['profile_image']['tmp_name'])) {
+      $ext = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
+      if (!in_array($ext, ['jpg','jpeg','png','webp'], true)) {
+        $valid = false;
+      } else {
+        $target_dir = __DIR__ . '/../../uploads/profile';
+        if (!is_dir($target_dir)) { @mkdir($target_dir, 0777, true); }
+        $fname = 'u' . $user_id . '_' . time() . '.' . $ext;
+        $dest = rtrim($target_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fname;
+        if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $dest)) {
+          $rel_base = str_replace('\\', '/', str_replace(__DIR__ . '/../../', '', $target_dir));
+          $img_path = $rel_base . '/' . $fname;
+        } else {
+          $valid = false;
+        }
+      }
+    }
+
     if (!$valid) {
       $error = 'Invalid input';
     } else {
-      $stmt = db()->prepare('UPDATE users SET email = ?, nic = ?, name = ?, phone = ?, status = ? WHERE user_id = ? AND role = ?');
+      if ($img_path !== null) {
+        $stmt = db()->prepare('UPDATE users SET email = ?, nic = ?, name = ?, phone = ?, status = ?, profile_image = ? WHERE user_id = ? AND role = ?');
+      } else {
+        $stmt = db()->prepare('UPDATE users SET email = ?, nic = ?, name = ?, phone = ?, status = ? WHERE user_id = ? AND role = ?');
+      }
       if ($stmt) {
-        $stmt->bind_param('sssssis', $email, $nic, $name, $phone, $status, $user_id, $role);
+        if ($img_path !== null) {
+          $stmt->bind_param('ssssssis', $email, $nic, $name, $phone, $status, $img_path, $user_id, $role);
+        } else {
+          $stmt->bind_param('sssssis', $email, $nic, $name, $phone, $status, $user_id, $role);
+        }
         if ($stmt->execute()) {
           $stmt->close();
           $flash = 'Customer updated';
           $flash_type = 'success';
-          // Refresh current customer values to reflect changes
-          $customer = [
-            'user_id' => $user_id,
-            'email' => $email,
-            'nic' => $nic,
-            'name' => $name,
-            'phone' => $phone,
-            'status' => $status,
-          ];
+          // Reload customer (including profile_image)
+          $stmt2 = db()->prepare('SELECT user_id, email, nic, name, phone, status, profile_image FROM users WHERE user_id = ? AND role = ? LIMIT 1');
+          if ($stmt2) {
+            $stmt2->bind_param('is', $user_id, $role);
+            if ($stmt2->execute()) {
+              $res2 = $stmt2->get_result();
+              $customer = $res2->fetch_assoc();
+              $res2->free();
+            }
+            $stmt2->close();
+          }
         } else {
           $error = 'Update failed';
           $stmt->close();
@@ -108,7 +137,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card">
       <div class="card-header">Details</div>
       <div class="card-body">
-        <form method="post" class="row g-3 needs-validation" novalidate>
+        <div class="text-center mb-3">
+          <?php $img = (string)($customer['profile_image'] ?? ''); ?>
+          <?php if ($img !== ''): ?>
+            <img src="<?php echo $base_url . '/' . ltrim($img, '/'); ?>" alt="Profile" class="rounded-circle border" style="width:96px;height:96px;object-fit:cover;">
+          <?php else: ?>
+            <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" style="width:96px;height:96px;color:white;">
+              <span style="font-weight:600;">No Image</span>
+            </div>
+          <?php endif; ?>
+        </div>
+        <form method="post" class="row g-3 needs-validation" novalidate enctype="multipart/form-data">
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
           <div class="col-12 col-md-6">
@@ -145,6 +184,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="invalid-feedback">Please select a status.</div>
           </div>
 
+          <div class="col-12">
+            <label for="profile_image" class="form-label">Profile Image</label>
+            <input type="file" id="profile_image" class="form-control" name="profile_image" accept="image/*">
+          </div>
+
           <div class="col-12 d-flex gap-2">
             <button type="submit" class="btn btn-primary">Update</button>
             <a class="btn btn-outline-secondary" href="../index.php">Cancel</a>
@@ -154,17 +198,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <?php else: ?>
     <?php
-      // Load customers to choose from when no valid user_id is provided
+      // Load customers to choose from when no valid user_id is provided with filters
+      $q = trim($_GET['q'] ?? '');
+      $status_filter = $_GET['status'] ?? '';
+      $wheres = ["role='customer'"];
+      $params = [];
+      $types = '';
+      if ($q !== '') {
+        $wheres[] = "(name LIKE ? OR email LIKE ? OR phone LIKE ? OR nic LIKE ?)";
+        $like = '%' . $q . '%';
+        $params[] = $like; $params[] = $like; $params[] = $like; $params[] = $like;
+        $types .= 'ssss';
+      }
+      if (in_array($status_filter, ['active','inactive','banned'], true)) {
+        $wheres[] = 'status = ?';
+        $params[] = $status_filter;
+        $types .= 's';
+      }
+      $sql = 'SELECT user_id, name, email, phone, status FROM users WHERE ' . implode(' AND ', $wheres) . ' ORDER BY user_id DESC';
       $customers = [];
-      $result = db()->query("SELECT user_id, name, email, phone, status FROM users WHERE role='customer' ORDER BY user_id DESC");
-      if ($result) {
-        while ($row = $result->fetch_assoc()) { $customers[] = $row; }
-        $result->close();
+      if ($types !== '') {
+        $stmtL = db()->prepare($sql);
+        if ($stmtL) {
+          $stmtL->bind_param($types, ...$params);
+          if ($stmtL->execute()) {
+            $resL = $stmtL->get_result();
+            while ($row = $resL->fetch_assoc()) { $customers[] = $row; }
+            $resL->free();
+          }
+          $stmtL->close();
+        }
+      } else {
+        $result = db()->query($sql);
+        if ($result) {
+          while ($row = $result->fetch_assoc()) { $customers[] = $row; }
+          $result->close();
+        }
       }
     ?>
     <div class="card">
       <div class="card-header">Select a Customer to Update</div>
       <div class="card-body p-0">
+        <form method="get" class="p-3 border-bottom bg-light">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="q">Search</label>
+              <input type="text" id="q" name="q" class="form-control" placeholder="name, email, phone, NIC" value="<?php echo htmlspecialchars($q ?? ''); ?>">
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label" for="status">Status</label>
+              <select id="status" name="status" class="form-select">
+                <option value="">Any</option>
+                <option value="active" <?php echo ($status_filter==='active')?'selected':''; ?>>Active</option>
+                <option value="inactive" <?php echo ($status_filter==='inactive')?'selected':''; ?>>Inactive</option>
+                <option value="banned" <?php echo ($status_filter==='banned')?'selected':''; ?>>Banned</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
+              <button type="submit" class="btn btn-primary mt-3 mt-md-0"><i class="bi bi-search me-1"></i>Filter</button>
+              <a href="customer_update.php" class="btn btn-outline-secondary mt-3 mt-md-0">Reset</a>
+            </div>
+          </div>
+        </form>
         <div class="table-responsive">
           <table class="table table-striped table-hover mb-0 align-middle">
             <thead class="table-light">

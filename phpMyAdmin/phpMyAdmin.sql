@@ -308,6 +308,19 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       CONSTRAINT `fk_wishlist_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+  CREATE TABLE IF NOT EXISTS room_wishlist (
+  wishlist_id INT NOT NULL AUTO_INCREMENT,
+  customer_id INT NOT NULL,
+  room_id INT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (wishlist_id),
+  UNIQUE KEY uk_room_wishlist_unique (customer_id, room_id),
+  CONSTRAINT fk_room_wishlist_customer FOREIGN KEY (customer_id)
+    REFERENCES users (user_id) ON DELETE CASCADE,
+  CONSTRAINT fk_room_wishlist_room FOREIGN KEY (room_id)
+    REFERENCES rooms (room_id) ON DELETE CASCADE
+);
+
     -- Table: admin_logs
     CREATE TABLE IF NOT EXISTS `admin_logs` (
       `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

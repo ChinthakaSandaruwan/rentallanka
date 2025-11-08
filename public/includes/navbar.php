@@ -7,6 +7,20 @@ $isSuper = isset($_SESSION['super_admin_id']);
 $loggedIn = (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) || $isSuper;
 $role = $_SESSION['role'] ?? '';
 require_once __DIR__ . '/../../config/config.php';
+// Wishlist count for logged-in regular users
+$wlCount = 0;
+if ($loggedIn && !$isSuper) {
+    $uid = (int)($_SESSION['user']['user_id'] ?? 0);
+    if ($uid > 0) {
+        $st = db()->prepare('SELECT COUNT(*) AS c FROM wishlist WHERE customer_id = ?');
+        $st->bind_param('i', $uid);
+        $st->execute();
+        $rs = $st->get_result();
+        $row = $rs ? $rs->fetch_assoc() : ['c' => 0];
+        $wlCount = (int)($row['c'] ?? 0);
+        $st->close();
+    }
+}
 // Active link helper
 $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
 ?>
@@ -31,53 +45,26 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
           <?php endif; ?>
         </ul>
 
-        <?php
-          $cartCount = 0;
-          if ($loggedIn && ($role === 'customer')) {
-            try {
-              $cid = (int)($_SESSION['user']['user_id'] ?? 0);
-              if ($cid > 0) {
-                $c = db()->prepare('SELECT cart_id FROM carts WHERE customer_id=? AND status="active" LIMIT 1');
-                $c->bind_param('i', $cid);
-                $c->execute();
-                $cres = $c->get_result()->fetch_assoc();
-                $c->close();
-                if ($cres) {
-                  $cart_id = (int)$cres['cart_id'];
-                  $q = db()->prepare('SELECT COUNT(*) AS cnt FROM cart_items WHERE cart_id=?');
-                  $q->bind_param('i', $cart_id);
-                  $q->execute();
-                  $cnt = $q->get_result()->fetch_assoc();
-                  $q->close();
-                  $cartCount = (int)($cnt['cnt'] ?? 0);
-                }
-              }
-            } catch (Throwable $e) { /* ignore */ }
-          }
-        ?>
+        
         <!-- Right side -->
         <div class="d-flex align-items-center gap-2">
 
           <?php if (!$loggedIn): ?>
             <a href="<?= $base_url ?>/auth/login.php" class="btn btn-primary btn-sm">Login</a>
           <?php else: ?>
-            <?php if ($role === 'customer'): ?>
-              <a href="<?= $base_url ?>/public/includes/cart.php" class="btn btn-outline-primary position-relative btn-sm" title="Cart">
-                <i class="bi bi-cart"></i>
-                <?php if ($cartCount > 0): ?>
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    <?= $cartCount ?>
-                  </span>
+                        <?php if (!$isSuper): ?>
+              <a href="<?= $base_url ?>/public/includes/wish_list.php" class="btn btn-outline-primary btn-sm position-relative" title="Wishlist">
+                <i class="bi bi-heart"></i>
+                <?php if ($wlCount > 0): ?>
+                  <span class="position-absolute top-0 end-0 translate-middle-y badge rounded-pill bg-danger"><?= (int)$wlCount ?></span>
                 <?php endif; ?>
               </a>
             <?php endif; ?>
 
-
-
             <?php if (in_array($role, ['owner','admin'], true)): ?>
               <button type="button" class="btn btn-outline-secondary btn-sm position-relative" id="nl-bell" data-bs-toggle="modal" data-bs-target="#nlModal" title="Notifications">
                 <i class="bi bi-bell"></i>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="nl-badge">0</span>
+                <span class="position-absolute top-0 end-0 translate-middle-y badge rounded-pill bg-danger d-none" id="nl-badge">0</span>
               </button>
             <?php endif; ?>
 
@@ -110,6 +97,7 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       </div>
     </div>
   </nav>
+  
   <?php if ($loggedIn && in_array($role, ['owner','admin'], true)): ?>
   <div class="modal fade" id="nlModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-lg">
