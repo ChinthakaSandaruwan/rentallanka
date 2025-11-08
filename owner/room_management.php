@@ -59,6 +59,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'delete') {
             $rid = (int)($_POST['room_id'] ?? 0);
             if ($rid > 0) {
+                // Remove associated room images (files + DB)
+                try {
+                    $imgs = [];
+                    $qi = db()->prepare('SELECT image_path FROM room_images WHERE room_id=?');
+                    $qi->bind_param('i', $rid);
+                    $qi->execute();
+                    $rs = $qi->get_result();
+                    while ($r = $rs->fetch_assoc()) { $imgs[] = $r['image_path'] ?? ''; }
+                    $qi->close();
+
+                    $baseDir = realpath(dirname(__DIR__) . '/uploads/rooms') ?: '';
+                    foreach ($imgs as $p) {
+                        if (!$p) continue;
+                        $fname = basename(parse_url($p, PHP_URL_PATH) ?? '');
+                        if (!$fname) continue;
+                        $full = dirname(__DIR__) . '/uploads/rooms/' . $fname;
+                        $real = realpath($full) ?: '';
+                        if ($real && $baseDir && strpos($real, $baseDir) === 0 && is_file($real)) {
+                            @unlink($real);
+                        }
+                    }
+
+                    $dp = db()->prepare('DELETE FROM room_images WHERE room_id=?');
+                    $dp->bind_param('i', $rid);
+                    $dp->execute();
+                    $dp->close();
+                } catch (Throwable $e) { /* ignore file cleanup errors */ }
+
+                // Finally delete the room
                 $del = db()->prepare('DELETE FROM rooms WHERE room_id=? AND owner_id=?');
                 $del->bind_param('ii', $rid, $owner_id);
                 if ($del->execute() && $del->affected_rows > 0) {
@@ -473,34 +502,8 @@ try {
       </div>
     </div>
   </div>
-  <script>
-    function fillSelect(select, items, placeholder) {
-      select.innerHTML = '';
-      const ph = document.createElement('option');
-      ph.value = '';
-      ph.textContent = placeholder;
-      ph.disabled = true; ph.selected = true;
-      select.appendChild(ph);
-      items.forEach(item => { const o = document.createElement('option'); if (typeof item === 'object') { o.value=item.value; o.textContent=item.label; } else { o.value=item; o.textContent=item; } select.appendChild(o); });
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      const provSel = document.getElementById('province');
-      const distSel = document.getElementById('district');
-      const citySel = document.getElementById('city');
-      const baseUrl = window.location.pathname;
-      // provinces returns [{province_id,name}]
-      fetch(baseUrl + '?geo=provinces').then(r=>r.json()).then(list=>fillSelect(provSel, list.map(x=>({value:x.province_id,label:x.name})), 'Select province')).catch(()=>fillSelect(provSel, [], 'Select province'));
-      provSel.addEventListener('change', ()=>{
-        const pid = encodeURIComponent(provSel.value||'');
-        fetch(baseUrl + '?geo=districts&province_id=' + pid).then(r=>r.json()).then(list=>{ fillSelect(distSel, list.map(x=>({value:x.district_id,label:x.name})), 'Select district'); fillSelect(citySel, [], 'Select city');}).catch(()=>{fillSelect(distSel, [], 'Select district'); fillSelect(citySel, [], 'Select city');});
-      });
-      distSel.addEventListener('change', ()=>{
-        const did = encodeURIComponent(distSel.value||'');
-        fetch(baseUrl + '?geo=cities&district_id=' + did).then(r=>r.json()).then(list=>fillSelect(citySel, list.map(x=>({value:x.city_id,label:x.name})), 'Select city')).catch(()=>fillSelect(citySel, [], 'Select city'));
-      });
-    });
-  </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script src="js/room_management.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 
 </body>
 </html>

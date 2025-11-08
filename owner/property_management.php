@@ -54,6 +54,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'delete') {
             $pid = (int)($_POST['property_id'] ?? 0);
             if ($pid > 0) {
+                // Remove associated images from disk and DB
+                try {
+                    // Collect all image paths from property_images
+                    $imgs = [];
+                    $qi = db()->prepare('SELECT image_path FROM property_images WHERE property_id=?');
+                    $qi->bind_param('i', $pid);
+                    $qi->execute();
+                    $rs = $qi->get_result();
+                    while ($r = $rs->fetch_assoc()) { $imgs[] = $r['image_path'] ?? ''; }
+                    $qi->close();
+
+                    // Also include the primary image stored on properties.image
+                    $pp = db()->prepare('SELECT image FROM properties WHERE property_id=? AND owner_id=?');
+                    $pp->bind_param('ii', $pid, $uid);
+                    $pp->execute();
+                    $prow = $pp->get_result()->fetch_assoc();
+                    $pp->close();
+                    if (!empty($prow['image'])) { $imgs[] = $prow['image']; }
+
+                    // Delete files safely from uploads/properties
+                    $baseDir = realpath(dirname(__DIR__) . '/uploads/properties') ?: '';
+                    foreach ($imgs as $p) {
+                        if (!$p) continue;
+                        $fname = basename(parse_url($p, PHP_URL_PATH) ?? '');
+                        if (!$fname) continue;
+                        $full = dirname(__DIR__) . '/uploads/properties/' . $fname;
+                        $real = realpath($full) ?: '';
+                        if ($real && $baseDir && strpos($real, $baseDir) === 0 && is_file($real)) {
+                            @unlink($real);
+                        }
+                    }
+
+                    // Delete rows from property_images
+                    $dp = db()->prepare('DELETE FROM property_images WHERE property_id=?');
+                    $dp->bind_param('i', $pid);
+                    $dp->execute();
+                    $dp->close();
+                } catch (Throwable $e) { /* ignore file cleanup errors */ }
+
+                // Finally delete the property
                 $del = db()->prepare('DELETE FROM properties WHERE property_id=? AND owner_id=?');
                 $del->bind_param('ii', $pid, $uid);
                 if ($del->execute() && $del->affected_rows > 0) {
@@ -506,63 +546,8 @@ try {
   </div>
 </div>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script><script>
-  function fillSelect(select, items, placeholder) {
-    select.innerHTML = '';
-    const ph = document.createElement('option');
-    ph.value = '';
-    ph.textContent = placeholder;
-    ph.disabled = true; ph.selected = true;
-    select.appendChild(ph);
-    (items || []).forEach(item => {
-      const isObj = typeof item === 'object' && item !== null;
-      const value = isObj ? (item.value ?? item.id ?? '') : item;
-      const label = isObj ? (item.label ?? item.name ?? String(value)) : String(item);
-      const opt = document.createElement('option');
-      opt.value = value;
-      opt.textContent = label;
-      select.appendChild(opt);
-    });
-    select.disabled = false;
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const provSel = document.getElementById('province');
-    const distSel = document.getElementById('district');
-    const citySel = document.getElementById('city');
-    const baseUrl = window.location.pathname;
-
-    // provinces returns [{province_id,name}]
-    fetch(baseUrl + '?geo=provinces')
-      .then(r => r.json())
-      .then(list => fillSelect(provSel, list.map(x=>({value:x.province_id,label:x.name})), 'Select province'))
-      .catch(() => fillSelect(provSel, [], 'Select province'));
-
-    provSel.addEventListener('change', () => {
-      const pid = encodeURIComponent(provSel.value || '');
-      fetch(baseUrl + '?geo=districts&province_id=' + pid)
-        .then(r => r.json())
-        .then(list => {
-          fillSelect(distSel, list.map(x=>({value:x.district_id,label:x.name})), 'Select district');
-          fillSelect(citySel, [], 'Select city');
-        })
-        .catch(() => {
-          fillSelect(distSel, [], 'Select district');
-          fillSelect(citySel, [], 'Select city');
-        });
-    });
-
-    distSel.addEventListener('change', () => {
-      const did = encodeURIComponent(distSel.value || '');
-      fetch(baseUrl + '?geo=cities&district_id=' + did)
-        .then(r => r.json())
-        .then(list => fillSelect(citySel, list.map(x=>({value:x.city_id,label:x.name})), 'Select city'))
-        .catch(() => fillSelect(citySel, [], 'Select city'));
-    });
-  });
-
-  
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="js/property_management.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKvVYl0ZlEFp3rG5GkHA7r4XK6tBT3M" crossorigin="anonymous"></script>
 
 </body>
