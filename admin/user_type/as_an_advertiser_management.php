@@ -1,10 +1,14 @@
 <?php
-require_once __DIR__ . '/../public/includes/auth_guard.php';
-require_role('admin');
-require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../../config/config.php';
+// Admin-only access
+$loggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
+$role = $_SESSION['role'] ?? '';
+if (!$loggedIn || $role !== 'admin') {
+  redirect_with_message($base_url . '/auth/login.php', 'Admin access required', 'error');
+}
 
 // Ensure PHP errors are logged to the project error log
-try { @ini_set('log_errors', '1'); @ini_set('error_log', __DIR__ . '/../error/error.log'); } catch (Throwable $e) {}
+try { @ini_set('log_errors', '1'); @ini_set('error_log', __DIR__ . '/../../error/error.log'); } catch (Throwable $e) {}
 
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
@@ -43,6 +47,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
           $st2->bind_param('ii', $admin_id, $rid);
           if (!$st2->execute()) { @error_log('[as_adv_mgmt] mark approved failed: ' . (string)db()->error . ' rid=' . $rid); }
           $st2->close();
+
+          // Notify the user about approval
+          try {
+            $title = 'Advertiser Request Approved';
+            $msg = 'Your request (ID #' . $rid . ') has been approved. Your account is now Owner.';
+            $type = 'system';
+            $n = db()->prepare('INSERT INTO notifications (user_id, title, message, type) VALUES (?,?,?,?)');
+            $n->bind_param('isss', $uid, $title, $msg, $type);
+            $n->execute();
+            $n->close();
+          } catch (Throwable $e3) { @error_log('[as_adv_mgmt] notify approve failed: ' . $e3->getMessage()); }
         } elseif ($action === 'mark_read') {
           // Reject request
           $st2 = db()->prepare('UPDATE advertiser_requests SET status = "rejected", reviewed_by = ? WHERE request_id = ?');
@@ -50,6 +65,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
           $st2->bind_param('ii', $admin_id, $rid);
           if ($st2->execute()) { $ok = 'Request dismissed'; } else { $err = 'Dismiss failed'; @error_log('[as_adv_mgmt] dismiss failed: ' . (string)db()->error . ' rid=' . $rid); }
           $st2->close();
+
+          // Notify the user about rejection
+          try {
+            $title = 'Advertiser Request Rejected';
+            $msg = 'Your request (ID #' . $rid . ') was rejected by admin.';
+            $type = 'system';
+            $n = db()->prepare('INSERT INTO notifications (user_id, title, message, type) VALUES (?,?,?,?)');
+            $n->bind_param('isss', $uid, $title, $msg, $type);
+            $n->execute();
+            $n->close();
+          } catch (Throwable $e4) { @error_log('[as_adv_mgmt] notify reject failed: ' . $e4->getMessage()); }
         } else {
           $err = 'Unknown action';
         }
@@ -85,7 +111,7 @@ try {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 </head>
 <body>
-  <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
+  <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
   <div class="container py-4">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h1 class="h4 mb-0">Advertiser Requests</h1>

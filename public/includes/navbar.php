@@ -61,7 +61,7 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
               </a>
             <?php endif; ?>
 
-            <?php if (in_array($role, ['owner','admin'], true)): ?>
+            <?php if (in_array($role, ['owner','admin','customer'], true)): ?>
               <button type="button" class="btn btn-outline-secondary btn-sm position-relative" id="nl-bell" data-bs-toggle="modal" data-bs-target="#nlModal" title="Notifications">
                 <i class="bi bi-bell"></i>
                 <span class="position-absolute top-0 end-0 translate-middle-y badge rounded-pill bg-danger d-none" id="nl-badge">0</span>
@@ -98,7 +98,7 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
     </div>
   </nav>
   
-  <?php if ($loggedIn && in_array($role, ['owner','admin'], true)): ?>
+  <?php if ($loggedIn && in_array($role, ['owner','admin','customer'], true)): ?>
   <div class="modal fade" id="nlModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-lg">
       <div class="modal-content">
@@ -120,7 +120,9 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       const role = <?= json_encode($role) ?>;
       const baseUrl = <?= json_encode($base_url) ?>;
       const currentUserId = <?= json_encode((int)($_SESSION['user']['user_id'] ?? 0)) ?>;
-      const api = baseUrl + '/notifications/between_admin_and_owner.php';
+      const api = (role === 'customer')
+        ? (baseUrl + '/notifications/between_customer_and_admin.php')
+        : (baseUrl + '/notifications/between_admin_and_owner.php');
       const badge = document.getElementById('nl-badge');
       const listEl = document.getElementById('nl-list');
       if (!badge || !listEl) return;
@@ -188,7 +190,9 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
 
       function load(){
         const params = new URLSearchParams({ action: 'list', unread_only: '0', limit: '20' });
-        if (role === 'admin' && currentUserId > 0) { params.set('owner_id', String(currentUserId)); }
+        if (role === 'admin' && currentUserId > 0 && api.indexOf('between_admin_and_owner.php') !== -1) {
+          params.set('owner_id', String(currentUserId));
+        }
         return fetch(api + '?' + params.toString()).then(rjson).then(j => render(j.data.items || []));
       }
 

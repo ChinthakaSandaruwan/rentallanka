@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../php_mailer/mailer.php';
 
 function normalize_phone_07(string $phone): string {
     $p = preg_replace('/\D+/', '', $phone);
@@ -67,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Create OTP and send
                     $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                     $expires = (new DateTime('+5 minutes'))->format('Y-m-d H:i:s');
-                    $stmt = db()->prepare('INSERT INTO otp_verifications (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
+                    $stmt = db()->prepare('INSERT INTO user_otps (user_id, otp_code, expires_at, is_verified) VALUES (?, ?, ?, 0)');
                     $stmt->bind_param('iss', $uid, $otp, $expires);
                     $stmt->execute();
                     $stmt->close();
@@ -89,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } else {
                         $error = 'Registration failed due to a server error.';
                     }
-                    if (isset($stmt) && $stmt) { $stmt->close(); }
+                    // Avoid closing a possibly already-closed statement to prevent fatal
                     $stage = 'request';
                 }
             }
@@ -106,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Invalid OTP';
                 $stage = 'verify';
             } else {
-                $stmt = db()->prepare('SELECT o.otp_id, u.user_id, u.role FROM otp_verifications o JOIN users u ON u.user_id = o.user_id WHERE o.user_id = ? AND o.otp_code = ? AND o.is_verified = 0 AND o.expires_at >= NOW() ORDER BY o.created_at DESC LIMIT 1');
+                $stmt = db()->prepare('SELECT o.otp_id, u.user_id, u.role FROM user_otps o JOIN users u ON u.user_id = o.user_id WHERE o.user_id = ? AND o.otp_code = ? AND o.is_verified = 0 AND o.expires_at >= NOW() ORDER BY o.created_at DESC LIMIT 1');
                 $stmt->bind_param('is', $uid, $code);
                 $stmt->execute();
                 $res = $stmt->get_result();
@@ -117,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stage = 'verify';
                 } else {
                     $otp_id = (int)$row['otp_id'];
-                    $stmt = db()->prepare('UPDATE otp_verifications SET is_verified = 1 WHERE otp_id = ?');
+                    $stmt = db()->prepare('UPDATE user_otps SET is_verified = 1 WHERE otp_id = ?');
                     $stmt->bind_param('i', $otp_id);
                     $stmt->execute();
                     $stmt->close();
@@ -131,6 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $uinfo = $se->get_result()->fetch_assoc();
                         $se->close();
                         if (!empty($uinfo['email'])) {
+                            require_once __DIR__ . '/../php_mailer/mailer.php';
                             $subject = 'Welcome to Rentallanka';
                             $nameTo = (string)($uinfo['name'] ?? '');
                             $body = '<p>Hi ' . htmlspecialchars($nameTo ?: 'there') . ',</p>'
@@ -138,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                   . '<p>Thank you,<br>Rentallanka</p>';
                             @mailer_send($uinfo['email'], $nameTo, $subject, $body);
                         }
+                        // In-app welcome notification removed per request
                     } catch (Throwable $e) { /* ignore */ }
 
                     $_SESSION['user'] = [

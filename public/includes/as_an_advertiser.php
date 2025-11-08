@@ -16,6 +16,22 @@ if (empty($_SESSION['csrf_token'])) {
 
 $err = '';
 $ok = '';
+$hasPending = false;
+
+// Pre-check: show pending state on initial load
+try {
+  if ($loggedIn && $role === 'customer') {
+    $uid = (int)($user['user_id'] ?? 0);
+    if ($uid > 0) {
+      $stc0 = db()->prepare("SELECT request_id FROM advertiser_requests WHERE user_id = ? AND status = 'pending' LIMIT 1");
+      $stc0->bind_param('i', $uid);
+      $stc0->execute();
+      $has0 = $stc0->get_result()->fetch_assoc();
+      $stc0->close();
+      if ($has0) { $hasPending = true; }
+    }
+  }
+} catch (Throwable $e) { /* ignore */ }
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   $token = $_POST['csrf_token'] ?? '';
@@ -58,6 +74,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
           $sti->bind_param('i', $uid);
           if ($sti->execute()) {
             $ok = 'Your request has been submitted for admin approval.';
+            // Notify first active admin about the new request
+            try {
+              $arid = (int)$sti->insert_id;
+              $resAdm = db()->query("SELECT user_id FROM users WHERE role='admin' AND status='active' ORDER BY user_id ASC LIMIT 1");
+              $adminId = 0;
+              if ($resAdm && ($rowAdm = $resAdm->fetch_assoc())) { $adminId = (int)$rowAdm['user_id']; }
+              if ($adminId > 0) {
+                $titleN = 'New Advertiser Request';
+                $msgN = 'Customer #' . (int)$uid . ' requested to become an advertiser (Request #' . $arid . ').';
+                $typeN = 'system';
+                $ns = db()->prepare('INSERT INTO notifications (user_id, title, message, type) VALUES (?,?,?,?)');
+                $ns->bind_param('isss', $adminId, $titleN, $msgN, $typeN);
+                $ns->execute();
+                $ns->close();
+              }
+            } catch (Throwable $e2) { @error_log('[as_an_advertiser] admin notify failed: ' . $e2->getMessage()); }
           } else {
             $err = 'Could not submit request. Please try again.';
             @error_log('[as_an_advertiser] insert failed: ' . (string)db()->error);
@@ -105,6 +137,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 <li>Admin approval is required.</li>
                 <li>We may contact you for verification.</li>
               </ul>
+              <?php if ($hasPending): ?>
+                <div class="alert alert-info d-flex align-items-center" role="alert">
+                  <i class="bi bi-hourglass-split me-2"></i>
+                  <div>Your request has been sent and is pending admin review.</div>
+                </div>
+              <?php endif; ?>
               <form method="post" class="needs-validation" novalidate>
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>" />
                 <div class="mb-3">
@@ -112,7 +150,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                   <input type="text" class="form-control" value="I want to upgrade to Owner" disabled />
                 </div>
                 <div class="d-grid">
-                  <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Send Request</button>
+                  <button type="submit" class="btn btn-primary" <?= $hasPending ? 'disabled' : '' ?>><i class="bi bi-send me-1"></i><?= $hasPending ? 'Request Pending' : 'Send Request' ?></button>
                 </div>
               </form>
             <?php elseif ($loggedIn && $role === 'owner'): ?>
