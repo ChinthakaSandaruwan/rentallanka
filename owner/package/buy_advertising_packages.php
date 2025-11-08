@@ -1,20 +1,20 @@
-<?php require_once __DIR__ . '/../public/includes/auth_guard.php'; require_role('owner'); ?>
-<?php require_once __DIR__ . '/../config/config.php'; ?>
+<?php require_once __DIR__ . '/../../public/includes/auth_guard.php'; require_role('owner'); ?>
+<?php require_once __DIR__ . '/../../config/config.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Buy Advertising Packages</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
-<?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
+<?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Buy Advertising Packages</h1>
-    <a href="index.php" class="btn btn-outline-secondary btn-sm">Back</a>
+    <a href="../index.php" class="btn btn-outline-secondary btn-sm">Dashboard</a>
   </div>
 
   <?php

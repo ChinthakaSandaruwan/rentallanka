@@ -20,6 +20,14 @@ if ($__session_status === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Fallback alert function used by global handlers. If an app-level
+// implementation exists elsewhere, that will override this.
+if (!function_exists('send_system_alert')) {
+    function send_system_alert(string $title, string $message): void {
+        error_log('[system_alert] ' . $title . ': ' . $message);
+    }
+}
+
 /**
  * Install global handlers to automatically raise system alerts
  * for unhandled exceptions, severe PHP errors, and fatal shutdowns.

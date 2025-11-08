@@ -1,0 +1,500 @@
+<?php
+require_once __DIR__ . '/../../public/includes/auth_guard.php';
+require_role('owner');
+require_once __DIR__ . '/../../config/config.php';
+
+$uid = (int)($_SESSION['user']['user_id'] ?? 0);
+if ($uid <= 0) {
+  redirect_with_message($GLOBALS['base_url'] . '/auth/login.php', 'Please log in', 'error');
+}
+
+// Serve geo data for selects
+if (isset($_GET['geo'])) {
+  header('Content-Type: application/json');
+  $type = $_GET['geo'];
+  if ($type === 'provinces') {
+    $rows = [];
+    $res = db()->query("SELECT id AS province_id, name_en AS name FROM provinces ORDER BY name_en");
+    while ($r = $res->fetch_assoc()) { $rows[] = $r; }
+    echo json_encode($rows); exit;
+  } elseif ($type === 'districts') {
+    $province_id = (int)($_GET['province_id'] ?? 0);
+    $rows = [];
+    $stmt = db()->prepare("SELECT id AS district_id, name_en AS name FROM districts WHERE province_id=? ORDER BY name_en");
+    $stmt->bind_param('i', $province_id);
+    $stmt->execute();
+    $rs = $stmt->get_result();
+    while ($r = $rs->fetch_assoc()) { $rows[] = $r; }
+    $stmt->close();
+    echo json_encode($rows); exit;
+  } elseif ($type === 'cities') {
+    $district_id = (int)($_GET['district_id'] ?? 0);
+    $rows = [];
+    $stmt = db()->prepare("SELECT id AS city_id, name_en AS name FROM cities WHERE district_id=? ORDER BY name_en");
+    $stmt->bind_param('i', $district_id);
+    $stmt->execute();
+    $rs = $stmt->get_result();
+    while ($r = $rs->fetch_assoc()) { $rows[] = $r; }
+    $stmt->close();
+    echo json_encode($rows); exit;
+  }
+  echo json_encode([]); exit;
+}
+
+if (empty($_SESSION['csrf_token'])) {
+  $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+
+// Guard: require active, paid property package with remaining slots
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+  try {
+    $q = db()->prepare("SELECT bp.bought_package_id, bp.remaining_properties, bp.end_date
+                         FROM bought_packages bp
+                         JOIN packages p ON p.package_id = bp.package_id
+                         WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid'
+                           AND (bp.end_date IS NULL OR bp.end_date>=NOW())
+                           AND COALESCE(p.max_properties,0) > 0
+                           AND COALESCE(bp.remaining_properties,0) > 0
+                         ORDER BY bp.start_date DESC LIMIT 1");
+    $q->bind_param('i', $uid);
+    $q->execute();
+    $pkg = $q->get_result()->fetch_assoc();
+    $q->close();
+    if (!$pkg) {
+      redirect_with_message($GLOBALS['base_url'] . '/owner/package/buy_advertising_packages.php', 'Please buy a property package (paid & active) with remaining slots before creating a property.', 'error');
+    }
+  } catch (Throwable $e) {
+    redirect_with_message($GLOBALS['base_url'] . '/owner/package/buy_advertising_packages.php', 'Please buy a property package before creating a property.', 'error');
+  }
+}
+
+$remaining_property_slots = null;
+try {
+  $st = db()->prepare("SELECT bp.remaining_properties
+                        FROM bought_packages bp
+                        JOIN packages p ON p.package_id = bp.package_id
+                        WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid'
+                          AND (bp.end_date IS NULL OR bp.end_date>=NOW())
+                          AND COALESCE(p.max_properties,0) > 0
+                        ORDER BY bp.start_date DESC LIMIT 1");
+  $st->bind_param('i', $uid);
+  $st->execute();
+  $r = $st->get_result()->fetch_assoc();
+  $st->close();
+  if ($r) { $remaining_property_slots = (int)$r['remaining_properties']; }
+} catch (Throwable $e) { /* ignore */ }
+
+$error = '';
+$created_id = 0;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $token = $_POST['csrf_token'] ?? '';
+  if (!hash_equals($_SESSION['csrf_token'], $token)) {
+    $error = 'Invalid request';
+  } else {
+    $title = trim($_POST['title'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $price_per_month = (float)($_POST['price_per_month'] ?? 0);
+    $bedrooms = (int)($_POST['bedrooms'] ?? 0);
+    $bathrooms = (int)($_POST['bathrooms'] ?? 0);
+    $living_rooms = (int)($_POST['living_rooms'] ?? 0);
+    $garden = isset($_POST['garden']) ? 1 : 0;
+    $gym = isset($_POST['gym']) ? 1 : 0;
+    $pool = isset($_POST['pool']) ? 1 : 0;
+    $sqft = $_POST['sqft'] ?? null;
+    $sqft = ($sqft === '' || $sqft === null) ? null : (float)$sqft;
+
+    $province_id = (int)($_POST['province_id'] ?? 0);
+    $district_id = (int)($_POST['district_id'] ?? 0);
+    $city_id = (int)($_POST['city_id'] ?? 0);
+    $address = trim($_POST['address'] ?? '');
+    $postal_code = trim($_POST['postal_code'] ?? '');
+
+    $allowed_types = ['apartment','house','villa','duplex','studio','penthouse','bungalow','townhouse','farmhouse','office','shop','warehouse','land','commercial_building','industrial','hotel','guesthouse','resort','other'];
+    $property_type = $_POST['property_type'] ?? 'other';
+    if (!in_array($property_type, $allowed_types, true)) { $property_type = 'other'; }
+
+    if ($title === '' || $price_per_month < 0) {
+      $error = 'Title and price are required';
+    } elseif ($province_id <= 0 || $district_id <= 0 || $city_id <= 0 || $postal_code === '') {
+      $error = 'Location (province, district, city, postal code) is required';
+    } elseif (mb_strlen($title) > 255) {
+      $error = 'Title is too long';
+    } elseif (mb_strlen($postal_code) > 10) {
+      $error = 'Postal code is too long';
+    } elseif (mb_strlen($address) > 255) {
+      $error = 'Address is too long';
+    } elseif ($bedrooms < 0 || $bathrooms < 0 || $living_rooms < 0) {
+      $error = 'Numeric values must be non-negative';
+    } elseif (!is_null($sqft) && $sqft < 0) {
+      $error = 'Area must be non-negative';
+    } else {
+      // Check active paid package with property slots
+      $bp = null; $bp_id = 0; $rem_props = 0;
+      try {
+        $q = db()->prepare("SELECT bp.bought_package_id, bp.remaining_properties, bp.end_date
+                             FROM bought_packages bp
+                             JOIN packages p ON p.package_id = bp.package_id
+                             WHERE bp.user_id=? AND bp.status='active' AND bp.payment_status='paid'
+                               AND (bp.end_date IS NULL OR bp.end_date>=NOW())
+                               AND COALESCE(p.max_properties,0) > 0
+                             ORDER BY bp.start_date DESC LIMIT 1");
+        $q->bind_param('i', $uid);
+        $q->execute();
+        $bp = $q->get_result()->fetch_assoc();
+        $q->close();
+        if ($bp) { $bp_id = (int)$bp['bought_package_id']; $rem_props = (int)$bp['remaining_properties']; }
+      } catch (Throwable $e) { /* ignore */ }
+      if ($bp_id <= 0) {
+        redirect_with_message($GLOBALS['base_url'] . '/owner/package/buy_advertising_packages.php', 'Please buy a property package and complete payment before adding a property.', 'error');
+      }
+      if ($rem_props <= 0) {
+        redirect_with_message($GLOBALS['base_url'] . '/owner/package/buy_advertising_packages.php', 'Your package does not have remaining property slots.', 'error');
+      }
+
+      $property_code = 'TEMP-' . bin2hex(random_bytes(4));
+      $stmt = db()->prepare('INSERT INTO properties (owner_id, property_code, title, description, price_per_month, bedrooms, bathrooms, living_rooms, garden, gym, pool, sqft, kitchen, parking, water_supply, electricity_supply, property_type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $has_kitchen = isset($_POST['has_kitchen']) ? 1 : 0;
+      $has_parking = isset($_POST['has_parking']) ? 1 : 0;
+      $has_water_supply = isset($_POST['has_water_supply']) ? 1 : 0;
+      $has_electricity_supply = isset($_POST['has_electricity_supply']) ? 1 : 0;
+      $stmt->bind_param(
+        'isssdiiiiiidiiiiss',
+        $uid,
+        $property_code,
+        $title,
+        $description,
+        $price_per_month,
+        $bedrooms,
+        $bathrooms,
+        $living_rooms,
+        $garden,
+        $gym,
+        $pool,
+        $sqft,
+        $has_kitchen,
+        $has_parking,
+        $has_water_supply,
+        $has_electricity_supply,
+        $property_type,
+        $pending_status
+      );
+      $pending_status = 'pending';
+      if ($stmt->execute()) {
+        $new_id = db()->insert_id;
+        $stmt->close();
+        // Friendly code
+        try {
+          $final_code = 'PROP-' . str_pad((string)$new_id, 6, '0', STR_PAD_LEFT);
+          $upc = db()->prepare('UPDATE properties SET property_code=? WHERE property_id=?');
+          $upc->bind_param('si', $final_code, $new_id);
+          $upc->execute();
+          $upc->close();
+        } catch (Throwable $e) { /* ignore */ }
+        // Location row
+        $loc = db()->prepare('INSERT INTO locations (property_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)');
+        $loc->bind_param('iiiiss', $new_id, $province_id, $district_id, $city_id, $address, $postal_code);
+        $loc->execute();
+        $loc->close();
+        // Track uploaded images in this same request
+        $uploaded_primary = false;
+        $uploaded_gallery_count = 0;
+
+        // Handle primary image upload (optional)
+        if (!empty($_FILES['image']['name']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
+          $imgSize = (int)($_FILES['image']['size'] ?? 0);
+          $imgInfo = @getimagesize($_FILES['image']['tmp_name']);
+          if ($imgSize > 0 && $imgSize <= 5242880 && $imgInfo !== false) {
+            $dir = dirname(__DIR__, 2) . '/uploads/properties';
+            if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
+            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+            $ext = preg_replace('/[^a-zA-Z0-9]/','', $ext);
+            if ($ext === '' && is_array($imgInfo)) {
+              $mime = $imgInfo['mime'] ?? '';
+              if (strpos($mime, 'jpeg') !== false) $ext = 'jpg';
+              elseif (strpos($mime, 'png') !== false) $ext = 'png';
+              elseif (strpos($mime, 'gif') !== false) $ext = 'gif';
+              elseif (strpos($mime, 'webp') !== false) $ext = 'webp';
+            }
+            if ($ext === '') $ext = 'jpg';
+            $fname = 'prop_' . $new_id . '_' . time() . '.' . $ext;
+            $dest = $dir . '/' . $fname;
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $dest)) {
+              $rel = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/properties/' . $fname;
+              // set as primary in properties and property_images
+              try { $up = db()->prepare('UPDATE properties SET image=? WHERE property_id=?'); $up->bind_param('si', $rel, $new_id); $up->execute(); $up->close(); } catch (Throwable $e) {}
+              try { $pi = db()->prepare('INSERT INTO property_images (property_id, image_path, is_primary) VALUES (?, ?, 1)'); $pi->bind_param('is', $new_id, $rel); $pi->execute(); $pi->close(); } catch (Throwable $e) {}
+              $uploaded_primary = true;
+            }
+          }
+        }
+        // Handle gallery images (optional)
+        if (!empty($_FILES['gallery_images']['name']) && is_array($_FILES['gallery_images']['name'])) {
+          $count = count($_FILES['gallery_images']['name']);
+          for ($i=0; $i < $count; $i++) {
+            if (empty($_FILES['gallery_images']['name'][$i]) || !is_uploaded_file($_FILES['gallery_images']['tmp_name'][$i])) { continue; }
+            $gSize = (int)($_FILES['gallery_images']['size'][$i] ?? 0);
+            $gInfo = @getimagesize($_FILES['gallery_images']['tmp_name'][$i]);
+            if ($gSize <= 0 || $gSize > 5242880 || $gInfo === false) { continue; }
+            $dir = dirname(__DIR__, 2) . '/uploads/properties';
+            if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
+            $ext = pathinfo($_FILES['gallery_images']['name'][$i], PATHINFO_EXTENSION);
+            $ext = preg_replace('/[^a-zA-Z0-9]/','', $ext);
+            if ($ext === '' && is_array($gInfo)) {
+              $mime = $gInfo['mime'] ?? '';
+              if (strpos($mime, 'jpeg') !== false) $ext = 'jpg';
+              elseif (strpos($mime, 'png') !== false) $ext = 'png';
+              elseif (strpos($mime, 'gif') !== false) $ext = 'gif';
+              elseif (strpos($mime, 'webp') !== false) $ext = 'webp';
+            }
+            if ($ext === '') $ext = 'jpg';
+            $fname = 'prop_' . $new_id . '_' . ($i+1) . '_' . time() . '.' . $ext;
+            $dest = $dir . '/' . $fname;
+            if (move_uploaded_file($_FILES['gallery_images']['tmp_name'][$i], $dest)) {
+              $rel = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/properties/' . $fname;
+              try { $pi = db()->prepare('INSERT INTO property_images (property_id, image_path, is_primary) VALUES (?, ?, 0)'); $pi->bind_param('is', $new_id, $rel); $pi->execute(); $pi->close(); } catch (Throwable $e) {}
+              $uploaded_gallery_count++;
+            }
+          }
+        }
+        // Deduct one property slot from the purchased package
+        try {
+          if (!empty($bp_id) && $bp_id > 0) {
+            $dec = db()->prepare('UPDATE bought_packages SET remaining_properties = remaining_properties - 1 WHERE bought_package_id = ? AND remaining_properties > 0');
+            $dec->bind_param('i', $bp_id);
+            $dec->execute();
+            $dec->close();
+          }
+        } catch (Throwable $e) { /* ignore deduction failure */ }
+
+        // Reflect new remaining slots in the UI without re-query
+        if ($remaining_property_slots !== null && $remaining_property_slots > 0) {
+          $remaining_property_slots = $remaining_property_slots - 1;
+        }
+
+        $created_id = (int)$new_id;
+        $flash = 'Property created successfully.';
+        if ($uploaded_primary || $uploaded_gallery_count > 0) {
+          $flash .= ' Uploaded images: ' . ($uploaded_primary ? 'primary' : 'no primary') . ', gallery ' . $uploaded_gallery_count . '.';
+        }
+        $flash_type = 'success';
+      } else {
+        $error = 'Failed to create property';
+        $stmt->close();
+      }
+    }
+  }
+}
+
+if (empty($flash)) {
+  [$flash, $flash_type] = get_flash();
+}
+?>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create Property</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+  <body>
+  <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
+  <div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h1 class="h3 mb-0">Create Property</h1>
+      <a href="../../owner/index.php" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+    </div>
+    <?php
+      if (!empty($error)) {
+        echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">'
+          . htmlspecialchars($error)
+          . '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+      }
+      if (!empty($flash)) {
+        $map = ['error' => 'danger', 'danger' => 'danger', 'success' => 'success', 'warning' => 'warning', 'info' => 'info'];
+        $type = $map[$flash_type ?? 'info'] ?? 'info';
+        echo '<div class="alert alert-' . $type . ' alert-dismissible fade show" role="alert">'
+          . htmlspecialchars($flash)
+          . '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+      }
+    ?>
+
+    <?php if (!is_null($remaining_property_slots)): ?>
+      <div class="mb-3">
+        <span class="badge bg-primary">Remaining Property Slots: <?php echo (int)$remaining_property_slots; ?></span>
+      </div>
+    <?php endif; ?>
+
+    <div class="card">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <div id="formAlert"></div>
+        <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+              <input name="title" class="form-control" required maxlength="255" placeholder="Spacious 3BR house...">
+              <div class="invalid-feedback">Please enter a title (max 255 characters).</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" rows="3" class="form-control" placeholder="Describe the property, amenities, nearby places..."></textarea>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Province</label>
+              <select name="province_id" id="province" class="form-select" required data-current=""></select>
+              <div class="invalid-feedback">Please select a province.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">District</label>
+              <select name="district_id" id="district" class="form-select" required data-current=""></select>
+              <div class="invalid-feedback">Please select a district.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">City</label>
+              <select name="city_id" id="city" class="form-select" required data-current=""></select>
+              <div class="invalid-feedback">Please select a city.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Postal Code</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-mailbox"></i></span>
+                <input name="postal_code" class="form-control" required maxlength="10" placeholder="e.g. 10115">
+                <div class="invalid-feedback">Please provide a postal code.</div>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Address</label>
+              <input name="address" class="form-control" maxlength="255" placeholder="Street, number, etc.">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Price per month (LKR)</label>
+            <div class="input-group">
+              <span class="input-group-text">LKR</span>
+              <input name="price_per_month" type="number" min="0" step="0.01" class="form-control" required placeholder="0.00">
+              <div class="invalid-feedback">Please enter a valid non-negative price.</div>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col">
+              <label class="form-label">Bedrooms</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-door-open"></i></span>
+                <input name="bedrooms" type="number" min="0" class="form-control" placeholder="0" value="0">
+              </div>
+            </div>
+            <div class="col">
+              <label class="form-label">Bathrooms</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-droplet"></i></span>
+                <input name="bathrooms" type="number" min="0" class="form-control" placeholder="0" value="0">
+              </div>
+            </div>
+            <div class="col">
+              <label class="form-label">Living rooms</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-house"></i></span>
+                <input name="living_rooms" type="number" min="0" class="form-control" placeholder="0" value="0">
+              </div>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="has_kitchen" id="has_kitchen">
+                <label class="form-check-label" for="has_kitchen">Kitchen</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="has_parking" id="has_parking">
+                <label class="form-check-label" for="has_parking">Parking</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="has_water_supply" id="has_water_supply">
+                <label class="form-check-label" for="has_water_supply">Water</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="has_electricity_supply" id="has_electricity_supply">
+                <label class="form-check-label" for="has_electricity_supply">Electricity</label>
+              </div>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="garden" id="garden">
+                <label class="form-check-label" for="garden">Garden</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="gym" id="gym">
+                <label class="form-check-label" for="gym">Gym</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="pool" id="pool">
+                <label class="form-check-label" for="pool">Pool</label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Property type</label>
+            <select name="property_type" class="form-select">
+              <option value="apartment">Apartment</option>
+              <option value="house">House</option>
+              <option value="villa">Villa</option>
+              <option value="duplex">Duplex</option>
+              <option value="studio">Studio</option>
+              <option value="penthouse">Penthouse</option>
+              <option value="bungalow">Bungalow</option>
+              <option value="townhouse">Townhouse</option>
+              <option value="farmhouse">Farmhouse</option>
+              <option value="office">Office</option>
+              <option value="shop">Shop</option>
+              <option value="warehouse">Warehouse</option>
+              <option value="land">Land</option>
+              <option value="commercial_building">Commercial Building</option>
+              <option value="industrial">Industrial</option>
+              <option value="hotel">Hotel</option>
+              <option value="guesthouse">Guesthouse</option>
+              <option value="resort">Resort</option>
+              <option value="other" selected>Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="sqft">Area (sqft)</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-rulers"></i></span>
+              <input class="form-control" type="number" name="sqft" id="sqft" step="0.01" min="0" placeholder="e.g. 1200">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Primary Image (optional, max 5MB)</label>
+            <input type="file" name="image" accept="image/*" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Gallery Images (optional, max 5MB each)</label>
+            <input type="file" name="gallery_images[]" accept="image/*" class="form-control" multiple>
+          </div>
+          <button type="submit" class="btn btn-primary">Create Property</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script src="js/property_create.js" defer></script>
+</body>
+</html>

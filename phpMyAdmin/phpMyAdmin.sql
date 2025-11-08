@@ -204,7 +204,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       CONSTRAINT `fk_rooms_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- Reference geography tables
+  
 
     -- locations (must be after rooms and reference tables to satisfy FKs)
     CREATE TABLE IF NOT EXISTS `locations` (

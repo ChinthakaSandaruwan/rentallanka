@@ -80,7 +80,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $st = db()->prepare('DELETE FROM properties WHERE property_id = ?');
         $st->bind_param('i', $pid);
         if ($st->execute() && $st->affected_rows > 0) {
-          if ($ow > 0) { $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?,?)'); $title = 'Property deleted'; $msg = 'Your property #' . $pid . ' was deleted by admin'; $type = 'system'; $nt->bind_param('isssi', $ow, $title, $msg, $type, $pid); $nt->execute(); $nt->close(); }
+          // Insert notification without violating FK (property_id set to NULL after deletion)
+          if ($ow > 0) {
+            try {
+              $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, NULL)');
+              $title = 'Property deleted';
+              $msg = 'Your property #' . $pid . ' was deleted by admin';
+              $type = 'system';
+              $nt->bind_param('isss', $ow, $title, $msg, $type);
+              $nt->execute();
+              $nt->close();
+            } catch (Throwable $e) { /* ignore notification failure */ }
+          }
           redirect_with_message('property_management.php', 'Property deleted', 'success');
         } else { $pv_error = 'Delete failed'; }
         $st->close();
