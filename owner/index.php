@@ -137,8 +137,36 @@ require_role('owner');
           </div>
         </div>
       </div>
-    </div>
+   
 
+    <!-- RENTED ROOM SECTION -->
+    <div class="row g-3">
+      <div class="col-12 col-md-4 col-lg-3">
+        <div class="card h-100 text-center">
+          <div class="card-body d-flex flex-column">
+            <i class="bi bi-check-circle text-primary card-icon mb-2"></i>
+            <h5 class="card-title mb-0">Rented Room</h5>
+            <p class="card-text text-muted">View your rented rooms.</p>
+            <a href="room/room_rented.php" class="btn btn-primary mt-auto">Rented Room</a>
+          </div>
+        </div>
+      </div>
+   
+
+      <!-- room status -->
+      <div class="col-12 col-md-4 col-lg-3">
+        <div class="card h-100 text-center">
+          <div class="card-body d-flex flex-column">
+            <i class="bi bi-check-circle text-primary card-icon mb-2"></i>
+            <h5 class="card-title mb-0">Room Status</h5>
+            <p class="card-text text-muted">View your room status.</p>
+            <a href="room/room_status.php" class="btn btn-primary mt-auto">Room Status</a>
+          </div>
+        </div>
+      </div>
+ </div>
+
+ </div>
     <!-- PACKAGE SECTION -->
     <h2 class="section-title">Packages</h2>
     <div class="row g-3">
@@ -164,6 +192,8 @@ require_role('owner');
         </div>
       </div>
     </div>
+
+
 
   </div>
 

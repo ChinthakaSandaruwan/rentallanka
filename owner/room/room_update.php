@@ -50,13 +50,13 @@ $error = '';
 $flash = '';
 $flash_type = '';
 $room = null;
-$location = ['province_id'=>null,'district_id'=>null,'city_id'=>null,'address'=>'','postal_code'=>''];
+$location = ['province_id'=>null,'district_id'=>null,'city_id'=>null,'address'=>'','google_map_link'=>'','postal_code'=>''];
 $primary_image_path = '';
 $images = [];
 
 // Load room + location for GET (and for POST re-check ownership)
 if ($room_id > 0) {
-  $sql = 'SELECT r.room_id, r.title, r.description, r.room_type, r.meal_plan, r.beds, r.maximum_guests, r.price_per_day, r.status
+  $sql = 'SELECT r.room_id, r.title, r.description, r.room_type, r.beds, r.maximum_guests, r.price_per_day, r.status
           FROM rooms r WHERE r.room_id=? AND r.owner_id=?';
   $st = db()->prepare($sql);
   $st->bind_param('ii', $room_id, $uid);
@@ -66,7 +66,7 @@ if ($room_id > 0) {
   $st->close();
 
   if ($room) {
-    $ls = db()->prepare('SELECT province_id, district_id, city_id, address, postal_code FROM locations WHERE room_id=? LIMIT 1');
+    $ls = db()->prepare('SELECT province_id, district_id, city_id, address, google_map_link, postal_code FROM locations WHERE room_id=? LIMIT 1');
     $ls->bind_param('i', $room_id);
     $ls->execute();
     $lr = $ls->get_result()->fetch_assoc();
@@ -87,6 +87,18 @@ if ($room_id > 0) {
     $gr = $gi->get_result();
     while ($row = $gr->fetch_assoc()) { $images[] = $row; }
     $gi->close();
+
+    // Load per-room meal price overrides
+    try {
+      $mo = db()->prepare('SELECT meal_name, price FROM room_meals WHERE room_id=?');
+      $mo->bind_param('i', $room_id);
+      $mo->execute();
+      $mr = $mo->get_result();
+      while ($row = $mr->fetch_assoc()) {
+        $meal_overrides[strtolower((string)$row['meal_name'])] = (float)$row['price'];
+      }
+      $mo->close();
+    } catch (Throwable $e) { $meal_overrides = []; }
   }
 }
 
@@ -183,7 +195,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $room_type = $_POST['room_type'] ?? 'other';
-    $meal_plan = $_POST['meal_plan'] ?? 'none';
     $beds = (int)($_POST['beds'] ?? 1);
     $maximum_guests = (int)($_POST['maximum_guests'] ?? 1);
     $price_per_day_raw = $_POST['price_per_day'] ?? '';
@@ -193,12 +204,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $district_id = (int)($_POST['district_id'] ?? 0);
     $city_id = (int)($_POST['city_id'] ?? 0);
     $address = trim($_POST['address'] ?? '');
+    $google_map_link = trim($_POST['google_map_link'] ?? '');
     $postal_code = trim($_POST['postal_code'] ?? '');
 
     $allowed_types = ['single','double','twin','suite','deluxe','family','studio','dorm','apartment','villa','penthouse','shared','conference','meeting','other'];
     if (!in_array($room_type, $allowed_types, true)) { $room_type = 'other'; }
-    $allowed_meals = ['breakfast','half_board','full_board','all_inclusive','none'];
-    if (!in_array($meal_plan, $allowed_meals, true)) { $meal_plan = 'none'; }
 
     if ($title === '' || $price_per_day === null || $price_per_day <= 0) {
       $error = 'Title and price per day are required';
@@ -210,12 +220,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $error = 'Postal code is too long';
     } elseif (mb_strlen($address) > 255) {
       $error = 'Address is too long';
+    } elseif (mb_strlen($google_map_link) > 255) {
+      $error = 'Google map link is too long';
     } elseif ($beds < 1 || $maximum_guests < 1) {
       $error = 'Beds and maximum guests must be at least 1';
     } else {
       // Update main room fields
-      $up = db()->prepare('UPDATE rooms SET title=?, description=?, room_type=?, meal_plan=?, beds=?, maximum_guests=?, price_per_day=? WHERE room_id=? AND owner_id=?');
-      $up->bind_param('ssssiidii', $title, $description, $room_type, $meal_plan, $beds, $maximum_guests, $price_per_day, $room_id, $uid);
+      $up = db()->prepare('UPDATE rooms SET title=?, description=?, room_type=?, beds=?, maximum_guests=?, price_per_day=? WHERE room_id=? AND owner_id=?');
+      $up->bind_param('sssiidii', $title, $description, $room_type, $beds, $maximum_guests, $price_per_day, $room_id, $uid);
       $ok = $up->execute();
       $up->close();
 
@@ -228,13 +240,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $exists = (bool)$ch->get_result()->fetch_row();
         $ch->close();
         if ($exists) {
-          $loc = db()->prepare('UPDATE locations SET province_id=?, district_id=?, city_id=?, address=?, postal_code=? WHERE room_id=?');
-          $loc->bind_param('iiissi', $province_id, $district_id, $city_id, $address, $postal_code, $room_id);
+          $loc = db()->prepare('UPDATE locations SET province_id=?, district_id=?, city_id=?, address=?, google_map_link=?, postal_code=? WHERE room_id=?');
+          $gmap = ($google_map_link === '' ? null : $google_map_link);
+          $loc->bind_param('iiisssi', $province_id, $district_id, $city_id, $address, $gmap, $postal_code, $room_id);
           $loc->execute();
           $loc->close();
         } else {
-          $loc = db()->prepare('INSERT INTO locations (room_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)');
-          $loc->bind_param('iiiiss', $room_id, $province_id, $district_id, $city_id, $address, $postal_code);
+          $loc = db()->prepare('INSERT INTO locations (room_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)');
+          $gmap = ($google_map_link === '' ? null : $google_map_link);
+          $loc->bind_param('iiiisss', $room_id, $province_id, $district_id, $city_id, $address, $gmap, $postal_code);
           $loc->execute();
           $loc->close();
         }
@@ -321,6 +335,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
           }
         }
+
+        // Upsert per-room meal price overrides (blank deletes)
+        try {
+          // Static mapping; meal_plans table removed
+          $mealsMap = [
+            'breakfast' => 1,
+            'half_board' => 2,
+            'full_board' => 3,
+            'all_inclusive' => 4,
+          ];
+          $pairs = [
+            'breakfast' => $_POST['meal_price_breakfast'] ?? null,
+            'half_board' => $_POST['meal_price_half_board'] ?? null,
+            'full_board' => $_POST['meal_price_full_board'] ?? null,
+            'all_inclusive' => $_POST['meal_price_all_inclusive'] ?? null,
+          ];
+          foreach ($pairs as $name => $val) {
+            $mid = (int)($mealsMap[$name] ?? 0);
+            if ($mid <= 0) { continue; }
+            if ($val === null || $val === '') {
+              // Blank means delete override
+              $del = db()->prepare('DELETE FROM room_meals WHERE room_id=? AND meal_id=?');
+              $del->bind_param('ii', $room_id, $mid);
+              $del->execute();
+              $del->close();
+            } elseif (is_numeric($val)) {
+              $price = (float)$val; if ($price < 0) { $price = 0.0; }
+              // Upsert into room_meals
+              $upsert = db()->prepare('INSERT INTO room_meals (room_id, meal_id, meal_name, price) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE meal_name=VALUES(meal_name), price=VALUES(price)');
+              $upsert->bind_param('iisd', $room_id, $mid, $name, $price);
+              $upsert->execute();
+              $upsert->close();
+            }
+          }
+        } catch (Throwable $e) { /* ignore */ }
 
         redirect_with_message($GLOBALS['base_url'] . '/owner/room/room_update.php?id=' . (int)$room_id, 'Room updated successfully.', 'success');
         exit;
@@ -439,6 +488,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label class="form-label">Address</label>
             <input name="address" class="form-control" maxlength="255" value="<?php echo htmlspecialchars($location['address'] ?? ''); ?>" placeholder="Street, number, etc.">
           </div>
+          <div class="col-12">
+            <label class="form-label">Google Map Link (optional)</label>
+            <input name="google_map_link" class="form-control" maxlength="255" value="<?php echo htmlspecialchars($location['google_map_link'] ?? ''); ?>" placeholder="https://maps.google.com/...">
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Price per day (LKR)</label>
@@ -472,17 +525,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </select>
         </div>
         <div class="mb-3">
-          <label class="form-label">Meal plan</label>
-          <select name="meal_plan" class="form-select">
-            <?php
-              $meals = ['none','breakfast','half_board','full_board','all_inclusive'];
-              $curMeal = (string)($room['meal_plan'] ?? 'none');
-              foreach ($meals as $m) {
-                $sel = ($curMeal === $m) ? ' selected' : '';
-                echo '<option value="'.htmlspecialchars($m).'"'.$sel.'>'.ucwords(str_replace('_',' ',$m))."</option>";
-              }
-            ?>
-          </select>
+          <label class="form-label">Meal prices per day (optional)</label>
+          <div class="row g-2">
+            <div class="col-sm-6 col-md-3">
+              <div class="input-group">
+                <span class="input-group-text">Breakfast</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="meal_price_breakfast" value="<?php echo htmlspecialchars(isset($meal_overrides['breakfast']) ? (string)$meal_overrides['breakfast'] : ''); ?>" placeholder="e.g. 1000.00">
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="input-group">
+                <span class="input-group-text">Half board</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="meal_price_half_board" value="<?php echo htmlspecialchars(isset($meal_overrides['half_board']) ? (string)$meal_overrides['half_board'] : ''); ?>" placeholder="e.g. 1500.00">
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="input-group">
+                <span class="input-group-text">Full board</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="meal_price_full_board" value="<?php echo htmlspecialchars(isset($meal_overrides['full_board']) ? (string)$meal_overrides['full_board'] : ''); ?>" placeholder="e.g. 2000.00">
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="input-group">
+                <span class="input-group-text">All inclusive</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="meal_price_all_inclusive" value="<?php echo htmlspecialchars(isset($meal_overrides['all_inclusive']) ? (string)$meal_overrides['all_inclusive'] : ''); ?>" placeholder="e.g. 3000.00">
+              </div>
+            </div>
+          </div>
+          <div class="form-text">Leave blank to use global meal plan prices. Only meals up to the selected meal plan capability will be kept.</div>
         </div>
         <div class="mb-3">
           <label class="form-label">Primary Image (optional, max 5MB)</label>

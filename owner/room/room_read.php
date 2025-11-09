@@ -39,7 +39,6 @@
                    r.title,
                    r.description,
                    r.room_type,
-                   r.meal_plan,
                    r.beds,
                    r.maximum_guests,
                    r.price_per_day,
@@ -101,9 +100,6 @@
             <div class="mb-2">
               <?php if (!empty($r['room_type'])): ?>
                 <span class="badge bg-info text-dark me-1"><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $r['room_type']))); ?></span>
-              <?php endif; ?>
-              <?php if (isset($r['meal_plan']) && $r['meal_plan'] !== ''): ?>
-                <span class="badge bg-success text-light me-1">Meal: <?php echo htmlspecialchars(ucwords(str_replace('_',' ', $r['meal_plan']))); ?></span>
               <?php endif; ?>
               <?php if (isset($r['beds'])): ?>
                 <span class="badge bg-light text-dark border me-1">Beds: <?php echo (int)$r['beds']; ?></span>

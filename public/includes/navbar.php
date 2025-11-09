@@ -40,6 +40,10 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_properties.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_properties.php"><i class="bi bi-building me-1"></i>Properties</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_rooms.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_rooms.php"><i class="bi bi-door-open me-1"></i>Rooms</a></li>
 
+          <?php if ($loggedIn && !$isSuper && in_array($role, ['customer','owner','admin'], true)): ?>
+            <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/my_rentals.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/my_rentals.php"><i class="bi bi-receipt me-1"></i>My Rentals</a></li>
+          <?php endif; ?>
+
           <?php if ($loggedIn && $isSuper): ?>
             <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/superAdmin/index.php"><i class="bi bi-shield-lock me-1"></i>Super Admin Dashboard</a></li>
           <?php endif; ?>

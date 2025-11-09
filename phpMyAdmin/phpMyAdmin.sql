@@ -195,7 +195,6 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `room_type` ENUM('single','double','twin','suite','deluxe','family','studio','dorm','apartment','villa','penthouse','shared','conference','meeting','other') NULL,
       `beds` INT NOT NULL DEFAULT 1,
       `bathrooms` INT NOT NULL DEFAULT 1,
-      `meal_plan` ENUM('breakfast','half_board','full_board','all_inclusive','none') NULL,
       `maximum_guests` INT NOT NULL DEFAULT 1,
       `price_per_day` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       `status` ENUM('available','rented','unavailable','pending') NOT NULL DEFAULT 'pending',
@@ -220,6 +219,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
      `district_id` INT NOT NULL,
      `city_id` INT NOT NULL,
      `address` VARCHAR(255) NULL,
+     `google_map_link` VARCHAR(255) NULL,
      `postal_code` VARCHAR(10) NOT NULL,
      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
      PRIMARY KEY (`location_id`),
@@ -391,25 +391,19 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       CONSTRAINT `fk_advreq_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- Table: meal_plans (reference for room_rents.meal_id)
-    CREATE TABLE IF NOT EXISTS `meal_plans` (
-      `meal_id` INT NOT NULL AUTO_INCREMENT,
+
+    -- Table: room_meals (per-room override prices for meals)
+    CREATE TABLE IF NOT EXISTS `room_meals` (
+      `room_id` INT NOT NULL,
+      `meal_id` INT NOT NULL,
       `meal_name` VARCHAR(50) NOT NULL,
-      `status` ENUM('active','inactive') NOT NULL DEFAULT 'active',
-      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`meal_id`),
-      UNIQUE KEY `uk_meal_plans_name` (`meal_name`)
+      `price` DECIMAL(10,2) NOT NULL,
+      PRIMARY KEY (`room_id`, `meal_id`),
+      CONSTRAINT `fk_room_meals_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- Seed default meals aligned with rooms.meal_plan enum
-    INSERT INTO `meal_plans` (`meal_name`, `status`) VALUES
-      ('breakfast', 'active'),
-      ('half_board', 'active'),
-      ('full_board', 'active'),
-      ('all_inclusive', 'active'),
-      ('none', 'active')
-    AS new
-    ON DUPLICATE KEY UPDATE `status` = new.`status`;
+  
+
 
     -- Table: room_rents (room rentals/bookings)
     CREATE TABLE IF NOT EXISTS `room_rents` (
@@ -430,6 +424,5 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       KEY `idx_room_rents_checkin` (`checkin_date`),
       KEY `idx_room_rents_status` (`status`),
       CONSTRAINT `fk_room_rents_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE,
-      CONSTRAINT `fk_room_rents_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-      CONSTRAINT `fk_room_rents_meal` FOREIGN KEY (`meal_id`) REFERENCES `meal_plans` (`meal_id`) ON DELETE SET NULL
+      CONSTRAINT `fk_room_rents_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

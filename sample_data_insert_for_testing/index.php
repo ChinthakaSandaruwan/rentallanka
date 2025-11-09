@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/config.php';
 function get_owners(): array {
   $rows = [];
   try {
-    $res = db()->query("SELECT user_id, CONCAT(first_name, ' ', last_name) AS name FROM users WHERE role='owner' ORDER BY user_id DESC LIMIT 200");
+    $res = db()->query("SELECT user_id, COALESCE(name,'') AS name FROM users WHERE role='owner' ORDER BY user_id DESC LIMIT 200");
     while ($r = $res->fetch_assoc()) { $rows[] = $r; }
   } catch (Throwable $e) {}
   return $rows;
@@ -86,6 +86,14 @@ $owners = get_owners();
           <div class="col-12">
             <button class="btn btn-success" type="submit">Generate Rooms</button>
           </div>
+        </form>
+      </div>
+
+      <hr>
+      <div class="mt-3">
+        <form method="post" action="delete_all.php" onsubmit="return confirm('Delete ALL sample data (rooms, properties, images)? This cannot be undone.');">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ($_SESSION['csrf_token']=bin2hex(random_bytes(16)))); ?>">
+          <button type="submit" class="btn btn-outline-danger">Delete All Sample Data</button>
         </form>
       </div>
 

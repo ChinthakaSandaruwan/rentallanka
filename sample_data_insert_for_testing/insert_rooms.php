@@ -102,6 +102,8 @@ for ($i=0; $i<$count; $i++) {
   $title = sample_title();
   $desc = sample_desc();
   $room_type = pick_room_type();
+  // random capability for optional per-room meal overrides (0..4)
+  $meal_cap_level = mt_rand(0, 4);
   $beds = mt_rand(1, 3);
   $guests = max($beds, mt_rand(1, 4));
   $price_day = mt_rand(1500, 15000);
@@ -116,7 +118,7 @@ for ($i=0; $i<$count; $i++) {
     if (!$stmt->execute()) { $errors++; $stmt->close(); continue; }
     $new_id = db()->insert_id; $stmt->close();
     try { $final = 'ROOM-' . str_pad((string)$new_id, 6, '0', STR_PAD_LEFT); $up = db()->prepare('UPDATE rooms SET room_code=? WHERE room_id=?'); $up->bind_param('si', $final, $new_id); $up->execute(); $up->close(); } catch (Throwable $e) {}
-    try { $loc = db()->prepare('INSERT INTO locations (room_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)'); $loc->bind_param('iiiiss', $new_id, $province_id, $district_id, $city_id, $address, $postal); $loc->execute(); $loc->close(); } catch (Throwable $e) {}
+    try { $gmap = null; $loc = db()->prepare('INSERT INTO locations (room_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)'); $loc->bind_param('iiiisss', $new_id, $province_id, $district_id, $city_id, $address, $gmap, $postal); $loc->execute(); $loc->close(); } catch (Throwable $e) {}
     $imgs = pick_sample_images(); $idx = 0; $primary_set = false;
     foreach ($imgs as $img) {
       $idx++;
@@ -127,6 +129,26 @@ for ($i=0; $i<$count; $i++) {
       try { $pi = db()->prepare('INSERT INTO room_images (room_id, image_path, is_primary) VALUES (?, ?, ?)'); $pi->bind_param('isi', $new_id, $url, $is_primary); $pi->execute(); $pi->close(); } catch (Throwable $e) {}
       if (!$primary_set) { $primary_set = true; }
     }
+    // Optionally insert per-room meal price overrides up to capability (50% chance) into room_meals
+    try {
+      if (mt_rand(0,1) === 1 && $meal_cap_level > 0) {
+        $candidates = [
+          1 => 'breakfast',
+          2 => 'half_board',
+          3 => 'full_board',
+          4 => 'all_inclusive'
+        ];
+        foreach ($candidates as $mid => $name) {
+          if ($mid > $meal_cap_level) break;
+          $price = (float)mt_rand(800, 3000);
+          $ins = db()->prepare('INSERT INTO room_meals (room_id, meal_id, meal_name, price) VALUES (?,?,?,?)');
+          $ins->bind_param('iisd', $new_id, $mid, $name, $price);
+          $ins->execute();
+          $ins->close();
+        }
+      }
+    } catch (Throwable $e) { /* ignore */ }
+
     $created++; $created_ids[] = (int)$new_id;
   } catch (Throwable $e) {
     $errors++;

@@ -117,7 +117,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $room_type = $_POST['room_type'] ?? 'other';
-    $meal_plan = $_POST['meal_plan'] ?? 'none';
     $beds = (int)($_POST['beds'] ?? 1);
     $maximum_guests = (int)($_POST['maximum_guests'] ?? 1);
     $price_per_day_raw = $_POST['price_per_day'] ?? '';
@@ -127,12 +126,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $district_id = (int)($_POST['district_id'] ?? 0);
     $city_id = (int)($_POST['city_id'] ?? 0);
     $address = trim($_POST['address'] ?? '');
+    $google_map_link = trim($_POST['google_map_link'] ?? '');
     $postal_code = trim($_POST['postal_code'] ?? '');
 
     $allowed_types = ['single','double','twin','suite','deluxe','family','studio','dorm','apartment','villa','penthouse','shared','conference','meeting','other'];
     if (!in_array($room_type, $allowed_types, true)) { $room_type = 'other'; }
-    $allowed_meals = ['breakfast','half_board','full_board','all_inclusive','none'];
-    if (!in_array($meal_plan, $allowed_meals, true)) { $meal_plan = 'none'; }
 
     if ($title === '' || $price_per_day === null || $price_per_day <= 0) {
       $error = 'Title and price per day are required';
@@ -144,13 +142,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $error = 'Postal code is too long';
     } elseif (mb_strlen($address) > 255) {
       $error = 'Address is too long';
+    } elseif (mb_strlen($google_map_link) > 255) {
+      $error = 'Google map link is too long';
     } elseif ($beds < 1 || $maximum_guests < 1) {
       $error = 'Beds and maximum guests must be at least 1';
     } else {
       $room_code = 'TEMP-' . bin2hex(random_bytes(4));
-      $stmt = db()->prepare('INSERT INTO rooms (room_code, owner_id, title, description, room_type, meal_plan, beds, maximum_guests, price_per_day, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $stmt = db()->prepare('INSERT INTO rooms (room_code, owner_id, title, description, room_type, beds, maximum_guests, price_per_day, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
       $pending_status = 'pending';
-      $stmt->bind_param('sissssiids', $room_code, $uid, $title, $description, $room_type, $meal_plan, $beds, $maximum_guests, $price_per_day, $pending_status);
+      $stmt->bind_param('sisssiids', $room_code, $uid, $title, $description, $room_type, $beds, $maximum_guests, $price_per_day, $pending_status);
       if ($stmt->execute()) {
         $new_id = db()->insert_id;
         $stmt->close();
@@ -162,8 +162,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $upc->close();
         } catch (Throwable $e) {}
         try {
-          $loc = db()->prepare('INSERT INTO locations (room_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)');
-          $loc->bind_param('iiiiss', $new_id, $province_id, $district_id, $city_id, $address, $postal_code);
+          $gmap = ($google_map_link === '' ? null : $google_map_link);
+          $loc = db()->prepare('INSERT INTO locations (room_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)');
+          $loc->bind_param('iiiisss', $new_id, $province_id, $district_id, $city_id, $address, $gmap, $postal_code);
           $loc->execute();
           $loc->close();
         } catch (Throwable $e) {}
@@ -217,6 +218,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
           }
         }
+        // Insert per-room meal price overrides (optional)
+        try {
+          // Use static mapping as we no longer rely on meal_plans table
+          $mealsMap = [
+            'breakfast' => 1,
+            'half_board' => 2,
+            'full_board' => 3,
+            'all_inclusive' => 4,
+          ];
+          $order = ['none'=>0,'breakfast'=>1,'half_board'=>2,'full_board'=>3,'all_inclusive'=>4];
+          $capLevel = 4;
+          $pairs = [
+            'breakfast' => $_POST['meal_price_breakfast'] ?? '',
+            'half_board' => $_POST['meal_price_half_board'] ?? '',
+            'full_board' => $_POST['meal_price_full_board'] ?? '',
+            'all_inclusive' => $_POST['meal_price_all_inclusive'] ?? '',
+          ];
+          foreach ($pairs as $name => $val) {
+            $lvl = $order[$name] ?? 0;
+            if ($lvl < 1 || $lvl > $capLevel) { continue; }
+            if ($val === '' || !is_numeric($val)) { continue; }
+            $price = (float)$val; if ($price < 0) { $price = 0.0; }
+            $mid = $mealsMap[$name] ?? 0; if ($mid <= 0) { continue; }
+            $insMp = db()->prepare('INSERT INTO room_meals (room_id, meal_id, meal_name, price) VALUES (?,?,?,?)');
+            $insMp->bind_param('iisd', $new_id, $mid, $name, $price);
+            $insMp->execute();
+            $insMp->close();
+          }
+        } catch (Throwable $e) { /* ignore meal override errors */ }
+
         // Deduct one room slot from the purchased package
         try {
           if (!empty($bp_id) && $bp_id > 0) {
@@ -316,6 +347,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label class="form-label">Address</label>
             <input name="address" class="form-control" maxlength="255" placeholder="Street, number, etc.">
           </div>
+          <div class="col-12">
+            <label class="form-label">Google Map Link (optional)</label>
+            <input name="google_map_link" class="form-control" maxlength="255" placeholder="https://maps.google.com/...">
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Price per day (LKR)</label>
@@ -347,15 +382,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </select>
         </div>
         <div class="mb-3">
-          <label class="form-label">Meal plan</label>
-          <select name="meal_plan" class="form-select">
-            <?php
-              $meals = ['none','breakfast','half_board','full_board','all_inclusive'];
-              foreach ($meals as $m) {
-                echo '<option value="'.htmlspecialchars($m).'">'.ucwords(str_replace('_',' ',$m)).'</option>';
-              }
-            ?>
-          </select>
+          <label class="form-label">Meal prices per day (optional)</label>
+          <div class="row g-2">
+            <div class="col-sm-6 col-md-3">
+              <div class="input-group">
+                <span class="input-group-text">Breakfast</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="meal_price_breakfast" placeholder="e.g. 1000.00">
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="input-group">
+                <span class="input-group-text">Half board</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="meal_price_half_board" placeholder="e.g. 1500.00">
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="input-group">
+                <span class="input-group-text">Full board</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="meal_price_full_board" placeholder="e.g. 2000.00">
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="input-group">
+                <span class="input-group-text">All inclusive</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="meal_price_all_inclusive" placeholder="e.g. 3000.00">
+              </div>
+            </div>
+          </div>
+          <div class="form-text">Leave blank to use global meal plan prices. Only meals up to the selected meal plan capability will be applied.</div>
         </div>
         <div class="mb-3">
           <label class="form-label">Primary Image (optional, max 5MB)</label>

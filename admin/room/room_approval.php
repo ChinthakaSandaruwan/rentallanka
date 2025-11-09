@@ -12,12 +12,14 @@ $okmsg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $token = $_POST['csrf_token'] ?? '';
   if (!hash_equals($_SESSION['csrf_token'], $token)) {
-    $error = 'Invalid request';
+    redirect_with_message(($GLOBALS['base_url'] ?? '') . '/admin/room/room_approval.php', 'Invalid request.', 'error');
+    exit;
   } else {
     $action = $_POST['action'] ?? '';
     $rid = (int)($_POST['room_id'] ?? 0);
     if ($rid <= 0) {
-      $error = 'Bad input';
+      redirect_with_message(($GLOBALS['base_url'] ?? '') . '/admin/room/room_approval.php', 'Bad input.', 'error');
+      exit;
     } else if ($action === 'approve') {
       // Transition to available and notify owner
       $owner_id = 0; $cur_status = '';
@@ -29,14 +31,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if ($r) { $cur_status = (string)$r['status']; $owner_id = (int)$r['owner_id']; }
 
       if ($cur_status === 'available') {
-        $okmsg = 'Room is already available.';
+        redirect_with_message(($GLOBALS['base_url'] ?? '') . '/admin/room/room_approval.php', 'Room is already available.', 'success');
+        exit;
       } else {
         $st = db()->prepare('UPDATE rooms SET status = ? WHERE room_id = ?');
         $avail = 'available';
         $st->bind_param('si', $avail, $rid);
         if ($st->execute()) {
           $st->close();
-          $okmsg = 'Room approved.';
+          // Notify owner best-effort
           if ($owner_id > 0) {
             try {
               // notifications table does not have room_id; use property_id=NULL
@@ -49,7 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               $nt->close();
             } catch (Throwable $e) { /* ignore notification failure */ }
           }
-        } else { $error = 'Approval failed'; $st->close(); }
+          redirect_with_message(($GLOBALS['base_url'] ?? '') . '/admin/room/room_approval.php', 'Room approved.', 'success');
+          exit;
+        } else { $st->close(); redirect_with_message(($GLOBALS['base_url'] ?? '') . '/admin/room/room_approval.php', 'Approval failed.', 'error'); exit; }
       }
     } else if ($action === 'reject') {
       // Set to unavailable and notify owner
@@ -65,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $new_status = 'unavailable';
       $st->bind_param('si', $new_status, $rid);
       if ($st->execute()) {
-        $okmsg = 'Room rejected.';
         // Restore one room slot to owner's active paid package (since it was deducted on creation)
         if ($owner_id > 0) {
           try {
@@ -94,8 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nt->close();
           } catch (Throwable $e) { /* ignore notification failure */ }
         }
-      } else { $error = 'Reject failed'; }
-      $st->close();
+        redirect_with_message(($GLOBALS['base_url'] ?? '') . '/admin/room/room_approval.php', 'Room rejected.', 'success');
+        exit;
+      } else { $st->close(); redirect_with_message(($GLOBALS['base_url'] ?? '') . '/admin/room/room_approval.php', 'Reject failed.', 'error'); exit; }
     }
   }
 }
