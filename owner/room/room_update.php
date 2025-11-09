@@ -52,6 +52,7 @@ $flash_type = '';
 $room = null;
 $location = ['province_id'=>null,'district_id'=>null,'city_id'=>null,'address'=>'','postal_code'=>''];
 $primary_image_path = '';
+$images = [];
 
 // Load room + location for GET (and for POST re-check ownership)
 if ($room_id > 0) {
@@ -78,6 +79,14 @@ if ($room_id > 0) {
     $pr = $ps->get_result()->fetch_assoc();
     $ps->close();
     if ($pr) { $primary_image_path = (string)$pr['image_path']; }
+
+    // Load all images for management UI
+    $gi = db()->prepare('SELECT image_path, COALESCE(is_primary,0) AS is_primary FROM room_images WHERE room_id=? ORDER BY uploaded_at DESC');
+    $gi->bind_param('i', $room_id);
+    $gi->execute();
+    $gr = $gi->get_result();
+    while ($row = $gr->fetch_assoc()) { $images[] = $row; }
+    $gi->close();
   }
 }
 
@@ -106,6 +115,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $st->close();
     if (!$owned) {
       redirect_with_message($GLOBALS['base_url'] . '/owner/room/room_update.php', 'Room not found', 'error');
+    }
+
+    // Handle image actions early
+    $image_action = $_POST['image_action'] ?? '';
+    if ($image_action === 'make_primary' || $image_action === 'delete_image') {
+      $path = $_POST['image_path'] ?? '';
+      if ($path !== '') {
+        if ($image_action === 'make_primary') {
+          // Set all to non-primary, then set provided path to primary
+          $clr = db()->prepare('UPDATE room_images SET is_primary=0 WHERE room_id=?');
+          $clr->bind_param('i', $room_id);
+          $clr->execute();
+          $clr->close();
+
+          $mk = db()->prepare('UPDATE room_images SET is_primary=1 WHERE room_id=? AND image_path=?');
+          $mk->bind_param('is', $room_id, $path);
+          $mk->execute();
+          $mk->close();
+
+          redirect_with_message($GLOBALS['base_url'] . '/owner/room/room_update.php?id=' . (int)$room_id, 'Primary image updated.', 'success');
+        } elseif ($image_action === 'delete_image') {
+          // Remove DB record
+          $del = db()->prepare('DELETE FROM room_images WHERE room_id=? AND image_path=?');
+          $del->bind_param('is', $room_id, $path);
+          $del->execute();
+          $affected = $del->affected_rows;
+          $del->close();
+
+          // Delete file if it belongs to uploads path
+          if ($affected > 0) {
+            $prefix = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/rooms/';
+            $root = dirname(__DIR__, 2) . '/uploads/rooms/';
+            if (strpos($path, $prefix) === 0) {
+              $fname = substr($path, strlen($prefix));
+              $full = $root . $fname;
+              if (is_file($full)) { @unlink($full); }
+            }
+          }
+
+          // Ensure there is a primary; if none remains, set latest as primary
+          $chk = db()->prepare('SELECT image_path FROM room_images WHERE room_id=? AND is_primary=1 LIMIT 1');
+          $chk->bind_param('i', $room_id);
+          $chk->execute();
+          $hasPrimary = (bool)$chk->get_result()->fetch_assoc();
+          $chk->close();
+          if (!$hasPrimary) {
+            $pick = db()->prepare('SELECT image_path FROM room_images WHERE room_id=? ORDER BY uploaded_at DESC LIMIT 1');
+            $pick->bind_param('i', $room_id);
+            $pick->execute();
+            $row = $pick->get_result()->fetch_assoc();
+            $pick->close();
+            if ($row) {
+              $mk = db()->prepare('UPDATE room_images SET is_primary=1 WHERE room_id=? AND image_path=?');
+              $mk->bind_param('is', $room_id, $row['image_path']);
+              $mk->execute();
+              $mk->close();
+            }
+          }
+
+          redirect_with_message($GLOBALS['base_url'] . '/owner/room/room_update.php?id=' . (int)$room_id, 'Image deleted.', 'success');
+        }
+      }
+      // Fallthrough if no path
     }
 
     $title = trim($_POST['title'] ?? '');
@@ -250,11 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           }
         }
 
-        $flash = 'Room updated successfully.';
-        $flash_type = 'success';
-        // Reload loaded data for form re-display
-        header('Location: ' . $GLOBALS['base_url'] . '/owner/room/room_update.php?id=' . (int)$room_id);
-        set_flash($flash, $flash_type);
+        redirect_with_message($GLOBALS['base_url'] . '/owner/room/room_update.php?id=' . (int)$room_id, 'Room updated successfully.', 'success');
         exit;
       } else {
         $error = 'Failed to update room';
@@ -429,6 +497,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <button type="submit" class="btn btn-primary">Update Room</button>
       </form>
+      <div class="mt-4">
+        <label class="form-label">Manage Existing Images</label>
+        <?php if (!empty($images)): ?>
+          <div class="row g-3">
+            <?php foreach ($images as $im): ?>
+              <div class="col-12 col-sm-6 col-md-4">
+                <div class="card h-100">
+                  <?php if (!empty($im['image_path'])): ?>
+                    <img src="<?php echo htmlspecialchars($im['image_path']); ?>" class="card-img-top" alt="Room image" style="object-fit:cover; height:180px">
+                  <?php endif; ?>
+                  <div class="card-body d-flex flex-column">
+                    <div class="mb-2">
+                      <?php if (!empty($im['is_primary'])): ?>
+                        <span class="badge bg-success">Primary</span>
+                      <?php else: ?>
+                        <span class="badge bg-secondary">Gallery</span>
+                      <?php endif; ?>
+                    </div>
+                    <div class="mt-auto d-flex gap-2">
+                      <?php if (empty($im['is_primary'])): ?>
+                        <form method="post" class="d-inline">
+                          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                          <input type="hidden" name="room_id" value="<?php echo (int)$room_id; ?>">
+                          <input type="hidden" name="image_action" value="make_primary">
+                          <input type="hidden" name="image_path" value="<?php echo htmlspecialchars($im['image_path']); ?>">
+                          <button type="submit" class="btn btn-outline-primary btn-sm">Make Primary</button>
+                        </form>
+                      <?php endif; ?>
+                      <form method="post" class="d-inline" onsubmit="return confirm('Delete this image?');">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                        <input type="hidden" name="room_id" value="<?php echo (int)$room_id; ?>">
+                        <input type="hidden" name="image_action" value="delete_image">
+                        <input type="hidden" name="image_path" value="<?php echo htmlspecialchars($im['image_path']); ?>">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <div class="text-muted">No images uploaded yet.</div>
+        <?php endif; ?>
+      </div>
     </div>
   </div>
   <?php endif; ?>
