@@ -216,13 +216,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               elseif (strpos($mime, 'webp') !== false) $ext = 'webp';
             }
             if ($ext === '') $ext = 'jpg';
-            $fname = 'prop_' . $new_id . '_' . time() . '.' . $ext;
+            $fname = 'prop_' . $new_id . '_' . slugify($title) . '_' . time() . '.' . $ext;
             $dest = $dir . '/' . $fname;
             if (move_uploaded_file($_FILES['image']['tmp_name'], $dest)) {
-              $rel = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/properties/' . $fname;
-              // set as primary in properties and property_images
-              try { $up = db()->prepare('UPDATE properties SET image=? WHERE property_id=?'); $up->bind_param('si', $rel, $new_id); $up->execute(); $up->close(); } catch (Throwable $e) {}
-              try { $pi = db()->prepare('INSERT INTO property_images (property_id, image_path, is_primary) VALUES (?, ?, 1)'); $pi->bind_param('is', $new_id, $rel); $pi->execute(); $pi->close(); } catch (Throwable $e) {}
+              resize_image_constrain($dest, 1600, 1200);
+              $thumb = $dir . '/prop_' . $new_id . '_' . slugify($title) . '_' . time() . '_thumb.' . $ext;
+              @copy($dest, $thumb);
+              resize_image_constrain($thumb, 480, 360);
+              $relFull = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/properties/' . basename($dest);
+              $thumbWebp = create_webp_copy($thumb) ?: '';
+              $relThumb = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/properties/' . basename($thumbWebp ?: $thumb);
+              try { $up = db()->prepare('UPDATE properties SET image=? WHERE property_id=?'); $up->bind_param('si', $relThumb, $new_id); $up->execute(); $up->close(); } catch (Throwable $e) {}
+              try { $pi = db()->prepare('INSERT INTO property_images (property_id, image_path, is_primary) VALUES (?, ?, 1)'); $pi->bind_param('is', $new_id, $relFull); $pi->execute(); $pi->close(); } catch (Throwable $e) {}
               $uploaded_primary = true;
             }
           }
@@ -247,9 +252,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               elseif (strpos($mime, 'webp') !== false) $ext = 'webp';
             }
             if ($ext === '') $ext = 'jpg';
-            $fname = 'prop_' . $new_id . '_' . ($i+1) . '_' . time() . '.' . $ext;
+            $fname = 'prop_' . $new_id . '_' . slugify($title) . '_' . ($i+1) . '_' . time() . '.' . $ext;
             $dest = $dir . '/' . $fname;
             if (move_uploaded_file($_FILES['gallery_images']['tmp_name'][$i], $dest)) {
+              resize_image_constrain($dest, 1600, 1200);
               $rel = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/properties/' . $fname;
               try { $pi = db()->prepare('INSERT INTO property_images (property_id, image_path, is_primary) VALUES (?, ?, 0)'); $pi->bind_param('is', $new_id, $rel); $pi->execute(); $pi->close(); } catch (Throwable $e) {}
               $uploaded_gallery_count++;

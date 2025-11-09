@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/cache.php';
 
 // Current user (for wishlist state)
 $uid = (int)($_SESSION['user']['user_id'] ?? 0);
@@ -8,43 +9,63 @@ $perPage = 9;
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $offset = ($page - 1) * $perPage;
 
-// Total count of available rooms
-$total = 0;
-$ctr = db()->query('SELECT COUNT(*) AS c FROM rooms r WHERE r.status = "available"');
-if ($ctr) { $row = $ctr->fetch_assoc(); $total = (int)($row['c'] ?? 0); $ctr->free(); }
+// Total count of available rooms (cached)
+$cacheKeyTotal = 'all_rooms_total_v1';
+$total = app_cache_get($cacheKeyTotal, 60);
+if ($total === null) {
+  $total = 0;
+  $ctr = db()->query('SELECT COUNT(*) AS c FROM rooms r WHERE r.status = "available"');
+  if ($ctr) { $row = $ctr->fetch_assoc(); $total = (int)($row['c'] ?? 0); $ctr->free(); }
+  app_cache_set($cacheKeyTotal, $total);
+}
 $totalPages = max(1, (int)ceil($total / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
-// Fetch current page of available rooms with primary image and location names
-$items = [];
-$sql = 'SELECT r.room_id, r.title, r.room_type, r.beds, r.price_per_day, r.status,
-               (
-                 SELECT ri.image_path FROM room_images ri
-                 WHERE ri.room_id = r.room_id
-                 ORDER BY ri.is_primary DESC, ri.image_id DESC
-                 LIMIT 1
-               ) AS image_path,
-               pr.name_en AS province_name, d.name_en AS district_name, c.name_en AS city_name,
-               ' . ($uid > 0 ? 'IF(rw.wishlist_id IS NULL, 0, 1)' : '0') . ' AS in_wishlist
-        FROM rooms r
-        LEFT JOIN locations l ON l.room_id = r.room_id
-        LEFT JOIN provinces pr ON pr.id = l.province_id
-        LEFT JOIN districts d ON d.id = l.district_id
-        LEFT JOIN cities c ON c.id = l.city_id
-        ' . ($uid > 0 ? 'LEFT JOIN room_wishlist rw ON rw.room_id = r.room_id AND rw.customer_id = ?' : '') . '
-        WHERE r.status = "available"
-        ORDER BY r.room_id DESC
-        LIMIT ? OFFSET ?';
-$stmt = db()->prepare($sql);
-if ($uid > 0) {
-  $stmt->bind_param('iii', $uid, $perPage, $offset);
-} else {
-  $stmt->bind_param('ii', $perPage, $offset);
+// Fetch current page of available rooms with primary image and location names (cached per user/page)
+$cacheKeyPage = 'all_rooms_page_v1_' . $page . '_u' . $uid . '_pp' . $perPage;
+$items = ($uid === 0) ? app_cache_get($cacheKeyPage, 60) : null;
+if ($items === null) {
+  $items = [];
+  $lastId = isset($_GET['last_id']) ? (int)$_GET['last_id'] : 0;
+  $whereKeyset = $lastId > 0 ? ' AND r.room_id < ?' : '';
+  $limitClause = $lastId > 0 ? ' LIMIT ?' : ' LIMIT ? OFFSET ?';
+  $sql = 'SELECT r.room_id, r.title, r.room_type, r.beds, r.price_per_day, r.status,
+                 (
+                   SELECT ri.image_path FROM room_images ri
+                   WHERE ri.room_id = r.room_id
+                   ORDER BY ri.is_primary DESC, ri.image_id DESC
+                   LIMIT 1
+                 ) AS image_path,
+                 pr.name_en AS province_name, d.name_en AS district_name, c.name_en AS city_name,
+                 ' . ($uid > 0 ? 'IF(rw.wishlist_id IS NULL, 0, 1)' : '0') . ' AS in_wishlist
+          FROM rooms r
+          LEFT JOIN locations l ON l.room_id = r.room_id
+          LEFT JOIN provinces pr ON pr.id = l.province_id
+          LEFT JOIN districts d ON d.id = l.district_id
+          LEFT JOIN cities c ON c.id = l.city_id
+          ' . ($uid > 0 ? 'LEFT JOIN room_wishlist rw ON rw.room_id = r.room_id AND rw.customer_id = ?' : '') . '
+          WHERE r.status = "available"' . $whereKeyset . '
+          ORDER BY r.room_id DESC' . $limitClause;
+  $stmt = db()->prepare($sql);
+  if ($uid > 0) {
+    if ($lastId > 0) {
+      $stmt->bind_param('iii', $uid, $lastId, $perPage);
+    } else {
+      $stmt->bind_param('iii', $uid, $perPage, $offset);
+    }
+  } else {
+    if ($lastId > 0) {
+      $stmt->bind_param('ii', $lastId, $perPage);
+    } else {
+      $stmt->bind_param('ii', $perPage, $offset);
+    }
+  }
+  $stmt->execute();
+  $res = $stmt->get_result();
+  while ($row = $res->fetch_assoc()) { $items[] = $row; }
+  $stmt->close();
+  if ($uid === 0) { app_cache_set($cacheKeyPage, $items); }
 }
-$stmt->execute();
-$res = $stmt->get_result();
-while ($row = $res->fetch_assoc()) { $items[] = $row; }
-$stmt->close();
 
 function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
 ?>
@@ -53,7 +74,15 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>All Rooms</title>
+  <?php
+    $seo = [
+      'title' => 'All Rooms',
+      'description' => 'Browse currently available rooms across Sri Lanka.',
+      'url' => rtrim($base_url,'/') . '/public/includes/all_rooms.php',
+      'type' => 'website'
+    ];
+    require_once __DIR__ . '/seo_meta.php';
+  ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
@@ -66,7 +95,6 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
       <div class="text-muted small">Browse currently available rooms</div>
     </div>
     <div class="d-flex gap-2">
-      <a href="<?php echo $base_url; ?>/public/includes/advance_search_room.php" class="btn btn-primary btn-sm"><i class="bi bi-funnel me-1"></i>Advanced Search</a>
       <a href="<?php echo $base_url; ?>/" class="btn btn-outline-secondary btn-sm">Home</a>
     </div>
   </div>
@@ -81,7 +109,20 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
           <?php if (!empty($r['image_path'])): ?>
             <?php $img = $r['image_path']; if ($img && !preg_match('#^https?://#i', $img) && $img[0] !== '/') { $img = '/' . ltrim($img, '/'); } ?>
             <div class="ratio ratio-16x9">
-              <img src="<?php echo htmlspecialchars($img); ?>" class="w-100 h-100 object-fit-cover" alt="">
+              <?php
+                $path = parse_url($img, PHP_URL_PATH) ?: '';
+                $webpUrl = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $img);
+                $webpPath = ($webpUrl !== $img) ? (($_p = parse_url($webpUrl, PHP_URL_PATH)) ? rtrim($_SERVER['DOCUMENT_ROOT'] ?? '','/') . $_p : '') : '';
+                $hasWebp = ($webpPath && is_file($webpPath));
+              ?>
+              <?php if ($hasWebp): ?>
+                <picture>
+                  <source type="image/webp" srcset="<?php echo htmlspecialchars($webpUrl); ?>">
+                  <img src="<?php echo htmlspecialchars($img); ?>" class="w-100 h-100 object-fit-cover" alt="<?php echo htmlspecialchars($r['title']); ?>" loading="lazy" decoding="async">
+                </picture>
+              <?php else: ?>
+                <img src="<?php echo htmlspecialchars($img); ?>" class="w-100 h-100 object-fit-cover" alt="<?php echo htmlspecialchars($r['title']); ?>" loading="lazy" decoding="async">
+              <?php endif; ?>
             </div>
           <?php endif; ?>
           <div class="card-body d-flex flex-column">
@@ -152,7 +193,7 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
     </nav>
   <?php endif; ?>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   async function roomWishToggle(btn, id) {
     btn.disabled = true;

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../public/includes/auth_guard.php';
 require_role('admin');
+require_once __DIR__ . '/../../config/cache.php';
 
 // Filters
 $q = trim((string)($_GET['q'] ?? ''));
@@ -31,21 +32,29 @@ if (in_array($status, ['active','inactive'], true)) {
 $where_sql = $wheres ? ('WHERE ' . implode(' AND ', $wheres)) : '';
 
 $rows = [];
-$sql = 'SELECT * FROM packages ' . $where_sql . ' ORDER BY created_at DESC';
-if ($types !== '') {
-  $stmt = db()->prepare($sql);
-  if ($stmt) {
-    $stmt->bind_param($types, ...$params);
-    if ($stmt->execute()) {
-      $res = $stmt->get_result();
-      while ($r = $res->fetch_assoc()) { $rows[] = $r; }
-      $res->free();
-    }
-    $stmt->close();
-  }
+$baseKey = 'admin_package_read_v1_' . http_build_query(['q'=>$q,'type'=>$type,'status'=>$status]);
+$cacheKey = app_cache_ns_key('packages', $baseKey);
+$cached = app_cache_get($cacheKey, 120);
+if ($cached !== null) {
+  $rows = $cached;
 } else {
-  $res = db()->query($sql);
-  if ($res) { while ($r = $res->fetch_assoc()) { $rows[] = $r; } }
+  $sql = 'SELECT * FROM packages ' . $where_sql . ' ORDER BY created_at DESC';
+  if ($types !== '') {
+    $stmt = db()->prepare($sql);
+    if ($stmt) {
+      $stmt->bind_param($types, ...$params);
+      if ($stmt->execute()) {
+        $res = $stmt->get_result();
+        while ($r = $res->fetch_assoc()) { $rows[] = $r; }
+        $res->free();
+      }
+      $stmt->close();
+    }
+  } else {
+    $res = db()->query($sql);
+    if ($res) { while ($r = $res->fetch_assoc()) { $rows[] = $r; } }
+  }
+  app_cache_set($cacheKey, $rows);
 }
 ?>
 <!DOCTYPE html>

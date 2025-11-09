@@ -28,13 +28,12 @@ $pageProp = isset($_GET['page_prop']) ? max(1, (int)$_GET['page_prop']) : 1;
 $offset = ($pageProp - 1) * $perPage;
 
 // Count total
-$countSql = 'SELECT COUNT(*) AS c
-             FROM properties p
-             LEFT JOIN locations l ON l.property_id = p.property_id
-             LEFT JOIN provinces pr ON pr.id = l.province_id
-             LEFT JOIN districts d ON d.id = l.district_id
-             LEFT JOIN cities c ON c.id = l.city_id
-             WHERE ' . implode(' AND ', $conds);
+$needLookupJoins = ($q !== '');
+$countSql = 'SELECT COUNT(*) AS c '
+          . 'FROM properties p '
+          . 'LEFT JOIN locations l ON l.property_id = p.property_id '
+          . ($needLookupJoins ? 'LEFT JOIN provinces pr ON pr.id = l.province_id LEFT JOIN districts d ON d.id = l.district_id LEFT JOIN cities c ON c.id = l.city_id ' : '')
+          . 'WHERE ' . implode(' AND ', $conds);
 $stc = db()->prepare($countSql);
 if ($types !== '') { $stc->bind_param($types, ...$vals); }
 $stc->execute();
@@ -88,7 +87,7 @@ $stmt->close();
           <?php if (!empty($p['image'])): ?>
             <?php $src = $p['image']; if ($src && !preg_match('#^https?://#i', $src) && $src[0] !== '/') { $src = '/'.ltrim($src, '/'); } ?>
             <div class="ratio ratio-16x9">
-              <img src="<?php echo htmlspecialchars($src); ?>" class="w-100 h-100 object-fit-cover" alt="">
+              <img src="<?php echo htmlspecialchars($src); ?>" class="w-100 h-100 object-fit-cover" alt="" loading="lazy" decoding="async">
             </div>
           <?php endif; ?>
           <div class="card-body d-flex flex-column">

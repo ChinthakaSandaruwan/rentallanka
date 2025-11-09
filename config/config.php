@@ -16,6 +16,17 @@ $smslenz_api_key = getenv('SMSLENZ_API_KEY') ?: '';
 $smslenz_sender_id = getenv('SMSLENZ_SENDER_ID') ?: 'SMSlenzDEMO';
 $smslenz_base = 'https://smslenz.lk/api';
 
+// Optional: Redis-backed sessions (set SESSION_REDIS like "tcp://127.0.0.1:6379?database=1")
+try {
+    $sessRedis = getenv('SESSION_REDIS') ?: '';
+    if ($sessRedis !== '' && function_exists('ini_set')) {
+        @ini_set('session.save_handler', 'redis');
+        @ini_set('session.save_path', $sessRedis);
+        if (!ini_get('session.gc_maxlifetime')) { @ini_set('session.gc_maxlifetime', '86400'); }
+
+    }
+} catch (Throwable $e) { /* ignore */ }
+
 $__session_status = function_exists('session_status') ? session_status() : PHP_SESSION_NONE;
 if ($__session_status === PHP_SESSION_NONE) {
     session_start();
@@ -66,7 +77,9 @@ function install_system_alert_handlers(): void {
 // Ensure handlers are active for all requests including CLI scripts that include config.php
 install_system_alert_handlers();
 
-$mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$__use_persistent = (getenv('DB_PERSISTENT') === '1');
+$__db_host = $__use_persistent ? ('p:' . DB_HOST) : DB_HOST;
+$mysqli = new mysqli($__db_host, DB_USER, DB_PASS, DB_NAME);
 if ($mysqli->connect_errno) {
     http_response_code(500);
     echo 'Database connection failed';

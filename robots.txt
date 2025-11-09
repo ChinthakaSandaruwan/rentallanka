@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /owner/
+Disallow: /superAdmin/
+Disallow: /auth/
+
+Allow: /
+
+Sitemap: http://localhost/rentallanka/sitemap.php

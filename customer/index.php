@@ -14,63 +14,14 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
       <div>
         <h1 class="h3 mb-1">Customer Dashboard</h1>
-        <p class="text-muted mb-0">Quick access to properties, rooms, rentals, and your profile.</p>
       </div>
       <a href="../auth/logout.php" class="btn btn-outline-danger">Logout</a>
     </div>
 
     <div class="row g-4">
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card h-100 border rounded-3 shadow-sm">
-          <div class="card-body d-flex flex-column gap-2">
-            <div class="d-flex align-items-center">
-              <h5 class="card-title mb-0">Browse Properties</h5>
-            </div>
-            <p class="card-text text-muted">Find places to rent.</p>
-            <a href="../index.php" class="btn btn-primary mt-auto">Open</a>
-          </div>
-        </div>
-      </div>
+     
       
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card h-100 border rounded-3 shadow-sm">
-          <div class="card-body d-flex flex-column gap-2">
-            <div class="d-flex align-items-center">
-              <h5 class="card-title mb-0">Browse Rooms</h5>
-            </div>
-            <p class="card-text text-muted">Find rooms to rent.</p>
-            <a class="btn btn-primary mt-auto" href="../index.php">Open</a>
-          </div>
-        </div>
-      </div>
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card h-100 border rounded-3 shadow-sm">
-          <div class="card-body d-flex flex-column gap-2">
-            <div class="d-flex align-items-center">
-              <h5 class="card-title mb-0">My Rented Properties</h5>
-            </div>
-            <p class="card-text text-muted">View your active property rentals.</p>
-            <div class="d-flex gap-2 mt-auto">
-              <a href="my_rented_property.php" class="btn btn-primary">Open</a>
-              <a href="my_property_monthly_payment.php" class="btn btn-outline-primary">Monthly Payment</a>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card h-100 border rounded-3 shadow-sm">
-          <div class="card-body d-flex flex-column gap-2">
-            <div class="d-flex align-items-center">
-              <h5 class="card-title mb-0">My Rented Rooms</h5>
-            </div>
-            <p class="card-text text-muted">View your active room rentals.</p>
-            <div class="d-flex gap-2 mt-auto">
-              <a href="my_rented_room.php" class="btn btn-primary">Open</a>
-              <a href="my_room_daily_payment.php" class="btn btn-outline-primary">Daily Payment</a>
-            </div>
-          </div>
-        </div>
-      </div>
+    
       <div class="col-12 col-md-6 col-lg-4">
         <div class="card h-100 border rounded-3 shadow-sm">
           <div class="card-body d-flex flex-column gap-2">

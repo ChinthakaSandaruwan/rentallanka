@@ -27,12 +27,15 @@ $pageRoom = isset($_GET['page_room']) ? max(1, (int)$_GET['page_room']) : 1;
 $offset = ($pageRoom - 1) * $perPage;
 
 // Count total items with filters
+$needLookupJoins = ($q !== '');
 $countSql = "SELECT COUNT(*) AS c
              FROM rooms r
-             LEFT JOIN locations l ON l.room_id = r.room_id
+             LEFT JOIN locations l ON l.room_id = r.room_id" .
+             ($needLookupJoins ? "
              LEFT JOIN provinces pr ON pr.id = l.province_id
              LEFT JOIN districts d ON d.id = l.district_id
-             LEFT JOIN cities c ON c.id = l.city_id
+             LEFT JOIN cities c ON c.id = l.city_id" : "") .
+            "
              WHERE " . implode(' AND ', $conds);
 $stc = db()->prepare($countSql);
 if ($types !== '') { $stc->bind_param($types, ...$vals); }
@@ -94,7 +97,7 @@ $stmt->close();
           <?php if (!empty($r['image_path'])): ?>
             <?php $src = $r['image_path']; if ($src && !preg_match('#^https?://#i', $src) && $src[0] !== '/') { $src = '/'.ltrim($src, '/'); } ?>
             <div class="ratio ratio-16x9">
-              <img src="<?php echo htmlspecialchars($src); ?>" class="w-100 h-100 object-fit-cover" alt="">
+              <img src="<?php echo htmlspecialchars($src); ?>" class="w-100 h-100 object-fit-cover" alt="" loading="lazy" decoding="async">
             </div>
           <?php endif; ?>
           <div class="card-body d-flex flex-column">

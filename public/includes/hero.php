@@ -1,4 +1,5 @@
 <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+  <!-- dont add buttons and a tags to navigate other pages -->
   <style>
     @media (max-width: 576px){
       #heroCarousel .hero-img{max-height:45vh;}
@@ -14,7 +15,7 @@
   </div>
   <div class="carousel-inner">
     <div class="carousel-item active">
-      <img src="https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg" class="d-block w-100 hero-img" alt="Modern living room" style="max-height:70vh;object-fit:cover;" loading="lazy">
+      <img src="https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg" class="d-block w-100 hero-img" alt="Modern living room" style="max-height:70vh;object-fit:cover;" loading="eager" decoding="async" fetchpriority="high">
       <div class="position-absolute top-0 start-0 w-100 h-100" style="background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.35));"></div>
       <div class="carousel-caption d-flex flex-column align-items-center justify-content-center h-100 px-3 text-center text-md-start">
         <h1 class="fw-bold mb-2 hero-title">Find your next home</h1>
@@ -24,7 +25,7 @@
       </div>
     </div>
     <div class="carousel-item">
-      <img src="https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg" class="d-block w-100 hero-img" alt="Cozy bedroom interior" style="max-height:70vh;object-fit:cover;" loading="lazy">
+      <img src="https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg" class="d-block w-100 hero-img" alt="Cozy bedroom interior" style="max-height:70vh;object-fit:cover;" loading="lazy" decoding="async">
       <div class="position-absolute top-0 start-0 w-100 h-100" style="background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.35));"></div>
       <div class="carousel-caption d-flex flex-column align-items-center justify-content-center h-100 px-3 text-center text-md-start">
         <h2 class="fw-bold mb-2 hero-title">Rooms made for comfort</h2>
@@ -34,7 +35,7 @@
       </div>
     </div>
     <div class="carousel-item">
-      <img src="https://images.pexels.com/photos/2251247/pexels-photo-2251247.jpeg" class="d-block w-100 hero-img" alt="City apartment exterior" style="max-height:70vh;object-fit:cover;" loading="lazy">
+      <img src="https://images.pexels.com/photos/2251247/pexels-photo-2251247.jpeg" class="d-block w-100 hero-img" alt="City apartment exterior" style="max-height:70vh;object-fit:cover;" loading="lazy" decoding="async">
       <div class="position-absolute top-0 start-0 w-100 h-100" style="background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.35));"></div>
       <div class="carousel-caption d-flex flex-column align-items-center justify-content-center h-100 px-3 text-center text-md-start">
         <h2 class="fw-bold mb-2 hero-title">Live where it matters</h2>

@@ -26,7 +26,6 @@
       PRIMARY KEY (`user_id`),
       UNIQUE KEY `uk_users_phone` (`phone`),
       UNIQUE KEY `uk_users_email` (`email`),
-      UNIQUE KEY `uk_users_name` (`name`),
       UNIQUE KEY `uk_users_nic` (`nic`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -181,6 +180,8 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       PRIMARY KEY (`property_id`),
       KEY `idx_properties_owner_id` (`owner_id`),
       KEY `idx_properties_status` (`status`),
+      KEY `idx_props_status_price` (`status`, `price_per_month`),
+      FULLTEXT KEY `idx_ft_properties_title_desc` (`title`, `description`),
       CONSTRAINT `fk_properties_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -202,6 +203,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       PRIMARY KEY (`room_id`),
       KEY `idx_rooms_owner_id` (`owner_id`),
       KEY `idx_rooms_status` (`status`),
+      FULLTEXT KEY `idx_ft_rooms_title_desc` (`title`, `description`),
       CONSTRAINT `fk_rooms_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -223,7 +225,8 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
      KEY `idx_locations_room_id` (`room_id`),
      KEY `idx_locations_province_id` (`province_id`),
      KEY `idx_locations_district_id` (`district_id`),
-     KEY `idx_locations_city_id` (`city_id`)
+     KEY `idx_locations_city_id` (`city_id`),
+     KEY `idx_locations_prop_prov_dist` (`property_id`, `province_id`, `district_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Table: room_images (images attached to a specific room)
@@ -387,3 +390,17 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       KEY `idx_user_status` (`user_id`, `status`),
       CONSTRAINT `fk_advreq_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =========================
+-- Slow Query Log: enable and verify (session/global)
+-- Run these after schema import to enable logging immediately
+-- Note: these settings reset on MySQL restart unless also set in my.ini
+SET GLOBAL log_output = 'FILE';
+SET GLOBAL slow_query_log_file = 'C:/xampp/htdocs/rentallanka/error/slow.log';
+SET GLOBAL long_query_time = 0.5;
+SET GLOBAL slow_query_log = ON;
+
+-- Verify current values
+SHOW VARIABLES LIKE 'slow_query%';
+SHOW VARIABLES LIKE 'long_query_time';
+SHOW VARIABLES LIKE 'log_output';

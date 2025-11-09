@@ -183,6 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fname = 'room_' . $new_id . '_' . time() . '.' . $ext;
             $dest = $dir . '/' . $fname;
             if (move_uploaded_file($_FILES['image']['tmp_name'], $dest)) {
+              resize_image_constrain($dest, 1600, 1200);
               $rel = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/rooms/' . $fname;
               try { $pi = db()->prepare('INSERT INTO room_images (room_id, image_path, is_primary) VALUES (?, ?, 1)'); $pi->bind_param('is', $new_id, $rel); $pi->execute(); $pi->close(); } catch (Throwable $e) {}
             }
@@ -246,8 +247,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Create Room</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 </head>
 <body>
 <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
@@ -261,20 +262,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <span class="badge bg-primary">Remaining Room Slots: <?php echo (int)$remaining_room_slots; ?></span>
     </div>
   <?php endif; ?>
-  <?php
-    if (!empty($error)) {
-      echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">'
-        . htmlspecialchars($error)
-        . '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
-    }
-    if (!empty($flash)) {
-      $map = ['error' => 'danger', 'danger' => 'danger', 'success' => 'success', 'warning' => 'warning', 'info' => 'info'];
-      $type = $map[$flash_type ?? 'info'] ?? 'info';
-      echo '<div class="alert alert-' . $type . ' alert-dismissible fade show" role="alert">'
-        . htmlspecialchars($flash)
-        . '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
-    }
-  ?>
+  <?php if (!empty($flash)): ?>
+    <div class="alert <?php echo ($flash_type==='success')?'alert-success':'alert-danger'; ?> alert-dismissible fade show" role="alert">
+      <?php echo htmlspecialchars($flash); ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <?php endif; ?>
   <div class="card">
     <div class="card-header">Details</div>
     <div class="card-body">
@@ -362,8 +355,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </form>
     </div>
   </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+ </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 <script src="js/room_create.js" defer></script>
 </body>
 </html>

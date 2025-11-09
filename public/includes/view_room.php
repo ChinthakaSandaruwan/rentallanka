@@ -45,8 +45,7 @@ function norm_url($p) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?php echo htmlspecialchars($room['title']); ?> - Room</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
 <?php require_once __DIR__ . '/navbar.php'; ?>
@@ -77,7 +76,7 @@ function norm_url($p) {
           <?php if ($images): ?>
             <?php $primaryUrl = norm_url($images[0]['image_path'] ?? ''); ?>
             <?php if ($primaryUrl): ?>
-              <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid rounded mb-3" alt="">
+              <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid rounded mb-3" alt="" loading="eager" decoding="async" fetchpriority="high">
             <?php endif; ?>
             <?php if (count($images) > 1): ?>
               <div class="row g-2">
@@ -85,7 +84,7 @@ function norm_url($p) {
                   <?php $p = norm_url($img['image_path'] ?? ''); ?>
                   <div class="col-6 col-md-4">
                     <a href="<?php echo htmlspecialchars($p); ?>" target="_blank">
-                      <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid rounded" alt="">
+                      <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid rounded" alt="" loading="lazy" decoding="async">
                     </a>
                   </div>
                 <?php endforeach; ?>

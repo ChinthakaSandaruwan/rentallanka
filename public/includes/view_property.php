@@ -49,10 +49,20 @@ function norm_url($p) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?php echo htmlspecialchars($prop['title']); ?> - Property</title>
+  <?php
+    $pageUrl = rtrim($base_url,'/') . '/public/includes/view_property.php?id=' . (int)$prop['property_id'];
+    $imgPrimary = (string)($prop['image'] ?? '');
+    $seo = [
+      'title' => $prop['title'] . ' - Property',
+      'description' => mb_strimwidth((string)($prop['description'] ?? ''), 0, 160, '…'),
+      'url' => $pageUrl,
+      'image' => $imgPrimary,
+      'type' => 'product'
+    ];
+    require_once __DIR__ . '/seo_meta.php';
+  ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
 <?php require_once __DIR__ . '/navbar.php'; ?>
@@ -64,7 +74,7 @@ function norm_url($p) {
         <div class="card-body">
           <?php $primaryUrl = norm_url($prop['image'] ?? ''); ?>
           <?php if ($primaryUrl): ?>
-            <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid rounded mb-3" alt="">
+            <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid rounded mb-3" alt="<?php echo htmlspecialchars($prop['title']); ?>" loading="eager" decoding="async" fetchpriority="high">
           <?php endif; ?>
           <?php if ($gallery): ?>
             <div class="row g-2">
@@ -72,7 +82,7 @@ function norm_url($p) {
                 <?php $p = norm_url($img['image_path'] ?? ''); ?>
                 <div class="col-6 col-md-4">
                   <a href="<?php echo htmlspecialchars($p); ?>" target="_blank">
-                    <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid rounded" alt="">
+                    <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid rounded" alt="<?php echo htmlspecialchars($prop['title']); ?>" loading="lazy" decoding="async">
                   </a>
                 </div>
               <?php endforeach; ?>
@@ -131,5 +141,43 @@ function norm_url($p) {
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php
+// JSON-LD structured data
+$addressParts = [
+  'streetAddress' => (string)($prop['address'] ?? ''),
+  'addressLocality' => (string)($prop['city_name'] ?? ''),
+  'addressRegion' => (string)($prop['district_name'] ?? ''),
+  'postalCode' => (string)($prop['postal_code'] ?? ''),
+  'addressCountry' => 'LK'
+];
+$images = [];
+if (!empty($prop['image'])) { $images[] = $prop['image']; }
+foreach ($gallery as $g) { if (!empty($g['image_path'])) { $images[] = $g['image_path']; } }
+$jsonLd = [
+  '@context' => 'https://schema.org',
+  '@type' => 'Accommodation',
+  'name' => (string)$prop['title'],
+  'description' => (string)($prop['description'] ?? ''),
+  'url' => $pageUrl,
+  'image' => array_values(array_unique($images)),
+  'address' => array_filter([
+    '@type' => 'PostalAddress',
+    'streetAddress' => $addressParts['streetAddress'],
+    'addressLocality' => $addressParts['addressLocality'],
+    'addressRegion' => $addressParts['addressRegion'],
+    'postalCode' => $addressParts['postalCode'],
+    'addressCountry' => $addressParts['addressCountry']
+  ]),
+  'offers' => [
+    '@type' => 'Offer',
+    'priceCurrency' => 'LKR',
+    'price' => (string)((float)($prop['price_per_month'] ?? 0)),
+    'availability' => 'https://schema.org/InStock'
+  ]
+];
+?>
+<script type="application/ld+json">
+<?php echo json_encode($jsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT); ?>
+</script>
 </body>
 </html>

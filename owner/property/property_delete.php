@@ -98,10 +98,10 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
   $del->bind_param('ii', $pid, $uid);
   if ($del->execute() && $del->affected_rows > 0) {
     $del->close();
-    redirect_with_message($GLOBALS['base_url'] . '/owner/index.php', 'Property deleted', 'success');
+    redirect_with_message($GLOBALS['base_url'] . '/owner/property/property_delete.php', 'Property deleted', 'success');
   }
   $del->close();
-  redirect_with_message($GLOBALS['base_url'] . '/owner/index.php', 'Delete failed', 'error');
+  redirect_with_message($GLOBALS['base_url'] . '/owner/property/property_delete.php', 'Delete failed', 'error');
 }
 
 [$flash, $flash_type] = get_flash();
