@@ -42,7 +42,7 @@ $sql = 'SELECT p.property_id,
                d.name_en AS district_name,
                pr.name_en AS province_name
         FROM properties p
-        LEFT JOIN locations l ON l.property_id = p.property_id
+        LEFT JOIN property_locations l ON l.property_id = p.property_id
         LEFT JOIN cities c ON c.id = l.city_id
         LEFT JOIN districts d ON d.id = l.district_id
         LEFT JOIN provinces pr ON pr.id = l.province_id

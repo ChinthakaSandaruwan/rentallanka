@@ -124,7 +124,13 @@ for ($i=0; $i<$count; $i++) {
     // Pretty code
     try { $final = 'PROP-' . str_pad((string)$new_id, 6, '0', STR_PAD_LEFT); $up = db()->prepare('UPDATE properties SET property_code=? WHERE property_id=?'); $up->bind_param('si', $final, $new_id); $up->execute(); $up->close(); } catch (Throwable $e) {}
     // Location
-    try { $loc = db()->prepare('INSERT INTO locations (property_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)'); $loc->bind_param('iiiiss', $new_id, $province_id, $district_id, $city_id, $address, $postal); $loc->execute(); $loc->close(); } catch (Throwable $e) {}
+    try {
+      $gmap = null;
+      $loc = db()->prepare('INSERT INTO property_locations (property_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      $loc->bind_param('iiiisss', $new_id, $province_id, $district_id, $city_id, $address, $gmap, $postal);
+      $loc->execute();
+      $loc->close();
+    } catch (Throwable $e) {}
     // Images
     $imgs = pick_sample_images(); $idx = 0; $primary_set = false;
     foreach ($imgs as $img) {

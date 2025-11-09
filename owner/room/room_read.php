@@ -46,23 +46,27 @@
                    r.status,
                    (SELECT image_path FROM room_images WHERE room_id=r.room_id AND is_primary=1 ORDER BY uploaded_at DESC LIMIT 1) AS image_path,
                    (SELECT COUNT(*) FROM room_images WHERE room_id=r.room_id AND COALESCE(is_primary,0)=0) AS gallery_count,
-                   l.address, l.postal_code,
+                   l.address,
+                   l.postal_code,
                    c.name_en AS city_name,
                    d.name_en AS district_name,
                    p.name_en AS province_name
             FROM rooms r
-            LEFT JOIN locations l ON l.room_id = r.room_id
+            LEFT JOIN room_locations l ON l.room_id = r.room_id
             LEFT JOIN cities c ON c.id = l.city_id
             LEFT JOIN districts d ON d.id = l.district_id
             LEFT JOIN provinces p ON p.id = l.province_id
             WHERE r.owner_id=?
             ORDER BY r.created_at DESC';
     $q = db()->prepare($sql);
-    $q->bind_param('i', $uid);
-    $q->execute();
-    $rs = $q->get_result();
-    while ($row = $rs->fetch_assoc()) { $rooms[] = $row; }
-    $q->close();
+    if ($q) {
+      $q->bind_param('i', $uid);
+      if ($q->execute()) {
+        $rs = $q->get_result();
+        while ($row = $rs->fetch_assoc()) { $rooms[] = $row; }
+      }
+      $q->close();
+    }
   ?>
 
   <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">

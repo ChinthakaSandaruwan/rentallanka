@@ -114,7 +114,7 @@ require_role('customer');
               <h5 class="card-title mb-0">My Rentals</h5>
             </div>
             <p class="card-text text-muted">View your booked properties, payments, and rental history.</p>
-            <a href="my_rentals.php" class="btn btn-primary mt-auto w-100">
+            <a href="../public/includes/my_rentals.php" class="btn btn-primary mt-auto w-100">
               <i class="bi bi-arrow-right-circle me-1"></i> Open
             </a>
           </div>

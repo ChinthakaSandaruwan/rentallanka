@@ -118,7 +118,7 @@ for ($i=0; $i<$count; $i++) {
     if (!$stmt->execute()) { $errors++; $stmt->close(); continue; }
     $new_id = db()->insert_id; $stmt->close();
     try { $final = 'ROOM-' . str_pad((string)$new_id, 6, '0', STR_PAD_LEFT); $up = db()->prepare('UPDATE rooms SET room_code=? WHERE room_id=?'); $up->bind_param('si', $final, $new_id); $up->execute(); $up->close(); } catch (Throwable $e) {}
-    try { $gmap = null; $loc = db()->prepare('INSERT INTO locations (room_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)'); $loc->bind_param('iiiisss', $new_id, $province_id, $district_id, $city_id, $address, $gmap, $postal); $loc->execute(); $loc->close(); } catch (Throwable $e) {}
+    try { $gmap = null; $loc = db()->prepare('INSERT INTO room_locations (room_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)'); $loc->bind_param('iiiisss', $new_id, $province_id, $district_id, $city_id, $address, $gmap, $postal); $loc->execute(); $loc->close(); } catch (Throwable $e) {}
     $imgs = pick_sample_images(); $idx = 0; $primary_set = false;
     foreach ($imgs as $img) {
       $idx++;

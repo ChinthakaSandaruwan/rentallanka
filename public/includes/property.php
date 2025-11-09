@@ -31,7 +31,7 @@ $offset = ($pageProp - 1) * $perPage;
 $needLookupJoins = ($q !== '');
 $countSql = 'SELECT COUNT(*) AS c '
           . 'FROM properties p '
-          . 'LEFT JOIN locations l ON l.property_id = p.property_id '
+          . 'LEFT JOIN property_locations l ON l.property_id = p.property_id '
           . ($needLookupJoins ? 'LEFT JOIN provinces pr ON pr.id = l.province_id LEFT JOIN districts d ON d.id = l.district_id LEFT JOIN cities c ON c.id = l.city_id ' : '')
           . 'WHERE ' . implode(' AND ', $conds);
 $stc = db()->prepare($countSql);
@@ -48,7 +48,7 @@ if ($pageProp > $totalPages) { $pageProp = $totalPages; $offset = ($pageProp - 1
 $sql = 'SELECT p.property_id, p.title, p.price_per_month, p.image, p.status,
                ' . ($uid > 0 ? 'IF(w.wishlist_id IS NULL, 0, 1)' : '0') . ' AS in_wishlist
         FROM properties p
-        LEFT JOIN locations l ON l.property_id = p.property_id
+        LEFT JOIN property_locations l ON l.property_id = p.property_id
         LEFT JOIN provinces pr ON pr.id = l.province_id
         LEFT JOIN districts d ON d.id = l.district_id
         LEFT JOIN cities c ON c.id = l.city_id

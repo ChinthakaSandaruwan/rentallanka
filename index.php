@@ -28,6 +28,7 @@
 <?php include 'public/includes/hero.php'; ?>
 <hr/>
 <?php include 'public/includes/search.php'; ?>
+
 <hr/>
 <?php include 'public/includes/property.php'; ?>
 <hr/>

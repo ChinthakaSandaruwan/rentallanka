@@ -36,7 +36,7 @@ $props = [];
 try {
   $sql = 'SELECT p.property_id, p.title, p.image, p.price_per_month, p.property_type, p.status
           FROM properties p
-          LEFT JOIN locations l ON l.property_id = p.property_id
+          LEFT JOIN property_locations l ON l.property_id = p.property_id
           WHERE p.status = "available" AND l.city_id = ?
           ORDER BY p.property_id DESC LIMIT 12';
   $st = db()->prepare($sql);

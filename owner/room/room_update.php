@@ -66,7 +66,7 @@ if ($room_id > 0) {
   $st->close();
 
   if ($room) {
-    $ls = db()->prepare('SELECT province_id, district_id, city_id, address, google_map_link, postal_code FROM locations WHERE room_id=? LIMIT 1');
+    $ls = db()->prepare('SELECT province_id, district_id, city_id, address, google_map_link, postal_code FROM room_locations WHERE room_id=? LIMIT 1');
     $ls->bind_param('i', $room_id);
     $ls->execute();
     $lr = $ls->get_result()->fetch_assoc();
@@ -234,19 +234,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if ($ok) {
         // Upsert location
         $exists = false;
-        $ch = db()->prepare('SELECT 1 FROM locations WHERE room_id=? LIMIT 1');
+        $ch = db()->prepare('SELECT 1 FROM room_locations WHERE room_id=? LIMIT 1');
         $ch->bind_param('i', $room_id);
         $ch->execute();
         $exists = (bool)$ch->get_result()->fetch_row();
         $ch->close();
         if ($exists) {
-          $loc = db()->prepare('UPDATE locations SET province_id=?, district_id=?, city_id=?, address=?, google_map_link=?, postal_code=? WHERE room_id=?');
+          $loc = db()->prepare('UPDATE room_locations SET province_id=?, district_id=?, city_id=?, address=?, google_map_link=?, postal_code=? WHERE room_id=?');
           $gmap = ($google_map_link === '' ? null : $google_map_link);
           $loc->bind_param('iiisssi', $province_id, $district_id, $city_id, $address, $gmap, $postal_code, $room_id);
           $loc->execute();
           $loc->close();
         } else {
-          $loc = db()->prepare('INSERT INTO locations (room_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)');
+          $loc = db()->prepare('INSERT INTO room_locations (room_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)');
           $gmap = ($google_map_link === '' ? null : $google_map_link);
           $loc->bind_param('iiiisss', $room_id, $province_id, $district_id, $city_id, $address, $gmap, $postal_code);
           $loc->execute();

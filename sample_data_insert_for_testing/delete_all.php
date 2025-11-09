@@ -39,11 +39,11 @@ try {
   db()->begin_transaction();
 
   // Locations (no FKs) referencing rooms/properties
-  try { db()->query("DELETE FROM locations WHERE room_id IS NOT NULL"); } catch (Throwable $e) {}
-  try { db()->query("DELETE FROM locations WHERE property_id IS NOT NULL"); } catch (Throwable $e) {}
+  try { db()->query("DELETE FROM room_locations"); } catch (Throwable $e) {}
+  try { db()->query("DELETE FROM property_locations"); } catch (Throwable $e) {}
 
   // Room-related tables
-  try { db()->query("DELETE FROM room_meal_prices"); } catch (Throwable $e) {}
+  try { db()->query("DELETE FROM room_meals"); } catch (Throwable $e) {}
   try { db()->query("DELETE FROM room_wishlist"); } catch (Throwable $e) {}
   try { db()->query("DELETE FROM room_rents"); } catch (Throwable $e) {}
   try { db()->query("DELETE FROM room_images"); } catch (Throwable $e) {}

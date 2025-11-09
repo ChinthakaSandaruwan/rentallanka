@@ -45,7 +45,7 @@ $id = (int)($_GET['id'] ?? 0);
 $selection_mode = false;
 $prop = null;
 if ($id > 0) {
-    $q = db()->prepare("SELECT p.*, l.province_id, l.district_id, l.city_id, l.address, l.postal_code FROM properties p LEFT JOIN locations l ON l.property_id=p.property_id WHERE p.property_id=? AND p.owner_id=? LIMIT 1");
+    $q = db()->prepare("SELECT p.*, l.province_id, l.district_id, l.city_id, l.address, l.google_map_link, l.postal_code FROM properties p LEFT JOIN property_locations l ON l.property_id=p.property_id WHERE p.property_id=? AND p.owner_id=? LIMIT 1");
     $q->bind_param('ii', $id, $uid);
     $q->execute();
     $prop = $q->get_result()->fetch_assoc();
@@ -165,6 +165,7 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $district_id = (int)($_POST['district_id'] ?? 0);
             $city_id = (int)($_POST['city_id'] ?? 0);
             $address = trim($_POST['address'] ?? '');
+            $google_map_link = trim($_POST['google_map_link'] ?? '');
             $postal_code = trim($_POST['postal_code'] ?? '');
             $has_kitchen = isset($_POST['has_kitchen']) ? 1 : 0;
             $has_parking = isset($_POST['has_parking']) ? 1 : 0;
@@ -184,6 +185,8 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Postal code is too long';
             } elseif (mb_strlen($address) > 255) {
                 $error = 'Address is too long';
+            } elseif (mb_strlen($google_map_link) > 255) {
+                $error = 'Google map link is too long';
             } elseif ($bedrooms < 0 || $bathrooms < 0 || $living_rooms < 0) {
                 $error = 'Numeric values must be non-negative';
             } elseif (!is_null($sqft) && $sqft < 0) {
@@ -224,19 +227,21 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ok = $u->execute();
                 $u->close();
                 if ($ok) {
-                    $exists = db()->prepare('SELECT 1 FROM locations WHERE property_id=? LIMIT 1');
+                    $exists = db()->prepare('SELECT 1 FROM property_locations WHERE property_id=? LIMIT 1');
                     $exists->bind_param('i', $id);
                     $exists->execute();
                     $ex = $exists->get_result()->fetch_row();
                     $exists->close();
                     if ($ex) {
-                        $locUp = db()->prepare('UPDATE locations SET province_id=?, district_id=?, city_id=?, address=?, postal_code=? WHERE property_id=?');
-                        $locUp->bind_param('iiiisi', $province_id, $district_id, $city_id, $address, $postal_code, $id);
+                        $locUp = db()->prepare('UPDATE property_locations SET province_id=?, district_id=?, city_id=?, address=?, google_map_link=?, postal_code=? WHERE property_id=?');
+                        $gmap = ($google_map_link === '' ? null : $google_map_link);
+                        $locUp->bind_param('iiisssi', $province_id, $district_id, $city_id, $address, $gmap, $postal_code, $id);
                         $locUp->execute();
                         $locUp->close();
                     } else {
-                        $locIns = db()->prepare('INSERT INTO locations (property_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)');
-                        $locIns->bind_param('iiiiss', $id, $province_id, $district_id, $city_id, $address, $postal_code);
+                        $locIns = db()->prepare('INSERT INTO property_locations (property_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                        $gmap = ($google_map_link === '' ? null : $google_map_link);
+                        $locIns->bind_param('iiiisss', $id, $province_id, $district_id, $city_id, $address, $gmap, $postal_code);
                         $locIns->execute();
                         $locIns->close();
                     }
@@ -318,6 +323,7 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $prop['district_id'] = $district_id;
                     $prop['city_id'] = $city_id;
                     $prop['address'] = $address;
+                    $prop['google_map_link'] = $google_map_link;
                     $prop['postal_code'] = $postal_code;
 
                     $flash = 'Property updated successfully.';
@@ -451,6 +457,10 @@ if (empty($flash)) { [$flash, $flash_type] = get_flash(); }
                 <div class="col-12">
                   <label class="form-label">Address</label>
                   <input name="address" class="form-control" maxlength="255" placeholder="Street, number, etc." value="<?php echo htmlspecialchars($prop['address'] ?? ''); ?>">
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Google Map Link (optional)</label>
+                  <input name="google_map_link" class="form-control" maxlength="255" placeholder="https://maps.google.com/..." value="<?php echo htmlspecialchars($prop['google_map_link'] ?? ''); ?>">
                 </div>
               </div>
               <div class="mb-3">

@@ -13,7 +13,7 @@ $sql = 'SELECT p.*, u.name AS owner_name, l.address, l.postal_code,
                pr.name_en AS province_name, d.name_en AS district_name, c.name_en AS city_name
         FROM properties p
         LEFT JOIN users u ON u.user_id = p.owner_id
-        LEFT JOIN locations l ON l.property_id = p.property_id
+        LEFT JOIN property_locations l ON l.property_id = p.property_id
         LEFT JOIN provinces pr ON pr.id = l.province_id
         LEFT JOIN districts d ON d.id = l.district_id
         LEFT JOIN cities c ON c.id = l.city_id

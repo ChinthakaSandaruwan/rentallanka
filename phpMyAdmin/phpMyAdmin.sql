@@ -209,12 +209,30 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
   
-
-    -- locations (must be after rooms and reference tables to satisfy FKs)
-    CREATE TABLE IF NOT EXISTS `locations` (
+    -- room locations
+    CREATE TABLE IF NOT EXISTS `room_locations` (
      `location_id` INT NOT NULL AUTO_INCREMENT,
-     `property_id` INT NULL,
-     `room_id` INT NULL,
+     `room_id` INT NOT NULL,
+     `province_id` INT NOT NULL,
+     `district_id` INT NOT NULL,
+     `city_id` INT NOT NULL,
+     `address` VARCHAR(255) NULL,
+     `google_map_link` VARCHAR(255) NULL,
+     `postal_code` VARCHAR(10) NOT NULL,
+     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     PRIMARY KEY (`location_id`),
+     KEY `idx_locations_room_id` (`room_id`),
+     KEY `idx_locations_province_id` (`province_id`),
+     KEY `idx_locations_district_id` (`district_id`),
+     KEY `idx_locations_city_id` (`city_id`),
+     KEY `idx_locations_room_prov_dist` (`room_id`, `province_id`, `district_id`),
+     CONSTRAINT `fk_room_locations_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+    --  property locations
+    CREATE TABLE IF NOT EXISTS `property_locations` (
+     `location_id` INT NOT NULL AUTO_INCREMENT,
+     `property_id` INT NOT NULL,
      `province_id` INT NOT NULL,
      `district_id` INT NOT NULL,
      `city_id` INT NOT NULL,
@@ -224,11 +242,11 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
      PRIMARY KEY (`location_id`),
      KEY `idx_locations_property_id` (`property_id`),
-     KEY `idx_locations_room_id` (`room_id`),
      KEY `idx_locations_province_id` (`province_id`),
      KEY `idx_locations_district_id` (`district_id`),
      KEY `idx_locations_city_id` (`city_id`),
-     KEY `idx_locations_prop_prov_dist` (`property_id`, `province_id`, `district_id`)
+     KEY `idx_locations_prop_prov_dist` (`property_id`, `province_id`, `district_id`),
+     CONSTRAINT `fk_property_locations_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- Table: room_images (images attached to a specific room)

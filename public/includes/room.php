@@ -30,7 +30,7 @@ $offset = ($pageRoom - 1) * $perPage;
 $needLookupJoins = ($q !== '');
 $countSql = "SELECT COUNT(*) AS c
              FROM rooms r
-             LEFT JOIN locations l ON l.room_id = r.room_id" .
+             LEFT JOIN room_locations l ON l.room_id = r.room_id" .
              ($needLookupJoins ? "
              LEFT JOIN provinces pr ON pr.id = l.province_id
              LEFT JOIN districts d ON d.id = l.district_id
@@ -57,7 +57,7 @@ $sql = "SELECT r.room_id, r.title, r.room_type, r.beds, r.price_per_day, r.statu
                ) AS image_path,
                " . ($uid > 0 ? "IF(rw.wishlist_id IS NULL, 0, 1)" : "0") . " AS in_wishlist
         FROM rooms r
-        LEFT JOIN locations l ON l.room_id = r.room_id
+        LEFT JOIN room_locations l ON l.room_id = r.room_id
         LEFT JOIN provinces pr ON pr.id = l.province_id
         LEFT JOIN districts d ON d.id = l.district_id
         LEFT JOIN cities c ON c.id = l.city_id

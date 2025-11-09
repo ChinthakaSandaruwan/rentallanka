@@ -46,7 +46,7 @@ $loc = [
 ];
 try {
   $ql = db()->prepare('SELECT l.address, l.google_map_link, l.postal_code, p.name_en AS province_name, d.name_en AS district_name, c.name_en AS city_name
-                        FROM locations l
+                        FROM room_locations l
                         LEFT JOIN provinces p ON p.id = l.province_id
                         LEFT JOIN districts d ON d.id = l.district_id
                         LEFT JOIN cities c ON c.id = l.city_id

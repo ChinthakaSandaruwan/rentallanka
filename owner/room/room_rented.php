@@ -37,7 +37,7 @@ try {
           FROM room_rents rr
           INNER JOIN rooms r ON r.room_id = rr.room_id AND r.owner_id = ?
           LEFT JOIN users cu ON cu.user_id = rr.customer_id
-          LEFT JOIN locations l ON l.room_id = r.room_id
+          LEFT JOIN room_locations l ON l.room_id = r.room_id
           LEFT JOIN cities c ON c.id = l.city_id
           LEFT JOIN districts d ON d.id = l.district_id
           LEFT JOIN provinces p ON p.id = l.province_id

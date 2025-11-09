@@ -107,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $district_id = (int)($_POST['district_id'] ?? 0);
     $city_id = (int)($_POST['city_id'] ?? 0);
     $address = trim($_POST['address'] ?? '');
+    $google_map_link = trim($_POST['google_map_link'] ?? '');
     $postal_code = trim($_POST['postal_code'] ?? '');
 
     $allowed_types = ['apartment','house','villa','duplex','studio','penthouse','bungalow','townhouse','farmhouse','office','shop','warehouse','land','commercial_building','industrial','hotel','guesthouse','resort','other'];
@@ -123,6 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $error = 'Postal code is too long';
     } elseif (mb_strlen($address) > 255) {
       $error = 'Address is too long';
+    } elseif (mb_strlen($google_map_link) > 255) {
+      $error = 'Google map link is too long';
     } elseif ($bedrooms < 0 || $bathrooms < 0 || $living_rooms < 0) {
       $error = 'Numeric values must be non-negative';
     } elseif (!is_null($sqft) && $sqft < 0) {
@@ -191,8 +194,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $upc->close();
         } catch (Throwable $e) { /* ignore */ }
         // Location row
-        $loc = db()->prepare('INSERT INTO locations (property_id, province_id, district_id, city_id, address, postal_code) VALUES (?, ?, ?, ?, ?, ?)');
-        $loc->bind_param('iiiiss', $new_id, $province_id, $district_id, $city_id, $address, $postal_code);
+        $loc = db()->prepare('INSERT INTO property_locations (property_id, province_id, district_id, city_id, address, google_map_link, postal_code) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $gmap = ($google_map_link === '' ? null : $google_map_link);
+        $loc->bind_param('iiiisss', $new_id, $province_id, $district_id, $city_id, $address, $gmap, $postal_code);
         $loc->execute();
         $loc->close();
         // Track uploaded images in this same request
@@ -377,6 +381,10 @@ if (empty($flash)) {
             <div class="col-12">
               <label class="form-label">Address</label>
               <input name="address" class="form-control" maxlength="255" placeholder="Street, number, etc.">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Google Map Link (optional)</label>
+              <input name="google_map_link" class="form-control" maxlength="255" placeholder="https://maps.google.com/...">
             </div>
           </div>
           <div class="mb-3">
