@@ -13,153 +13,141 @@ require_role('admin'); ?>
   <style>
     .card-icon {
       font-size: 1.75rem;
-      opacity: .7;
+      opacity: .75;
     }
   </style>
 </head>
 
 <body>
   <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
-  <div class="container py-4">
 
+  <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1 class="h3 mb-0">Admin Dashboard</h1>
     </div>
 
-   
-   <div class="row g-3">
+    <div class="row g-3">
+
+      <!-- Customer -->
       <div class="col-12 col-sm-6 col-lg-3">
-    
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">Customer</h5>
-              <i class="bi bi-person-circle card-icon"></i>
+              <i class="bi bi-people card-icon text-primary"></i>
             </div>
-            <p class="card-text text-muted">Update your details and password.</p>
+            <p class="card-text text-muted">Manage customer accounts.</p>
             <a href="customer.php" class="btn btn-primary mt-auto">Open</a>
           </div>
         </div>
       </div>
 
-
-        <div class="col-12 col-sm-6 col-lg-3">
+      <!-- Owner -->
+      <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">Owner</h5>
-              <i class="bi bi-person-circle card-icon"></i>
+              <i class="bi bi-person-badge card-icon text-success"></i>
             </div>
-            <p class="card-text text-muted">Update your details and password.</p>
-            <a href="owner.php" class="btn btn-primary mt-auto">Open</a>
+            <p class="card-text text-muted">View and manage property owners.</p>
+            <a href="owner.php" class="btn btn-success mt-auto">Open</a>
           </div>
         </div>
       </div>
 
-
-       <div class="col-12 col-sm-6 col-lg-3">
+      <!-- Property -->
+      <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">Property</h5>
-              <i class="bi bi-person-circle card-icon"></i>
+              <i class="bi bi-building card-icon text-warning"></i>
             </div>
-            <p class="card-text text-muted">Manage properties.</p>
-            <a href="property.php" class="btn btn-primary mt-auto">Open</a>
+            <p class="card-text text-muted">Manage listed properties.</p>
+            <a href="property.php" class="btn btn-warning text-white mt-auto">Open</a>
           </div>
         </div>
       </div>
 
-        <div class="col-12 col-sm-6 col-lg-3">
+      <!-- Package -->
+      <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">Package</h5>
-              <i class="bi bi-person-circle card-icon"></i>
+              <i class="bi bi-box-seam card-icon text-danger"></i>
             </div>
-            <p class="card-text text-muted">Manage packages.</p>
-            <a href="package.php" class="btn btn-primary mt-auto">Open</a>
+            <p class="card-text text-muted">Manage subscription packages.</p>
+            <a href="package.php" class="btn btn-danger mt-auto">Open</a>
           </div>
         </div>
       </div>
 
-
+      <!-- Profile -->
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">Profile</h5>
-              <i class="bi bi-person-circle card-icon"></i>
+              <i class="bi bi-person-circle card-icon text-info"></i>
             </div>
-            <p class="card-text text-muted">Update your details and password.</p>
-            <a href="../public/includes/profile.php" class="btn btn-primary mt-auto">Open</a>
+            <p class="card-text text-muted">Update your profile and password.</p>
+            <a href="../public/includes/profile.php" class="btn btn-info text-white mt-auto">Open</a>
           </div>
         </div>
       </div>
 
+
+
+      <!-- Room -->
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <h5 class="card-title mb-0">Property Management</h5>
-              <i class="bi bi-person-circle card-icon"></i>
-            </div>
-            <p class="card-text text-muted">Manage properties.</p>
-            <a href="property.php" class="btn btn-primary mt-auto">Open</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="col">
-        <div class="card h-100">
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">Room</h5>
-              <i class="bi bi-person-circle card-icon"></i>
+              <i class="bi bi-door-open card-icon text-primary"></i>
             </div>
-            <p class="card-text text-muted">Manage rooms.</p>
+            <p class="card-text text-muted">Manage rooms and availability.</p>
             <a href="room.php" class="btn btn-primary mt-auto">Open</a>
           </div>
         </div>
       </div>
 
-
-
-
+      <!-- Footer Management -->
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">Footer Management</h5>
-              <i class="bi bi-person-circle card-icon"></i>
+              <i class="bi bi-layout-text-window-reverse card-icon text-dark"></i>
             </div>
-            <p class="card-text text-muted">Manage footer.</p>
-            <a href="footer.php" class="btn btn-primary mt-auto">Open</a>
+            <p class="card-text text-muted">Edit website footer content.</p>
+            <a href="footer.php" class="btn btn-dark mt-auto">Open</a>
           </div>
         </div>
       </div>
 
-         <div class="col-12 col-sm-6 col-lg-3">
+      <!-- User Type -->
+      <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h5 class="card-title mb-0">User Type Change</h5>
-              <i class="bi bi-person-circle card-icon"></i>
+              <i class="bi bi-shuffle card-icon text-success"></i>
             </div>
-            <p class="card-text text-muted">Manage User Type.</p>
-            <a href="user_type.php" class="btn btn-primary mt-auto">Open</a>
+            <p class="card-text text-muted">Manage and update user roles.</p>
+            <a href="user_type.php" class="btn btn-success mt-auto">Open</a>
           </div>
         </div>
       </div>
 
-     
     </div>
-   </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-      crossorigin="anonymous"></script>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+    crossorigin="anonymous"></script>
 </body>
 
 </html>

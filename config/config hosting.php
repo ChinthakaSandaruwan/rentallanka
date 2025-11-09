@@ -173,3 +173,31 @@ function smslenz_send_sms(string $to, string $message): array {
 }
 
 
+if (!headers_sent()) {
+    $__li = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
+    $__uid = (int)($_SESSION['user']['user_id'] ?? 0);
+    $__sessRole = (string)($_SESSION['role'] ?? '');
+    if ($__li && $__uid > 0 && $__sessRole !== '') {
+        try {
+            $__st = db()->prepare('SELECT role FROM users WHERE user_id = ? LIMIT 1');
+            $__st->bind_param('i', $__uid);
+            $__st->execute();
+            $__res = $__st->get_result();
+            $__row = $__res->fetch_assoc();
+            $__st->close();
+            $__dbRole = (string)($__row['role'] ?? '');
+            if ($__dbRole !== '' && strcasecmp($__dbRole, $__sessRole) !== 0) {
+                $_SESSION = [];
+                if (ini_get('session.use_cookies')) {
+                    $params = session_get_cookie_params();
+                    setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+                }
+                @session_destroy();
+                $msg = 'Your account is now ' . strtoupper($__dbRole) . '. Please sign in again.';
+                redirect_with_message(rtrim($base_url, '/') . '/auth/login.php', $msg, 'info');
+            }
+        } catch (Throwable $__e) {}
+    }
+}
+
+
