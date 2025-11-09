@@ -64,16 +64,22 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
   <title>My Wishlist</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    @media (max-width: 576px){
+      h1.h4{font-size:1.1rem}
+      .wishlist-toolbar .btn{padding:.4rem .75rem;font-size:.9rem}
+    }
+  </style>
 </head>
 <body>
 <?php require_once __DIR__ . '/navbar.php'; ?>
 <div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-3 gap-2">
     <div>
       <h1 class="h4 mb-1 d-flex align-items-center"><i class="bi bi-heart me-2"></i>My Wishlist <span class="badge bg-secondary ms-2"><?php echo (int)(count($items) + count($items_rooms)); ?></span></h1>
       <div class="text-muted small">Saved properties and rooms</div>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2 wishlist-toolbar w-100 w-md-auto">
       <a href="<?php echo $base_url; ?>/public/includes/all_properties.php" class="btn btn-outline-secondary btn-sm">Browse Properties</a>
       <a href="<?php echo $base_url; ?>/public/includes/all_rooms.php" class="btn btn-outline-secondary btn-sm">Browse Rooms</a>
       <a href="<?php echo $base_url; ?>/" class="btn btn-secondary btn-sm">Home</a>
