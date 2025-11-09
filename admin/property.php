@@ -49,6 +49,20 @@ require_role('admin'); ?>
         </div>
       </div>
 
+         <!-- Property Status -->
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card h-100 border-warning">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">Property View</h5>
+              <i class="bi bi-building-gear card-icon text-warning"></i>
+            </div>
+            <p class="card-text text-muted">View all properties submitted by owners.</p>
+            <a href="property/property_view.php" class="btn btn-warning text-white mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+
       <!-- Property Status -->
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100 border-warning">

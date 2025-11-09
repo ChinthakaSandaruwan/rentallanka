@@ -35,6 +35,20 @@ require_role('admin'); ?>
 
     <div class="row g-3">
 
+        <!-- Room Approval -->
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card h-100 border-primary">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">Room Approval</h5>
+              <i class="bi bi-check-circle card-icon text-primary"></i>
+            </div>
+            <p class="card-text text-muted">Review and approve room listings submitted by owners.</p>
+            <a href="room/room_approval.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+
       <!-- Room View -->
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100 border-primary">
