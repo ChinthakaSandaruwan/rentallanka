@@ -39,10 +39,12 @@
                    r.title,
                    r.description,
                    r.room_type,
+                   r.meal_plan,
                    r.beds,
                    r.maximum_guests,
                    r.price_per_day,
                    r.created_at,
+                   r.status,
                    (SELECT image_path FROM room_images WHERE room_id=r.room_id AND is_primary=1 ORDER BY uploaded_at DESC LIMIT 1) AS image_path,
                    (SELECT COUNT(*) FROM room_images WHERE room_id=r.room_id AND COALESCE(is_primary,0)=0) AS gallery_count,
                    l.address, l.postal_code,
@@ -81,11 +83,27 @@
               <?php if (!empty($r['room_code'])): ?>
                 <span class="badge bg-secondary ms-2"><?php echo htmlspecialchars($r['room_code']); ?></span>
               <?php endif; ?>
+              <?php if (!empty($r['status'])): ?>
+                <?php
+                  $st = (string)$r['status'];
+                  $map = [
+                    'available' => 'success',
+                    'rented' => 'warning',
+                    'unavailable' => 'secondary',
+                    'pending' => 'info',
+                  ];
+                  $cls = $map[$st] ?? 'secondary';
+                ?>
+                <span class="badge ms-2 bg-<?php echo $cls; ?> text-light"><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $st))); ?></span>
+              <?php endif; ?>
             </div>
             <div class="mb-2 small text-muted">LKR <?php echo number_format((float)($r['price_per_day'] ?? 0), 2); ?> / day</div>
             <div class="mb-2">
               <?php if (!empty($r['room_type'])): ?>
                 <span class="badge bg-info text-dark me-1"><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $r['room_type']))); ?></span>
+              <?php endif; ?>
+              <?php if (isset($r['meal_plan']) && $r['meal_plan'] !== ''): ?>
+                <span class="badge bg-success text-light me-1">Meal: <?php echo htmlspecialchars(ucwords(str_replace('_',' ', $r['meal_plan']))); ?></span>
               <?php endif; ?>
               <?php if (isset($r['beds'])): ?>
                 <span class="badge bg-light text-dark border me-1">Beds: <?php echo (int)$r['beds']; ?></span>

@@ -186,6 +186,74 @@ function smslenz_send_sms(string $to, string $message): array {
     return ['ok' => $ok, 'http' => $http, 'errno' => $errno, 'error' => $error, 'body' => $response];
 }
 
+// Image helper: constrain image dimensions in-place (maintain aspect ratio)
+if (!function_exists('resize_image_constrain')) {
+    function resize_image_constrain(string $path, int $max_w, int $max_h): bool {
+        try {
+            if (!extension_loaded('gd')) { return false; }
+            if (!is_file($path)) { return false; }
+            $info = @getimagesize($path);
+            if ($info === false) { return false; }
+            $w = (int)($info[0] ?? 0); $h = (int)($info[1] ?? 0);
+            if ($w <= 0 || $h <= 0) { return false; }
+            if ($w <= $max_w && $h <= $max_h) { return true; } // already within bounds
+
+            $ratio = min($max_w / $w, $max_h / $h);
+            $nw = (int)max(1, floor($w * $ratio));
+            $nh = (int)max(1, floor($h * $ratio));
+
+            $mime = (string)($info['mime'] ?? '');
+            $src = null;
+            if (strpos($mime, 'jpeg') !== false || strpos($mime, 'jpg') !== false) {
+                $src = @imagecreatefromjpeg($path);
+            } elseif (strpos($mime, 'png') !== false) {
+                $src = @imagecreatefrompng($path);
+            } elseif (strpos($mime, 'gif') !== false) {
+                $src = @imagecreatefromgif($path);
+            } elseif (strpos($mime, 'webp') !== false && function_exists('imagecreatefromwebp')) {
+                $src = @imagecreatefromwebp($path);
+            } else {
+                $raw = @file_get_contents($path);
+                if ($raw !== false) { $src = @imagecreatefromstring($raw); }
+            }
+            if (!$src) { return false; }
+
+            $dst = @imagecreatetruecolor($nw, $nh);
+            if (!$dst) { @imagedestroy($src); return false; }
+
+            // Preserve transparency for PNG/GIF
+            if (strpos($mime, 'png') !== false || strpos($mime, 'gif') !== false) {
+                @imagealphablending($dst, false);
+                @imagesavealpha($dst, true);
+                $trans = @imagecolorallocatealpha($dst, 0, 0, 0, 127);
+                if ($trans !== false) { @imagefilledrectangle($dst, 0, 0, $nw, $nh, $trans); }
+            }
+
+            @imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+
+            $ok = false;
+            if (strpos($mime, 'jpeg') !== false || strpos($mime, 'jpg') !== false) {
+                $ok = @imagejpeg($dst, $path, 85);
+            } elseif (strpos($mime, 'png') !== false) {
+                $ok = @imagepng($dst, $path, 6);
+            } elseif (strpos($mime, 'gif') !== false) {
+                $ok = @imagegif($dst, $path);
+            } elseif (strpos($mime, 'webp') !== false && function_exists('imagewebp')) {
+                $ok = @imagewebp($dst, $path, 80);
+            } else {
+                // Default to JPEG
+                $ok = @imagejpeg($dst, $path, 85);
+            }
+
+            @imagedestroy($dst);
+            @imagedestroy($src);
+            return (bool)$ok;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+}
+
 if (!headers_sent()) {
     $__li = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
     $__uid = (int)($_SESSION['user']['user_id'] ?? 0);

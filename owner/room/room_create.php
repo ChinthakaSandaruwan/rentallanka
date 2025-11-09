@@ -117,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $room_type = $_POST['room_type'] ?? 'other';
+    $meal_plan = $_POST['meal_plan'] ?? 'none';
     $beds = (int)($_POST['beds'] ?? 1);
     $maximum_guests = (int)($_POST['maximum_guests'] ?? 1);
     $price_per_day_raw = $_POST['price_per_day'] ?? '';
@@ -130,6 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $allowed_types = ['single','double','twin','suite','deluxe','family','studio','dorm','apartment','villa','penthouse','shared','conference','meeting','other'];
     if (!in_array($room_type, $allowed_types, true)) { $room_type = 'other'; }
+    $allowed_meals = ['breakfast','half_board','full_board','all_inclusive','none'];
+    if (!in_array($meal_plan, $allowed_meals, true)) { $meal_plan = 'none'; }
 
     if ($title === '' || $price_per_day === null || $price_per_day <= 0) {
       $error = 'Title and price per day are required';
@@ -145,9 +148,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $error = 'Beds and maximum guests must be at least 1';
     } else {
       $room_code = 'TEMP-' . bin2hex(random_bytes(4));
-      $stmt = db()->prepare('INSERT INTO rooms (room_code, owner_id, title, description, room_type, beds, maximum_guests, price_per_day, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $stmt = db()->prepare('INSERT INTO rooms (room_code, owner_id, title, description, room_type, meal_plan, beds, maximum_guests, price_per_day, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       $pending_status = 'pending';
-      $stmt->bind_param('sisssiids', $room_code, $uid, $title, $description, $room_type, $beds, $maximum_guests, $price_per_day, $pending_status);
+      $stmt->bind_param('sissssiids', $room_code, $uid, $title, $description, $room_type, $meal_plan, $beds, $maximum_guests, $price_per_day, $pending_status);
       if ($stmt->execute()) {
         $new_id = db()->insert_id;
         $stmt->close();
@@ -339,6 +342,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               $types = ['single','double','twin','suite','deluxe','family','studio','dorm','apartment','villa','penthouse','shared','conference','meeting','other'];
               foreach ($types as $t) {
                 echo '<option value="'.htmlspecialchars($t).'">'.ucwords(str_replace('_',' ',$t)).'</option>';
+              }
+            ?>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Meal plan</label>
+          <select name="meal_plan" class="form-select">
+            <?php
+              $meals = ['none','breakfast','half_board','full_board','all_inclusive'];
+              foreach ($meals as $m) {
+                echo '<option value="'.htmlspecialchars($m).'">'.ucwords(str_replace('_',' ',$m)).'</option>';
               }
             ?>
           </select>

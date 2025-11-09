@@ -194,6 +194,8 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `description` TEXT NULL,
       `room_type` ENUM('single','double','twin','suite','deluxe','family','studio','dorm','apartment','villa','penthouse','shared','conference','meeting','other') NULL,
       `beds` INT NOT NULL DEFAULT 1,
+      `bathrooms` INT NOT NULL DEFAULT 1,
+      `meal_plan` ENUM('breakfast','half_board','full_board','all_inclusive','none') NULL,
       `maximum_guests` INT NOT NULL DEFAULT 1,
       `price_per_day` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       `status` ENUM('available','rented','unavailable','pending') NOT NULL DEFAULT 'pending',
@@ -313,7 +315,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       CONSTRAINT `fk_wishlist_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-  CREATE TABLE IF NOT EXISTS room_wishlist (
+  CREATE TABLE IF NOT EXISTS `room_wishlist` (
   wishlist_id INT NOT NULL AUTO_INCREMENT,
   customer_id INT NOT NULL,
   room_id INT NOT NULL,
@@ -354,14 +356,13 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       CONSTRAINT `fk_sms_logs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- Table: notifications
+    -- Table: notifications (trimmed to ads-only; removed rental references)
     CREATE TABLE IF NOT EXISTS `notifications` (
       `notification_id` INT NOT NULL AUTO_INCREMENT,
       `user_id` INT NOT NULL,
       `title` VARCHAR(150) NOT NULL,
       `message` TEXT NOT NULL,
-      `type` ENUM('system','rental','payment','other') NOT NULL DEFAULT 'system',
-      `rental_id` INT NULL,
+      `type` ENUM('system','other') NOT NULL DEFAULT 'system',
       `property_id` INT NULL,
       `is_read` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
       `read_at` DATETIME NULL,
@@ -370,7 +371,6 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       PRIMARY KEY (`notification_id`),
       KEY `idx_notifications_user_id` (`user_id`),
       KEY `idx_notifications_is_read` (`is_read`),
-      KEY `idx_notifications_rental_id` (`rental_id`),
       KEY `idx_notifications_property_id` (`property_id`),
       KEY `idx_notifications_user_read_created` (`user_id`, `is_read`, `created_at`),
       CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
@@ -391,16 +391,45 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       CONSTRAINT `fk_advreq_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =========================
--- Slow Query Log: enable and verify (session/global)
--- Run these after schema import to enable logging immediately
--- Note: these settings reset on MySQL restart unless also set in my.ini
-SET GLOBAL log_output = 'FILE';
-SET GLOBAL slow_query_log_file = 'C:/xampp/htdocs/rentallanka/error/slow.log';
-SET GLOBAL long_query_time = 0.5;
-SET GLOBAL slow_query_log = ON;
+    -- Table: meal_plans (reference for room_rents.meal_id)
+    CREATE TABLE IF NOT EXISTS `meal_plans` (
+      `meal_id` INT NOT NULL AUTO_INCREMENT,
+      `meal_name` VARCHAR(50) NOT NULL,
+      `status` ENUM('active','inactive') NOT NULL DEFAULT 'active',
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`meal_id`),
+      UNIQUE KEY `uk_meal_plans_name` (`meal_name`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Verify current values
-SHOW VARIABLES LIKE 'slow_query%';
-SHOW VARIABLES LIKE 'long_query_time';
-SHOW VARIABLES LIKE 'log_output';
+    -- Seed default meals aligned with rooms.meal_plan enum
+    INSERT INTO `meal_plans` (`meal_name`, `status`) VALUES
+      ('breakfast', 'active'),
+      ('half_board', 'active'),
+      ('full_board', 'active'),
+      ('all_inclusive', 'active'),
+      ('none', 'active')
+    AS new
+    ON DUPLICATE KEY UPDATE `status` = new.`status`;
+
+    -- Table: room_rents (room rentals/bookings)
+    CREATE TABLE IF NOT EXISTS `room_rents` (
+      `rent_id` INT NOT NULL AUTO_INCREMENT,
+      `room_id` INT NOT NULL,
+      `customer_id` INT NOT NULL,
+      `checkin_date` DATETIME NOT NULL,
+      `checkout_date` DATETIME NOT NULL,
+      `guests` INT NOT NULL DEFAULT 1,
+      `meal_id` INT NULL,
+      `price_per_day` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      `total_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      `status` ENUM('booked','checked_in','checked_out','cancelled') NOT NULL DEFAULT 'booked',
+      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`rent_id`),
+      KEY `idx_room_rents_room_id` (`room_id`),
+      KEY `idx_room_rents_customer_id` (`customer_id`),
+      KEY `idx_room_rents_checkin` (`checkin_date`),
+      KEY `idx_room_rents_status` (`status`),
+      CONSTRAINT `fk_room_rents_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE,
+      CONSTRAINT `fk_room_rents_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+      CONSTRAINT `fk_room_rents_meal` FOREIGN KEY (`meal_id`) REFERENCES `meal_plans` (`meal_id`) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

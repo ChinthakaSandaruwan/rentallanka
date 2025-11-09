@@ -128,10 +128,19 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       if (!badge || !listEl) return;
       let csrf = '';
 
-      function rjson(r){ return r.ok ? r.json() : r.json().then(j=>Promise.reject(j)); }
+      function rjson(r){
+        return r.text().then(t => {
+          let j = {};
+          try { j = t ? JSON.parse(t) : {}; } catch (e) { j = {}; }
+          return j;
+        }).catch(() => ({}));
+      }
 
       function fetchCsrf(){
-        return fetch(api + '?action=csrf').then(rjson).then(j=>{ csrf = j.data.csrf_token || ''; });
+        return fetch(api + '?action=csrf').then(rjson).then(j=>{
+          const token = j && j.data && j.data.csrf_token ? j.data.csrf_token : '';
+          csrf = token;
+        }).catch(()=>{ csrf = ''; });
       }
 
       function render(items){
@@ -193,7 +202,10 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
         if (role === 'admin' && currentUserId > 0 && api.indexOf('between_admin_and_owner.php') !== -1) {
           params.set('owner_id', String(currentUserId));
         }
-        return fetch(api + '?' + params.toString()).then(rjson).then(j => render(j.data.items || []));
+        return fetch(api + '?' + params.toString()).then(rjson).then(j => {
+          const items = (j && j.data && Array.isArray(j.data.items)) ? j.data.items : [];
+          return render(items);
+        }).catch(()=>{ render([]); });
       }
 
       fetchCsrf().then(load);

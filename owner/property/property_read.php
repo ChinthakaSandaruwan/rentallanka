@@ -13,6 +13,8 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 $props = [];
+$db_error = '';
+// Primary query with joins for location and gallery count
 $sql = 'SELECT p.property_id,
                p.property_code,
                p.title,
@@ -47,11 +49,29 @@ $sql = 'SELECT p.property_id,
         WHERE p.owner_id = ?
         ORDER BY p.property_id DESC';
 $stmt = db()->prepare($sql);
-$stmt->bind_param('i', $uid);
-$stmt->execute();
-$res = $stmt->get_result();
-while ($row = $res->fetch_assoc()) { $props[] = $row; }
-$stmt->close();
+if ($stmt) {
+  $stmt->bind_param('i', $uid);
+  if ($stmt->execute()) {
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) { $props[] = $row; }
+  } else {
+    $db_error = db()->error;
+  }
+  $stmt->close();
+} else {
+  $db_error = db()->error;
+}
+
+// Fallback: if primary query failed (e.g., schema differences), load minimal fields without joins
+if (!$props && $db_error !== '') {
+  $fallback_sql = 'SELECT property_id, property_code, title, description, property_type, price_per_month, bedrooms, bathrooms, living_rooms, garden, gym, pool, sqft, kitchen, parking, water_supply, electricity_supply, status, created_at, image FROM properties WHERE owner_id=? ORDER BY property_id DESC';
+  $fb = db()->prepare($fallback_sql);
+  if ($fb && $fb->bind_param('i', $uid) && $fb->execute()) {
+    $res2 = $fb->get_result();
+    while ($row = $res2->fetch_assoc()) { $row['gallery_count'] = null; $props[] = $row; }
+  }
+  if ($fb) { $fb->close(); }
+}
 
 [$flash, $flash_type] = get_flash();
 // Ignore querystring-based flash to prevent persistent alerts when URL includes ?flash=...
@@ -76,6 +96,12 @@ if (isset($_GET['flash'])) { $flash = ''; $flash_type = ''; }
   <?php if ($flash): ?>
     <div class="alert <?php echo ($flash_type==='success')?'alert-success':'alert-danger'; ?> alert-dismissible fade show" role="alert">
       <?php echo htmlspecialchars($flash); ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <?php endif; ?>
+  <?php if (!empty($db_error)): ?>
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      <?php echo htmlspecialchars('Some details could not be loaded due to a database schema difference.'); ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   <?php endif; ?>

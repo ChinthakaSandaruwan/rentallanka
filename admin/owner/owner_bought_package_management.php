@@ -1,5 +1,121 @@
 <?php require_once __DIR__ . '/../../public/includes/auth_guard.php'; require_role('admin'); ?>
 <?php require_once __DIR__ . '/../../config/config.php'; ?>
+<?php
+  $alert = ['type'=>'','msg'=>''];
+  $expire_msg = '';
+  [$flash, $flash_type] = get_flash();
+
+  // Auto-expire packages whose end_date has passed
+  try {
+    $q = db()->query("UPDATE bought_packages SET status='expired' WHERE status='active' AND end_date IS NOT NULL AND end_date < NOW()");
+    if ($q !== false) {
+      $cnt = db()->affected_rows;
+      if ($cnt > 0) { $expire_msg = $cnt . ' package(s) auto-expired based on end date.'; }
+    }
+  } catch (Throwable $e) { /* ignore auto-expire errors */ }
+
+  // Handle POST with PRG
+  if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    try {
+      $action = $_POST['action'] ?? '';
+      $bp_id = (int)($_POST['bought_package_id'] ?? 0);
+      if ($bp_id <= 0) { throw new Exception('Invalid id'); }
+      if ($action === 'set_payment_status') {
+        $ps = $_POST['payment_status'] ?? 'pending';
+        if (!in_array($ps, ['pending','paid','failed'], true)) { throw new Exception('Bad status'); }
+        $st = db()->prepare('UPDATE bought_packages SET payment_status=? WHERE bought_package_id=?');
+        $st->bind_param('si', $ps, $bp_id);
+        $st->execute();
+        $st->close();
+        redirect_with_message($GLOBALS['base_url'] . '/admin/owner/owner_bought_package_management.php', 'Payment status updated', 'success');
+        exit;
+      } elseif ($action === 'set_package_status') {
+        $s = $_POST['status'] ?? 'active';
+        if (!in_array($s, ['active','expired'], true)) { throw new Exception('Bad status'); }
+        $st = db()->prepare('UPDATE bought_packages SET status=? WHERE bought_package_id=?');
+        $st->bind_param('si', $s, $bp_id);
+        $st->execute();
+        $st->close();
+        redirect_with_message($GLOBALS['base_url'] . '/admin/owner/owner_bought_package_management.php', 'Package status updated', 'success');
+        exit;
+      } else {
+        throw new Exception('Unknown action');
+      }
+    } catch (Throwable $e) {
+      redirect_with_message($GLOBALS['base_url'] . '/admin/owner/owner_bought_package_management.php', 'Failed: ' . $e->getMessage(), 'error');
+      exit;
+    }
+  }
+
+  // Filters (querystring)
+  $q = trim($_GET['q'] ?? '');
+  $f_status = $_GET['status'] ?? '';
+  $f_pay = $_GET['payment_status'] ?? '';
+
+  // Quick stats
+  $stat_total = 0; $stat_active = 0; $stat_expired = 0; $stat_pending = 0;
+  try {
+    $r1 = db()->query("SELECT COUNT(*) c FROM bought_packages");
+    if ($r1) { $stat_total = (int)$r1->fetch_assoc()['c']; }
+    $r2 = db()->query("SELECT COUNT(*) c FROM bought_packages WHERE status='active'");
+    if ($r2) { $stat_active = (int)$r2->fetch_assoc()['c']; }
+    $r3 = db()->query("SELECT COUNT(*) c FROM bought_packages WHERE status='expired'");
+    if ($r3) { $stat_expired = (int)$r3->fetch_assoc()['c']; }
+    $r4 = db()->query("SELECT COUNT(*) c FROM bought_packages WHERE payment_status='pending'");
+    if ($r4) { $stat_pending = (int)$r4->fetch_assoc()['c']; }
+  } catch (Throwable $e) {}
+
+  // Load bought packages with filters + pagination
+  $rows = [];
+  try {
+    $perPage = max(5, (int)($_GET['per'] ?? 20));
+    if ($perPage > 100) { $perPage = 100; }
+    $page = max(1, (int)($_GET['p'] ?? 1));
+    $offset = ($page - 1) * $perPage;
+
+    $where = [];
+    if ($q !== '') {
+      $qq = db()->real_escape_string($q);
+      $where[] = "(u.name LIKE '%$qq%' OR u.email LIKE '%$qq%' OR p.package_name LIKE '%$qq%')";
+    }
+    if (in_array($f_status, ['active','expired'], true)) {
+      $where[] = "bp.status='" . db()->real_escape_string($f_status) . "'";
+    }
+    if (in_array($f_pay, ['pending','paid','failed'], true)) {
+      $where[] = "bp.payment_status='" . db()->real_escape_string($f_pay) . "'";
+    }
+    $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
+    $totalFiltered = 0;
+    $csql = "SELECT COUNT(*) c FROM bought_packages bp JOIN users u ON u.user_id=bp.user_id JOIN packages p ON p.package_id=bp.package_id $whereSql";
+    $cres = db()->query($csql);
+    if ($cres) { $totalFiltered = (int)$cres->fetch_assoc()['c']; }
+
+    $sql = "
+      SELECT bp.bought_package_id, bp.user_id, u.name AS user_name, u.email AS user_email,
+             p.package_name, p.package_type, bp.start_date, bp.end_date,
+             bp.remaining_properties, bp.remaining_rooms, bp.status, bp.payment_status,
+             (
+               SELECT payment_reference FROM package_payments pp
+               WHERE pp.bought_package_id = bp.bought_package_id
+               ORDER BY pp.payment_id DESC LIMIT 1
+             ) AS last_slip,
+             (
+               SELECT amount FROM package_payments pp2
+               WHERE pp2.bought_package_id = bp.bought_package_id
+               ORDER BY pp2.payment_id DESC LIMIT 1
+             ) AS last_amount
+      FROM bought_packages bp
+      JOIN users u ON u.user_id = bp.user_id
+      JOIN packages p ON p.package_id = bp.package_id
+      $whereSql
+      ORDER BY bp.bought_package_id DESC
+      LIMIT $offset, $perPage
+    ";
+    $res = db()->query($sql);
+    if ($res) { while ($r = $res->fetch_assoc()) { $rows[] = $r; } }
+  } catch (Throwable $e) { $rows = []; }
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,115 +133,11 @@
     <a href="../index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
   </div>
 
-  <?php
-    $alert = ['type'=>'','msg'=>''];
-    $expire_msg = '';
-    // Auto-expire packages whose end_date has passed
-    try {
-      $q = db()->query("UPDATE bought_packages SET status='expired' WHERE status='active' AND end_date IS NOT NULL AND end_date < NOW()");
-      if ($q !== false) {
-        $cnt = db()->affected_rows;
-        if ($cnt > 0) { $expire_msg = $cnt . ' package(s) auto-expired based on end date.'; }
-      }
-    } catch (Throwable $e) { /* ignore auto-expire errors */ }
-    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-      try {
-        $action = $_POST['action'] ?? '';
-        $bp_id = (int)($_POST['bought_package_id'] ?? 0);
-        if ($bp_id <= 0) { throw new Exception('Invalid id'); }
-        if ($action === 'set_payment_status') {
-          $ps = $_POST['payment_status'] ?? 'pending';
-          if (!in_array($ps, ['pending','paid','failed'], true)) { throw new Exception('Bad status'); }
-          $st = db()->prepare('UPDATE bought_packages SET payment_status=? WHERE bought_package_id=?');
-          $st->bind_param('si', $ps, $bp_id);
-          $st->execute();
-          $st->close();
-          $alert = ['type'=>'success','msg'=>'Payment status updated'];
-        } elseif ($action === 'set_package_status') {
-          $s = $_POST['status'] ?? 'active';
-          if (!in_array($s, ['active','expired'], true)) { throw new Exception('Bad status'); }
-          $st = db()->prepare('UPDATE bought_packages SET status=? WHERE bought_package_id=?');
-          $st->bind_param('si', $s, $bp_id);
-          $st->execute();
-          $st->close();
-          $alert = ['type'=>'success','msg'=>'Package status updated'];
-        }
-      } catch (Throwable $e) {
-        $alert = ['type'=>'danger','msg'=>htmlspecialchars($e->getMessage())];
-      }
-    }
+  
 
-    // Filters (querystring)
-    $q = trim($_GET['q'] ?? '');
-    $f_status = $_GET['status'] ?? '';
-    $f_pay = $_GET['payment_status'] ?? '';
-
-    // Quick stats
-    $stat_total = 0; $stat_active = 0; $stat_expired = 0; $stat_pending = 0;
-    try {
-      $r1 = db()->query("SELECT COUNT(*) c FROM bought_packages");
-      if ($r1) { $stat_total = (int)$r1->fetch_assoc()['c']; }
-      $r2 = db()->query("SELECT COUNT(*) c FROM bought_packages WHERE status='active'");
-      if ($r2) { $stat_active = (int)$r2->fetch_assoc()['c']; }
-      $r3 = db()->query("SELECT COUNT(*) c FROM bought_packages WHERE status='expired'");
-      if ($r3) { $stat_expired = (int)$r3->fetch_assoc()['c']; }
-      $r4 = db()->query("SELECT COUNT(*) c FROM bought_packages WHERE payment_status='pending'");
-      if ($r4) { $stat_pending = (int)$r4->fetch_assoc()['c']; }
-    } catch (Throwable $e) {}
-
-    // Load bought packages with filters + pagination
-    $rows = [];
-    try {
-      $perPage = max(5, (int)($_GET['per'] ?? 20));
-      if ($perPage > 100) { $perPage = 100; }
-      $page = max(1, (int)($_GET['p'] ?? 1));
-      $offset = ($page - 1) * $perPage;
-
-      $where = [];
-      if ($q !== '') {
-        $qq = db()->real_escape_string($q);
-        $where[] = "(u.name LIKE '%$qq%' OR u.email LIKE '%$qq%' OR p.package_name LIKE '%$qq%')";
-      }
-      if (in_array($f_status, ['active','expired'], true)) {
-        $where[] = "bp.status='" . db()->real_escape_string($f_status) . "'";
-      }
-      if (in_array($f_pay, ['pending','paid','failed'], true)) {
-        $where[] = "bp.payment_status='" . db()->real_escape_string($f_pay) . "'";
-      }
-      $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
-
-      $totalFiltered = 0;
-      $csql = "SELECT COUNT(*) c FROM bought_packages bp JOIN users u ON u.user_id=bp.user_id JOIN packages p ON p.package_id=bp.package_id $whereSql";
-      $cres = db()->query($csql);
-      if ($cres) { $totalFiltered = (int)$cres->fetch_assoc()['c']; }
-
-      $sql = "
-        SELECT bp.bought_package_id, bp.user_id, u.name AS user_name, u.email AS user_email,
-               p.package_name, p.package_type, bp.start_date, bp.end_date,
-               bp.remaining_properties, bp.remaining_rooms, bp.status, bp.payment_status,
-               (
-                 SELECT payment_reference FROM package_payments pp
-                 WHERE pp.bought_package_id = bp.bought_package_id
-                 ORDER BY pp.payment_id DESC LIMIT 1
-               ) AS last_slip,
-               (
-                 SELECT amount FROM package_payments pp2
-                 WHERE pp2.bought_package_id = bp.bought_package_id
-                 ORDER BY pp2.payment_id DESC LIMIT 1
-               ) AS last_amount
-        FROM bought_packages bp
-        JOIN users u ON u.user_id = bp.user_id
-        JOIN packages p ON p.package_id = bp.package_id
-        $whereSql
-        ORDER BY bp.bought_package_id DESC
-        LIMIT $offset, $perPage
-      ";
-      $res = db()->query($sql);
-      if ($res) { while ($r = $res->fetch_assoc()) { $rows[] = $r; } }
-    } catch (Throwable $e) { $rows = []; }
-  ?>
-
-  <?php if ($alert['msg'] !== ''): ?>
+  <?php if (!empty($flash)): ?>
+    <div class="alert <?= $flash_type==='success'?'alert-success':'alert-danger' ?>" role="alert"><?= htmlspecialchars($flash) ?></div>
+  <?php elseif ($alert['msg'] !== ''): ?>
     <div class="alert alert-<?= $alert['type'] ?>"><?= $alert['msg'] ?></div>
   <?php endif; ?>
   <?php if (!empty($expire_msg)): ?>

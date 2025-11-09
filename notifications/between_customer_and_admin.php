@@ -53,7 +53,7 @@ if ($action === 'list') {
 
     if ($unread_only) { $where[] = 'is_read = 0'; }
 
-    $sql = 'SELECT notification_id, user_id, title, message, type, property_id, rental_id, is_read, read_at, created_at
+    $sql = 'SELECT notification_id, user_id, title, message, type, property_id, is_read, read_at, created_at
             FROM notifications
             ' . ($where ? ('WHERE ' . implode(' AND ', $where)) : '') . '
             ORDER BY notification_id DESC
