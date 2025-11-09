@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/otp_helper.php';
 
 function sa_normalize_phone_07(string $phone): string {
     $p = preg_replace('/\D+/', '', $phone);
@@ -70,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt2->close();
                     $prefix = trim((string)setting_get('otp_sms_prefix', 'OTP'));
                     $sms = ($prefix !== '' ? ($prefix . ' ') : '') . $otp . ' (expires in ' . $otp_exp_min . ' min)';
-                    smslenz_send_sms(sa_to_e164($phone07), $sms);
+                    sendOtp($phone07, $otp, $sms);
                     $info = 'OTP sent to ' . $phone07;
                     $stage = 'otp';
                 }
@@ -127,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $sms = ($prefix !== '' ? ($prefix . ' ') : '') . $otp . ' (expires in ' . $otp_exp_min . ' min)';
                     $phone07 = sa_normalize_phone_07((string)$sa['phone']);
                     if ($phone07 !== '') {
-                        smslenz_send_sms(sa_to_e164($phone07), $sms);
+                        sendOtp($phone07, $otp, $sms);
                     }
                     $info = 'OTP sent to ' . ($phone07 ?: 'linked number');
                     $stage = 'otp';
@@ -202,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt2->close();
             $prefix = trim((string)setting_get('otp_sms_prefix', 'OTP'));
             $sms = ($prefix !== '' ? ($prefix . ' ') : '') . $otp . ' (expires in ' . $otp_exp_min . ' min)';
-            smslenz_send_sms(sa_to_e164($pending['phone07']), $sms);
+            sendOtp($pending['phone07'], $otp, $sms);
             $info = 'OTP resent';
             $stage = 'otp';
         }

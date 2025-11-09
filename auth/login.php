@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/otp_helper.php';
 
 function normalize_phone_07(string $phone): string {
     $p = preg_replace('/\D+/', '', $phone);
@@ -65,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['otp_user_id'] = $uid;
                 $_SESSION['otp_phone'] = $phone07;
                 $sms = 'Your OTP code is ' . $otp . '. It expires in 5 minutes.';
-                smslenz_send_sms(to_e164_for_sms($phone07), $sms);
+                sendOtp($phone07, $otp, $sms);
                 $info = 'OTP sent to ' . $phone07;
                 $stage = 'verify';
                 }

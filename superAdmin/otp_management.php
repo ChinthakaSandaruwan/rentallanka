@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/otp_helper.php';
 require_once __DIR__ . '/../public/includes/auth_guard.php';
 require_super_admin();
 
@@ -23,7 +24,7 @@ $otp_length = (int)setting_get('otp_length', '6');
 $otp_expiry_minutes = (int)setting_get('otp_expiry_minutes', '5');
 $otp_max_attempts = (int)setting_get('otp_max_attempts', '5');
 $otp_sms_prefix = setting_get('otp_sms_prefix', 'OTP');
-$otp_dev_mode = (int)setting_get('otp_dev_mode', '0');
+$otp_mode = setting_get('otp_mode', 'development');
 
 // Read current SMS settings
 $sms_user_id = setting_get('sms_user_id', getenv('SMSLENZ_USER_ID') ?: '');
@@ -34,20 +35,22 @@ $sms_base_url = setting_get('sms_base_url', 'https://smslenz.lk/api');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save_otp_settings') {
         $otp_enabled = isset($_POST['otp_enabled']) ? 1 : 0;
-        $otp_dev_mode = isset($_POST['otp_dev_mode']) ? 1 : 0;
         $otp_length = max(4, min(8, (int)($_POST['otp_length'] ?? 6)));
         $otp_expiry_minutes = max(1, min(60, (int)($_POST['otp_expiry_minutes'] ?? 5)));
         $otp_max_attempts = max(1, min(20, (int)($_POST['otp_max_attempts'] ?? 5)));
         $otp_sms_prefix = trim($_POST['otp_sms_prefix'] ?? '');
+        $otp_mode_in = strtolower(trim((string)($_POST['otp_mode'] ?? 'development')));
+        if (!in_array($otp_mode_in, ['development','real'], true)) { $otp_mode_in = 'development'; }
         if (strlen($otp_sms_prefix) > 32) {
             $error = 'SMS Prefix must be 32 characters or less';
         } else {
             setting_set('otp_enabled', (string)$otp_enabled);
-            setting_set('otp_dev_mode', (string)$otp_dev_mode);
             setting_set('otp_length', (string)$otp_length);
             setting_set('otp_expiry_minutes', (string)$otp_expiry_minutes);
             setting_set('otp_max_attempts', (string)$otp_max_attempts);
             setting_set('otp_sms_prefix', $otp_sms_prefix);
+            setting_set('otp_mode', $otp_mode_in);
+            $otp_mode = $otp_mode_in;
             $message = 'OTP settings saved';
         }
     } elseif ($action === 'save_sms_settings') {
@@ -117,12 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->close();
                 $prefix = trim($otp_sms_prefix);
                 $sms = ($prefix !== '' ? ($prefix . ' ') : '') . $otp . ' (expires in ' . $otp_expiry_minutes . ' min)';
-                if ($otp_dev_mode) {
-                    $message = 'DEV MODE: OTP resent = ' . $otp;
-                } else {
-                    $r = smslenz_send_sms($to_e164($usr['phone']), $sms);
-                    $message = $r['ok'] ? 'OTP resent' : ('Failed to send: '.($r['error'] ?? ''));
-                }
+                // Use global helper respecting OTP_MODE
+                sendOtp((string)$usr['phone'], $otp, $sms);
+                $message = 'OTP resent';
             } else {
                 $error = 'User phone not found';
             }
@@ -178,17 +178,23 @@ $stmt->close();
             <div class="card-body">
                 <form method="post">
                     <div class="row g-3">
-                        <div class="col-12 col-md-3 d-flex align-items-end">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="otp_enabled" name="otp_enabled" <?php echo $otp_enabled ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="otp_enabled">Enable</label>
+                        <div class="col-12">
+                            <div class="alert alert-secondary py-2 mb-0">
+                                <strong>Current OTP Mode:</strong> <?php echo htmlspecialchars(strtoupper($otp_mode)); ?>
                             </div>
                         </div>
                         <div class="col-12 col-md-3 d-flex align-items-end">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="otp_dev_mode" name="otp_dev_mode" <?php echo $otp_dev_mode ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="otp_dev_mode">Development Mode</label>
+                                <input class="form-check-input" type="checkbox" id="otp_enabled" name="otp_enabled" <?php echo $otp_enabled ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="otp_enabled">On/Off</label>
                             </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Global OTP Mode</label>
+                            <select class="form-select" name="otp_mode">
+                                <option value="development" <?php echo ($otp_mode === 'development') ? 'selected' : ''; ?>>Development</option>
+                                <option value="real" <?php echo ($otp_mode === 'real') ? 'selected' : ''; ?>>Real</option>
+                            </select>
                         </div>
                         <div class="col-6 col-md-3">
                             <label class="form-label">OTP Length</label>

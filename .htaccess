@@ -3,7 +3,22 @@
 # Enable URL rewriting
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /rentallanka/
+
+  # Force HTTPS on non-local hosts; allow HTTP on localhost/127.0.0.1
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteCond %{HTTP_HOST} !^localhost(:[0-9]+)?$ [NC]
+  RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(:[0-9]+)?$ [NC]
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Shortcut like WordPress: /rl-admin -> admin login (works on localhost and production)
+  # Localhost (project in /rentallanka)
+  RewriteCond %{HTTP_HOST} ^(localhost|127\.0\.0\.1)(:[0-9]+)?$ [NC]
+  RewriteRule ^rl-admin/?$ /rentallanka/admin/auth/admin_login.php [L,QSA]
+  
+  # Production (project at domain root)
+  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:[0-9]+)?$ [NC]
+  RewriteRule ^rl-admin/?$ /admin/auth/admin_login.php [L,QSA]
 
   # Skip existing files/directories
   RewriteCond %{REQUEST_FILENAME} -f [OR]

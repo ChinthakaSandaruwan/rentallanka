@@ -53,14 +53,15 @@
       ('Property Yearly 120', 'yearly', 365, 120, 0, 19999.00, 'List up to 120 properties for 1 year.', 'active'),
       ('Room Monthly 10', 'monthly', 30, 0, 10, 1499.00, 'List up to 10 rooms for 30 days.', 'active'),
       ('Room Yearly 120', 'yearly', 365, 0, 120, 14999.00, 'List up to 120 rooms for 1 year.', 'active')
+    AS new
     ON DUPLICATE KEY UPDATE
-      `package_type`=VALUES(`package_type`),
-      `duration_days`=VALUES(`duration_days`),
-      `max_properties`=VALUES(`max_properties`),
-      `max_rooms`=VALUES(`max_rooms`),
-      `price`=VALUES(`price`),
-      `description`=VALUES(`description`),
-      `status`=VALUES(`status`);
+      `package_type`=new.`package_type`,
+      `duration_days`=new.`duration_days`,
+      `max_properties`=new.`max_properties`,
+      `max_rooms`=new.`max_rooms`,
+      `price`=new.`price`,
+      `description`=new.`description`,
+      `status`=new.`status`;
 
     -- Table: user_packages (Owner purchases)
     CREATE TABLE IF NOT EXISTS `bought_packages` (
@@ -266,7 +267,7 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       ('footer_company_name', 'Rentallanka'),
       ('footer_about', 'Find properties and rooms for rent across Sri Lanka.'),
       ('footer_address', 'Colombo, Sri Lanka'),
-      ('footer_email', 'info@rentallanka.com'),
+      ('footer_email', 'info@rentallanka.lk'),
       ('footer_phone', '+94 71 234 5678'),
       ('footer_social_facebook', ''),
       ('footer_social_twitter', ''),
@@ -276,12 +277,13 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       ('footer_social_github', ''),
       ('footer_products_links', 'Properties|/public/includes/all_properties.php\nRooms|/public/includes/all_rooms.php'),
       ('footer_useful_links', 'Pricing|#\nSettings|#\nOrders|#\nHelp|#'),
-      ('footer_copyright_text', CONCAT('© ', YEAR(CURRENT_DATE), ' Copyright: ')),
+      ('footer_copyright_text', CONCAT('  ', YEAR(CURRENT_DATE), ' Copyright: ')),
       ('footer_show_social', '1'),
       ('footer_show_products', '1'),
       ('footer_show_useful_links', '1'),
       ('footer_show_contact', '1')
-    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
+    AS new
+    ON DUPLICATE KEY UPDATE setting_value = new.setting_value;
 
     CREATE TABLE IF NOT EXISTS `reviews` (
       `review_id` INT NOT NULL AUTO_INCREMENT,

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/otp_helper.php';
 
 // If already logged in as admin (or super admin), send to admin dashboard
 $role = $_SESSION['role'] ?? '';
@@ -70,7 +71,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     $_SESSION['admin_otp_user_id'] = $uid;
                     $_SESSION['admin_otp_phone'] = $phone07;
                     $sms = 'Your admin OTP is ' . $otp . '. It expires in 5 minutes.';
-                    smslenz_send_sms(admin_to_e164($phone07), $sms);
+                    sendOtp($phone07, $otp, $sms);
                     $ok = 'OTP sent to ' . $phone07;
                     $stage = 'verify';
                 }
