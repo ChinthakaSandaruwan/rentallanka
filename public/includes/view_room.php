@@ -126,7 +126,7 @@ function norm_url($p) {
             <dt class="col-sm-4">Type</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['room_type'] ?? ''); ?></dd>
             <dt class="col-sm-4">Beds</dt><dd class="col-sm-8"><?php echo (int)$room['beds']; ?></dd>
             <dt class="col-sm-4">Max Guests</dt><dd class="col-sm-8"><?php echo (int)($room['maximum_guests'] ?? 0); ?></dd>
-            <dt class="col-sm-4">Price/Day</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$room['price_per_day'], 2); ?></dd>
+            <dt class="col-sm-4">Price Per Night</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$room['price_per_day'], 2); ?></dd>
           </dl>
           <div class="mt-3">
             <div class="fw-semibold mb-1">Description</div>
@@ -143,13 +143,13 @@ function norm_url($p) {
           <?php endif; ?>
           <div class="mt-4">
             <?php if (!$isOwnerViewing && strtolower((string)($room['status'] ?? '')) === 'available'): ?>
-              <a class="btn btn-primary" href="<?php echo $base_url; ?>/public/includes/rent_room.php?id=<?php echo (int)$rid; ?>">
+              <button type="button" class="btn btn-primary" id="btnRentNow" data-room-id="<?php echo (int)$rid; ?>">
                 <i class="bi bi-bag-check me-1"></i>Rent Now
-              </a>
+              </button>
             <?php else: ?>
-              <a class="btn btn-primary disabled" href="#" tabindex="-1" aria-disabled="true">
+              <button type="button" class="btn btn-primary" disabled>
                 <i class="bi bi-bag-check me-1"></i>Rent Now
-              </a>
+              </button>
             <?php endif; ?>
           </div>
           <div class="mt-4">
@@ -235,6 +235,117 @@ function norm_url($p) {
     </div>
   </div>
 </div>
+<!-- Rent Modal -->
+<div class="modal fade" id="rentModal" tabindex="-1" aria-labelledby="rentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="rentModalLabel">Rent Room</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="rentModalBody">
+        <div class="d-flex align-items-center gap-3 py-4 justify-content-center text-muted">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <span>Loading…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function(){
+    const modalEl = document.getElementById('rentModal');
+    const modalBody = document.getElementById('rentModalBody');
+    let bsModal = null;
+    function showSpinner(){
+      modalBody.innerHTML = '<div class="d-flex align-items-center gap-3 py-4 justify-content-center text-muted">'
+        + '<div class="spinner-border" role="status" aria-hidden="true"></div>'
+        + '<span>Loading…</span>'
+        + '</div>';
+    }
+
+    $(document).on('click', '#btnRentNow', function(e){
+      e.preventDefault();
+      const id = parseInt(this.getAttribute('data-room-id')||'0',10) || 0;
+      if (!id) return;
+      if (!bsModal) bsModal = new bootstrap.Modal(modalEl);
+      showSpinner();
+      bsModal.show();
+
+      $.ajax({
+        url: '<?php echo $base_url; ?>/public/includes/rent_room.php',
+        method: 'GET',
+        data: { id: id, ajax: 1 },
+        dataType: 'html',
+        success: function(res){
+          // If server sent JSON error (e.g., not logged in), try to parse
+          try {
+            const obj = JSON.parse(res);
+            if (obj && obj.status === 'error') {
+              modalBody.innerHTML = '<div class="alert alert-danger">' + (obj.message || 'Failed to load form') + '</div>';
+              return;
+            }
+          } catch(_) {}
+          modalBody.innerHTML = res;
+          // Execute any scripts included in the fragment so live calc/init runs
+          const scripts = modalBody.querySelectorAll('script');
+          scripts.forEach((old) => {
+            const s = document.createElement('script');
+            if (old.src) { s.src = old.src; }
+            else { s.text = old.textContent || ''; }
+            document.body.appendChild(s);
+            old.remove();
+          });
+        },
+        error: function(xhr){
+          let msg = 'Failed to load form.';
+          try { const o = JSON.parse(xhr.responseText||''); if (o && o.message) msg = o.message; } catch(_){ }
+          modalBody.innerHTML = '<div class="alert alert-danger">' + msg + '</div>';
+        }
+      });
+    });
+
+    // Delegate submit for the form inside modal
+    $(document).on('submit', '#rentModal form', function(e){
+      e.preventDefault();
+      const $form = $(this);
+      const data = $form.serializeArray();
+      data.push({name: 'ajax', value: '1'});
+      const idField = $form.find('input[name="room_id"]').val();
+      $.ajax({
+        url: '<?php echo $base_url; ?>/public/includes/rent_room.php',
+        method: 'POST',
+        data: $.param(data),
+        dataType: 'json',
+        success: function(resp){
+          if (resp && resp.status === 'success') {
+            modalBody.innerHTML = resp.html || '<div class="alert alert-success">' + (resp.message||'Booked') + '</div>';
+            // Optionally refresh parts of page or close after delay
+            setTimeout(function(){ if (bsModal) bsModal.hide(); }, 2000);
+          } else {
+            const msg = (resp && resp.message) ? resp.message : 'Booking failed';
+            const host = modalBody.querySelector('#formAlert');
+            if (host) {
+              host.innerHTML = '<div class="alert alert-danger">' + msg.replace(/\n/g,'<br>') + '</div>';
+            } else {
+              modalBody.insertAdjacentHTML('afterbegin','<div class="alert alert-danger">' + msg.replace(/\n/g,'<br>') + '</div>');
+            }
+          }
+        },
+        error: function(xhr){
+          let msg = 'Network error';
+          try { const o = JSON.parse(xhr.responseText||''); if (o && o.message) msg = o.message; } catch(_){ }
+          const host = modalBody.querySelector('#formAlert');
+          if (host) { host.innerHTML = '<div class="alert alert-danger">' + msg + '</div>'; }
+          else { modalBody.insertAdjacentHTML('afterbegin','<div class="alert alert-danger">' + msg + '</div>'); }
+        }
+      });
+    });
+  })();
+</script>
+ 
 </body>
 </html>

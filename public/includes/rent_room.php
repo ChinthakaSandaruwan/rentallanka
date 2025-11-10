@@ -4,6 +4,8 @@ require_once __DIR__ . '/../../config/config.php';
 $uid = (int)($_SESSION['user']['user_id'] ?? 0);
 $role = (string)($_SESSION['role'] ?? '');
 $rid = (int)($_GET['id'] ?? $_POST['room_id'] ?? 0);
+// Detect AJAX/XHR requests
+$isAjax = (strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest') || isset($_GET['ajax']) || isset($_POST['ajax']);
 
 if ($rid <= 0) {
   http_response_code(302);
@@ -13,6 +15,12 @@ if ($rid <= 0) {
 
 // Require login
 if ($uid <= 0) {
+  if ($isAjax) {
+    http_response_code(401);
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Please sign in to rent a room']);
+    exit;
+  }
   redirect_with_message(rtrim($base_url,'/') . '/auth/login.php', 'Please sign in to rent a room', 'info');
 }
 
@@ -24,17 +32,32 @@ $room = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 if (!$room) {
   http_response_code(404);
+  if ($isAjax) {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Room not found.']);
+    exit;
+  }
   echo '<!doctype html><html><body><div class="container p-4"><div class="alert alert-warning">Room not found.</div></div></body></html>';
   exit;
 }
 // Prevent owners from renting their own rooms
 if ((int)($room['owner_id'] ?? 0) === $uid) {
   http_response_code(403);
+  if ($isAjax) {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'You cannot rent your own room.']);
+    exit;
+  }
   echo '<!doctype html><html><body><div class="container p-4"><div class="alert alert-danger">You cannot rent your own room.</div></div></body></html>';
   exit;
 }
 if (($room['status'] ?? '') !== 'available') {
   http_response_code(409);
+  if ($isAjax) {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'This room is not available for rent.']);
+    exit;
+  }
   echo '<!doctype html><html><body><div class="container p-4"><div class="alert alert-danger">This room is not available for rent.</div></div></body></html>';
   exit;
 }
@@ -42,7 +65,7 @@ if (($room['status'] ?? '') !== 'available') {
 $unavailable = [];
 // Load existing future bookings for this room to show unavailable ranges
 try {
-  $qb = db()->prepare("SELECT DATE(checkin_date) AS ci, DATE(checkout_date) AS co FROM room_rents WHERE room_id=? AND status IN ('booked','checked_in') AND checkout_date > NOW() ORDER BY checkin_date");
+  $qb = db()->prepare("SELECT DATE(checkin_date) AS ci, DATE(checkout_date) AS co FROM room_rents WHERE room_id=? AND status IN ('booked','pending') AND checkout_date > NOW() ORDER BY checkin_date");
   $qb->bind_param('i', $rid);
   $qb->execute();
   $rs = $qb->get_result();
@@ -105,15 +128,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
   if ($guests <= 0) { $errors[] = 'Guests must be at least 1.'; }
-  $maxGuests = (int)($room['maximum_guests'] ?? 0);
-  if ($maxGuests > 0 && $guests > $maxGuests) {
-    $errors[] = 'Guests cannot exceed the maximum allowed for this room (' . (int)$maxGuests . ').';
-  }
+
   if ($meal_id !== 0 && !array_key_exists($meal_id, $meals)) { $errors[] = 'Invalid meal selection.'; }
 
   if (!$errors) {
-    // Prevent overlapping bookings for this room for active statuses
-    $sql = 'SELECT COUNT(*) AS c FROM room_rents WHERE room_id = ? AND status IN (\'booked\', \'checked_in\') AND checkin_date < ? AND checkout_date > ?';
+    // Prevent overlapping or touching bookings for this room for active statuses (inclusive bounds)
+    $sql = 'SELECT COUNT(*) AS c FROM room_rents WHERE room_id = ? AND status IN (\'booked\', \'pending\') AND checkin_date <= ? AND checkout_date >= ?';
     $st = db()->prepare($sql);
     $ci = $dtIn->format('Y-m-d H:i:s');
     $co = $dtOut->format('Y-m-d H:i:s');
@@ -145,10 +165,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
       // Insert booking
       if ($meal_id > 0 && isset($meals[$meal_id])) {
-        $ins = db()->prepare('INSERT INTO room_rents (room_id, customer_id, checkin_date, checkout_date, guests, meal_id, price_per_day, total_amount, status) VALUES (?,?,?,?,?,?,?,?,\'booked\')');
+        $ins = db()->prepare('INSERT INTO room_rents (room_id, customer_id, checkin_date, checkout_date, guests, meal_id, price_per_night, total_amount, status) VALUES (?,?,?,?,?,?,?,?,\'pending\')');
         $ins->bind_param('iissiidd', $rid, $uid, $ci, $co, $guests, $meal_id, $pricePerDayWithMeal, $total);
       } else {
-        $ins = db()->prepare('INSERT INTO room_rents (room_id, customer_id, checkin_date, checkout_date, guests, price_per_day, total_amount, status) VALUES (?,?,?,?,?,?,?,\'booked\')');
+        $ins = db()->prepare('INSERT INTO room_rents (room_id, customer_id, checkin_date, checkout_date, guests, price_per_night, total_amount, status) VALUES (?,?,?,?,?,?,?,\'pending\')');
         $ins->bind_param('iissidd', $rid, $uid, $ci, $co, $guests, $pricePerDayWithMeal, $total);
       }
       $ok1 = $ins->execute();
@@ -159,6 +179,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         throw new Exception('Failed to book room.');
       }
 
+      // Notify the room owner about the new pending booking (best-effort)
+      try {
+        $ownerId = (int)($room['owner_id'] ?? 0);
+        if ($ownerId > 0) {
+          $titleN = 'Booking Pending Request Came, Please Get a Action';
+          $ciLbl = substr($ci, 0, 10);
+          $coLbl = substr($co, 0, 10);
+          $msgN = 'A new booking #' . (int)$rentId . ' for room ' . (string)($room['title'] ?? ('#'.$rid)) . ' is pending from ' . $ciLbl . ' to ' . $coLbl . '. Guests: ' . (int)$guests . '.';
+          $typeN = 'system';
+          // notifications table has optional property_id, set to NULL for room events
+          $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, NULL)');
+          $nt->bind_param('isss', $ownerId, $titleN, $msgN, $typeN);
+          $nt->execute();
+          $nt->close();
+        }
+      } catch (Throwable $eN) { /* ignore notification failure */ }
+
+      // Notify the customer about booking pending (best-effort)
+      try {
+        $ciLbl = substr($ci, 0, 10);
+        $coLbl = substr($co, 0, 10);
+        $titleC = 'Booking Pending Please Wait';
+        $msgC = 'Your booking #' . (int)$rentId . ' for room ' . (string)($room['title'] ?? ('#'.$rid)) . ' is pending from ' . $ciLbl . ' to ' . $coLbl . '. Guests: ' . (int)$guests . '.';
+        $typeC = 'system';
+        $nt2 = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, NULL)');
+        $nt2->bind_param('isss', $uid, $titleC, $msgC, $typeC);
+        $nt2->execute();
+        $nt2->close();
+      } catch (Throwable $eC) { /* ignore notification failure */ }
+
       db()->commit();
       $success = true;
     } catch (Throwable $e) {
@@ -166,6 +216,117 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $errors[] = 'Booking failed. Please try again.';
     }
   }
+  // AJAX response for POST
+  if ($isAjax) {
+    header('Content-Type: application/json');
+    if ($success) {
+      $summary = '<div class="alert alert-success"><div class="fw-semibold mb-1">Booking pending</div>'
+               . '<div>Your booking ID is <span class="fw-bold">#' . (int)$rentId . '</span>. We have recorded your request and it is pending. We will notify the owner.</div>'
+               . '</div>';
+      echo json_encode(['status' => 'success', 'message' => 'Booking pending', 'html' => $summary, 'rent_id' => (int)$rentId]);
+    } else {
+      echo json_encode(['status' => 'error', 'message' => ($errors ? implode("\n", $errors) : 'Booking failed')]);
+    }
+    exit;
+  }
+}
+
+// AJAX response for GET: return fragment with booking form card only
+if ($isAjax && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+  ob_start();
+  ?>
+  <div class="card">
+    <div class="card-header">Booking details</div>
+    <div class="card-body">
+      <div id="formAlert"></div>
+      <form method="post" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
+        <input type="hidden" name="ajax" value="1">
+        <input type="hidden" name="room_id" value="<?php echo (int)$rid; ?>">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label for="checkin_date" class="form-label">Check-in date</label>
+            <input type="date" class="form-control" id="checkin_date" name="checkin_date" required>
+          </div>
+          <div class="col-sm-6">
+            <label for="checkout_date" class="form-label">Check-out date</label>
+            <input type="date" class="form-control" id="checkout_date" name="checkout_date" required>
+          </div>
+          <div class="col-sm-6">
+            <label for="guests" class="form-label">Guests</label>
+            <?php $maxGuests = (int)($room['maximum_guests'] ?? 0); ?>
+            <input type="number" class="form-control" id="guests" name="guests" value="1" required>
+          </div>
+          <div class="col-sm-6">
+            <label for="meal_id" class="form-label">Meal option</label>
+            <select id="meal_id" name="meal_id" class="form-select">
+              <option value="0" selected>No meals</option>
+              <?php foreach ($meals as $mid => $meta): ?>
+                <option value="<?php echo (int)$mid; ?>" data-price="<?php echo number_format((float)($meta['price'] ?? 0), 2, '.', ''); ?>">
+                  <?php echo htmlspecialchars(ucwords(str_replace('_',' ', (string)$meta['name'])) . ' • LKR ' . number_format((float)($meta['price'] ?? 0), 2) . '/night'); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="col-12">
+            <div id="priceInfo" class="text-muted small">
+              Room Per Night: LKR <?php echo number_format((float)($room['price_per_day'] ?? 0), 2); ?><?php if (!empty($meals)) { echo ' • Meal Per Night depends on selection'; } ?>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="form-text mb-1">Unavailable dates</div>
+            <div class="d-flex flex-wrap gap-2" id="unavailBadges">
+              <?php if (!empty($unavailable)): ?>
+                <?php foreach ($unavailable as $rng): ?>
+                  <?php $ciLbl = htmlspecialchars(date('Y-m-d', strtotime($rng[0]))); $coLbl = htmlspecialchars(date('Y-m-d', strtotime($rng[1]))); ?>
+                  <span class="badge bg-danger"><?php echo $ciLbl; ?> to <?php echo $coLbl; ?></span>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <span class="badge bg-success">No current blocks</span>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 d-flex gap-2">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-bag-check me-1"></i>Confirm Booking</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+    (function(){
+      const priceInfo = document.getElementById('priceInfo');
+      const alertHost = document.getElementById('formAlert');
+      const roomPrice = <?php echo json_encode((float)($room['price_per_day'] ?? 0)); ?>;
+      const mealSel = document.getElementById('meal_id');
+      const ci = document.getElementById('checkin_date');
+      const co = document.getElementById('checkout_date');
+      const guests = document.getElementById('guests');
+      const unavailable = <?php echo json_encode($unavailable, JSON_UNESCAPED_SLASHES); ?>; // [[ci,co], ...]
+
+      function parseDate(input){ if (!input || !input.value) return null; const d=new Date(input.value+'T12:00:00'); return isNaN(d)?null:d; }
+      function daysBetween(a,b){ if(!a||!b) return 0; const ms=(b-a)/(1000*60*60*24); const d=Math.floor(ms); return d>0?d:1; }
+      function getMealPerDay(){ if(!mealSel) return 0; const opt=mealSel.options[mealSel.selectedIndex]; const raw=opt&&opt.dataset?opt.dataset.price:'0'; const perGuest=parseFloat(raw||'0'); const g=parseInt(guests&&guests.value?guests.value:'1',10); const cnt=isNaN(g)||g<1?1:g; const v=(isNaN(perGuest)?0:perGuest)*cnt; return v<0?0:v; }
+      function fmt(n){ return (Number(n)||0).toFixed(2); }
+      function inUnavailable(d){ if(!d) return false; const x=new Date(d.getTime()); x.setHours(12,0,0,0); for(const [a,b] of (unavailable||[])){ if(!a||!b) continue; const da=new Date(a+'T00:00:00'); const db=new Date(b+'T00:00:00'); if(x>=da && x<=db) return true; } return false; }
+      function rangeOverlapsUnavailable(d1,d2){ if(!d1||!d2) return false; for(const [a,b] of (unavailable||[])){ if(!a||!b) continue; const da=new Date(a+'T00:00:00'); const db=new Date(b+'T00:00:00'); if(d1<=db && d2>=da) return true; } return false; }
+      function enforceMinCheckout(){ const d1=parseDate(ci); if(!co) return; if(d1){ const nxt=new Date(d1.getTime()); nxt.setDate(nxt.getDate()+1); co.min = nxt.toISOString().slice(0,10); } else { co.removeAttribute('min'); } }
+
+      function update(){ if(!priceInfo) return; const mealPerDay=getMealPerDay(); const pricePerDay=roomPrice+mealPerDay; const d1=parseDate(ci); const d2=parseDate(co); const days=daysBetween(d1,d2); const total=pricePerDay*(d1&&d2?days:1); const g=parseInt(guests&&guests.value?guests.value:'1',10)||1; priceInfo.innerHTML = '<div>Guests: '+g+'</div><div>Room Per Night: LKR '+fmt(roomPrice)+'</div><div>Meal Per Night (all guests): LKR '+fmt(mealPerDay)+'</div><div>Price Per Night: LKR '+fmt(pricePerDay)+'</div>' + (d1&&d2?'<div>Days: '+days+'</div>':'') + '<div class="mt-2"><span class="badge bg-success">Total: LKR '+fmt(total)+'</span></div>'; if(ci) ci.classList.toggle('is-invalid', inUnavailable(d1)); if(co) co.classList.toggle('is-invalid', inUnavailable(d2)); if(ci && co){ const bad = rangeOverlapsUnavailable(d1,d2); ci.classList.toggle('is-invalid', bad || inUnavailable(d1)); co.classList.toggle('is-invalid', bad || inUnavailable(d2)); }
+      }
+
+      mealSel && mealSel.addEventListener('change', update);
+      ci && ci.addEventListener('change', function(){ enforceMinCheckout(); update(); });
+      co && co.addEventListener('change', update);
+      guests && guests.addEventListener('input', update);
+      // init
+      enforceMinCheckout();
+      update();
+    })();
+  </script>
+  <?php
+  $html = ob_get_clean();
+  echo $html;
+  exit;
 }
 ?>
 <!doctype html>
@@ -199,9 +360,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <dt class="col-sm-4">Check-out</dt><dd class="col-sm-8"><?php echo htmlspecialchars($co); ?></dd>
               <dt class="col-sm-4">Guests</dt><dd class="col-sm-8"><?php echo (int)$guests; ?></dd>
               <dt class="col-sm-4">Meal</dt><dd class="col-sm-8"><?php echo htmlspecialchars(($meal_id > 0 && isset($meals[$meal_id])) ? ucwords(str_replace('_',' ', (string)$meals[$meal_id]['name'])) : 'No meals'); ?></dd>
-              <dt class="col-sm-4">Room/Day</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$pricePerDay, 2); ?></dd>
-              <dt class="col-sm-4">Meal/Day</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$mealPerDay, 2); ?></dd>
-              <dt class="col-sm-4">Price/Day</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$pricePerDayWithMeal, 2); ?></dd>
+              <dt class="col-sm-4">Room Per Night</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$pricePerDay, 2); ?></dd>
+              <dt class="col-sm-4">Meal Per Night</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$mealPerDay, 2); ?></dd>
+              <dt class="col-sm-4">Price Per Night</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$pricePerDayWithMeal, 2); ?></dd>
               <dt class="col-sm-4">Total</dt><dd class="col-sm-8 fw-bold text-primary">LKR <?php echo number_format((float)$total, 2); ?></dd>
             </dl>
           </div>
@@ -236,10 +397,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-sm-6">
                   <label for="guests" class="form-label">Guests</label>
                   <?php $maxGuests = (int)($room['maximum_guests'] ?? 0); ?>
-                  <input type="number" min="1" <?php echo $maxGuests>0 ? 'max="'.(int)$maxGuests.'"' : ''; ?> class="form-control" id="guests" name="guests" value="<?php echo htmlspecialchars((string)($_POST['guests'] ?? '1')); ?>" required>
-                  <?php if ($maxGuests > 0): ?>
-                    <div class="form-text">Maximum allowed: <?php echo (int)$maxGuests; ?></div>
-                  <?php endif; ?>
+                  <input type="number" class="form-control" id="guests" name="guests" value="<?php echo htmlspecialchars((string)($_POST['guests'] ?? '1')); ?>" required>
                 </div>
                 <div class="col-sm-6">
                   <label for="meal_id" class="form-label">Meal option</label>
@@ -248,14 +406,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="0" <?php echo $curMeal===0 ? 'selected' : ''; ?>>No meals</option>
                     <?php foreach ($meals as $mid => $meta): ?>
                       <option value="<?php echo (int)$mid; ?>" data-price="<?php echo number_format((float)($meta['price'] ?? 0), 2, '.', ''); ?>" <?php echo $curMeal===(int)$mid ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars(ucwords(str_replace('_',' ', (string)$meta['name'])) . ' • LKR ' . number_format((float)($meta['price'] ?? 0), 2) . '/day'); ?>
+                        <?php echo htmlspecialchars(ucwords(str_replace('_',' ', (string)$meta['name'])) . ' • LKR ' . number_format((float)($meta['price'] ?? 0), 2) . '/night'); ?>
                       </option>
                     <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-12">
                   <div id="priceInfo" class="text-muted small">
-                    Room/day: LKR <?php echo number_format((float)($room['price_per_day'] ?? 0), 2); ?><?php if (!empty($meals)) { echo ' • Meal/day depends on selection'; } ?>
+                    Room Per Night: LKR <?php echo number_format((float)($room['price_per_day'] ?? 0), 2); ?><?php if (!empty($meals)) { echo ' • Meal Per Night depends on selection'; } ?>
                   </div>
                 </div>
                 <div class="col-12">
@@ -333,20 +491,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!a || !b) continue;
         const da = new Date(a + 'T00:00:00');
         const db = new Date(b + 'T00:00:00');
-        // treat range as [ci, co) similar to server overlap check
-        if (x >= da && x < db) return true;
+        // treat range as [ci, co] inclusive: end date is also blocked
+        if (x >= da && x <= db) return true;
       }
       return false;
     }
 
     function rangeOverlapsUnavailable(d1, d2) {
       if (!d1 || !d2) return false;
-      // overlap if exists [ci,co) such that d1 < co && d2 > ci
+      // overlap/touch if exists [ci,co] such that d1 <= co && d2 >= ci
       for (const [a,b] of (unavailable||[])) {
         if (!a || !b) continue;
         const da = new Date(a + 'T00:00:00');
         const db = new Date(b + 'T00:00:00');
-        if (d1 < db && d2 > da) return true;
+        if (d1 <= db && d2 >= da) return true;
       }
       return false;
     }
@@ -368,11 +526,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       const g = parseInt(guests && guests.value ? guests.value : '1', 10) || 1;
       priceInfo.innerHTML = `
         <div>Guests: ${g}</div>
-        <div>Room/Day: LKR ${fmt(roomPrice)}</div>
-        <div>Meal/Day (all guests): LKR ${fmt(mealPerDay)}</div>
-        <div>Price/Day: LKR ${fmt(pricePerDay)}</div>
+        <div>Room Per Night: LKR ${fmt(roomPrice)}</div>
+        <div>Meal Per Night (all guests): LKR ${fmt(mealPerDay)}</div>
+        <div>Price Per Night: LKR ${fmt(pricePerDay)}</div>
         ${d1 && d2 ? `<div>Days: ${days}</div>` : ''}
-        <div class="fw-semibold">Total: LKR ${fmt(total)}</div>
+        <div class="mt-2"><span class="badge bg-success">Total: LKR ${fmt(total)}</span></div>
       `;
       // Simple visual invalid state on selecting blocked dates
       if (ci) ci.classList.toggle('is-invalid', inUnavailable(d1));
@@ -398,13 +556,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (d2 <= d1) errs.push('Check-out must be after check-in.');
         if (d1 < now) errs.push('Check-in cannot be in the past.');
         if (inUnavailable(d1) || inUnavailable(d2) || rangeOverlapsUnavailable(d1, d2)) {
-          errs.push('Your selected dates overlap with unavailable dates.');
+          errs.push('Your selected dates overlap or touch an unavailable range.');
         }
       }
       const g = parseInt(guests && guests.value ? guests.value : '0', 10);
       if (isNaN(g) || g < 1) errs.push('Guests must be at least 1.');
-      const maxGuests = <?php echo json_encode((int)($room['maximum_guests'] ?? 0)); ?>;
-      if (maxGuests > 0 && g > maxGuests) errs.push('Guests cannot exceed the maximum allowed for this room (' + maxGuests + ').');
+      // Removed client-side max guests constraint; server-side will validate if needed
       if (errs.length) {
         e.preventDefault();
         showAlert('<div class="fw-semibold mb-2">Please fix the following:</div><ul class="mb-0">' + errs.map(x=>'\n<li>'+x+'</li>').join('') + '</ul>');

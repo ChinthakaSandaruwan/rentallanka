@@ -2,7 +2,6 @@
 require_once __DIR__ . '/../config/config.php';
 
 if (!headers_sent()) { header('Content-Type: application/json'); }
-
 // Ensure CSRF token
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
@@ -20,6 +19,20 @@ if (!$loggedIn) { json_err('Unauthorized', 401); }
 $role = $_SESSION['role'] ?? '';
 $current_user_id = (int)($_SESSION['user']['user_id'] ?? 0);
 if ($current_user_id <= 0) { json_err('Unauthorized', 401); }
+
+// Route: unread count for badge (customer sees own inbox; admin also sees their own inbox)
+if ($action === 'count_unread') {
+    if (!in_array($role, ['admin','customer'], true)) { json_err('Forbidden', 403); }
+    $uid = $current_user_id;
+    $st = db()->prepare('SELECT COUNT(*) AS c FROM notifications WHERE user_id = ? AND is_read = 0');
+    if ($st === false) { json_err('Query prepare failed', 500); }
+    $st->bind_param('i', $uid);
+    $st->execute();
+    $rs = $st->get_result();
+    $row = $rs ? $rs->fetch_assoc() : ['c' => 0];
+    $st->close();
+    json_ok(['unread' => (int)($row['c'] ?? 0)]);
+}
 
 // Route: fetch CSRF token
 if ($action === 'csrf') {

@@ -164,6 +164,19 @@ require_role('owner');
           </div>
         </div>
       </div>
+
+      <!-- room approval -->
+      <div class="col-12 col-md-4 col-lg-3">
+        <div class="card h-100 text-center">
+          <div class="card-body d-flex flex-column">
+            <i class="bi bi-check-circle text-primary card-icon mb-2"></i>
+            <h5 class="card-title mb-0">Room Approval</h5>
+            <p class="card-text text-muted">View your room approval.</p>
+            <a href="room/room_rent_approval.php" class="btn btn-primary mt-auto">Room Approval</a>
+          </div>
+        </div>
+      </div>  
+
  </div>
 
  </div>

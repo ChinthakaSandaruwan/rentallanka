@@ -43,6 +43,10 @@ $csrf = $_SESSION['csrf_token'];
 <script>
 (function(){
   const base = <?php echo json_encode($base_url); ?>;
+  const role = <?php echo json_encode($_SESSION['role'] ?? ''); ?>;
+  const api = (role === 'admin')
+    ? (base + '/notifications/between_admin_and_owner.php')
+    : (base + '/notifications/between_customer_and_owner.php');
   const listEl = document.getElementById('notifList');
   const emptyEl = document.getElementById('emptyState');
   const toggleUnreadBtn = document.getElementById('toggle-unread');
@@ -52,7 +56,7 @@ $csrf = $_SESSION['csrf_token'];
   async function fetchList() {
     const p = new URLSearchParams({ action: 'list' });
     if (unreadOnly) p.set('unread_only', '1');
-    const url = `${base}/notifications/between_customer_and_admin.php?${p.toString()}`;
+    const url = `${api}?${p.toString()}`;
     const res = await fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Failed to load');
@@ -90,14 +94,14 @@ $csrf = $_SESSION['csrf_token'];
   }
 
   async function getCsrf(){
-    const res = await fetch(`${base}/notifications/between_customer_and_admin.php?action=csrf`, { credentials: 'same-origin' });
+    const res = await fetch(`${api}?action=csrf`, { credentials: 'same-origin' });
     const data = await res.json();
     return data.data && data.data.csrf_token ? data.data.csrf_token : '';
   }
 
   async function markRead(id){
     const token = await getCsrf();
-    const res = await fetch(`${base}/notifications/between_customer_and_admin.php`, {
+    const res = await fetch(`${api}`, {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -109,7 +113,7 @@ $csrf = $_SESSION['csrf_token'];
 
   async function delItem(id){
     const token = await getCsrf();
-    const res = await fetch(`${base}/notifications/between_customer_and_admin.php`, {
+    const res = await fetch(`${api}`, {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

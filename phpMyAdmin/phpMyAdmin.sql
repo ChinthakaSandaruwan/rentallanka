@@ -421,8 +421,6 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
   
-
-
     -- Table: room_rents (room rentals/bookings)
     CREATE TABLE IF NOT EXISTS `room_rents` (
       `rent_id` INT NOT NULL AUTO_INCREMENT,
@@ -432,9 +430,9 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       `checkout_date` DATETIME NOT NULL,
       `guests` INT NOT NULL DEFAULT 1,
       `meal_id` INT NULL,
-      `price_per_day` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      `price_per_night` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       `total_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-      `status` ENUM('booked','checked_in','checked_out','cancelled') NOT NULL DEFAULT 'booked',
+      `status` ENUM('booked','pending','cancelled') NOT NULL DEFAULT 'pending',
       `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`rent_id`),
       KEY `idx_room_rents_room_id` (`room_id`),
@@ -443,4 +441,21 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       KEY `idx_room_rents_status` (`status`),
       CONSTRAINT `fk_room_rents_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`room_id`) ON DELETE CASCADE,
       CONSTRAINT `fk_room_rents_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+    -- property rents
+    CREATE TABLE IF NOT EXISTS `property_rents` (
+      `rent_id` INT NOT NULL AUTO_INCREMENT,
+      `property_id` INT NOT NULL,
+      `customer_id` INT NOT NULL,
+      `price_per_month` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      `status` ENUM('booked','pending','cancelled') NOT NULL DEFAULT 'pending',
+      `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`rent_id`),
+      KEY `idx_property_rents_property_id` (`property_id`),
+      KEY `idx_property_rents_customer_id` (`customer_id`),
+      KEY `idx_property_rents_status` (`status`),
+      CONSTRAINT `fk_property_rents_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE,
+      CONSTRAINT `fk_property_rents_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

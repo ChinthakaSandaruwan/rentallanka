@@ -124,9 +124,9 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       const role = <?= json_encode($role) ?>;
       const baseUrl = <?= json_encode($base_url) ?>;
       const currentUserId = <?= json_encode((int)($_SESSION['user']['user_id'] ?? 0)) ?>;
-      const api = (role === 'customer')
-        ? (baseUrl + '/notifications/between_customer_and_admin.php')
-        : (baseUrl + '/notifications/between_admin_and_owner.php');
+      const api = (role === 'admin')
+        ? (baseUrl + '/notifications/between_admin_and_owner.php')
+        : (baseUrl + '/notifications/between_customer_and_owner.php');
       const badge = document.getElementById('nl-badge');
       const listEl = document.getElementById('nl-list');
       if (!badge || !listEl) return;
@@ -203,17 +203,33 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
 
       function load(){
         const params = new URLSearchParams({ action: 'list', unread_only: '0', limit: '20' });
-        if (role === 'admin' && currentUserId > 0 && api.indexOf('between_admin_and_owner.php') !== -1) {
-          params.set('owner_id', String(currentUserId));
-        }
         return fetch(api + '?' + params.toString()).then(rjson).then(j => {
           const items = (j && j.data && Array.isArray(j.data.items)) ? j.data.items : [];
           return render(items);
         }).catch(()=>{ render([]); });
       }
 
-      fetchCsrf().then(load);
+      // Lightweight unread count polling for live badge update
+      function pollUnread(){
+        const url = api + '?action=count_unread';
+        fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(rjson)
+          .then(j => {
+            const unread = (j && j.data && typeof j.data.unread === 'number') ? j.data.unread : 0;
+            if (unread > 0) {
+              badge.classList.remove('d-none');
+              badge.textContent = String(unread);
+            } else {
+              badge.classList.add('d-none');
+              badge.textContent = '0';
+            }
+          })
+          .catch(()=>{});
+      }
+
+      fetchCsrf().then(() => { load(); pollUnread(); });
       setInterval(load, 30000);
+      setInterval(pollUnread, 10000);
       document.addEventListener('shown.bs.modal', function(e){ if (e.target && e.target.id === 'nlModal') { load(); } });
     })();
   </script>

@@ -34,14 +34,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $cur = (string)$r['status'];
       $room_id = (int)$r['room_id'];
       $ok = false;
-      if ($action === 'cancel' && $cur === 'booked' && $now < $ci) {
+      if ($action === 'cancel' && in_array($cur, ['pending','booked'], true) && $now < $ci) {
         $up = db()->prepare("UPDATE room_rents SET status='cancelled' WHERE rent_id=? AND status='booked'");
         $up->bind_param('i', $rent_id);
         $ok = $up->execute();
         $up->close();
+        // If it was pending, ensure it is also captured
+        if (!$ok && $cur === 'pending') {
+          $up2 = db()->prepare("UPDATE room_rents SET status='cancelled' WHERE rent_id=? AND status='pending'");
+          $up2->bind_param('i', $rent_id);
+          $ok = $up2->execute();
+          $up2->close();
+        }
         if ($ok) {
           // Free room if no other active bookings
-          $q = db()->prepare("SELECT COUNT(*) AS c FROM room_rents WHERE room_id=? AND status IN ('booked','checked_in')");
+          $q = db()->prepare("SELECT COUNT(*) AS c FROM room_rents WHERE room_id=? AND status IN ('booked','pending')");
           $q->bind_param('i', $room_id);
           $q->execute();
           $cnt = (int)($q->get_result()->fetch_assoc()['c'] ?? 0);
@@ -52,6 +59,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fr->execute();
             $fr->close();
           }
+
+          // Notify the room owner (best-effort)
+          try {
+            $ow = 0; $roomTitle = '';
+            $gr = db()->prepare('SELECT owner_id, title FROM rooms WHERE room_id=? LIMIT 1');
+            $gr->bind_param('i', $room_id);
+            $gr->execute();
+            $rr = $gr->get_result()->fetch_assoc();
+            $gr->close();
+            if ($rr) { $ow = (int)$rr['owner_id']; $roomTitle = (string)($rr['title'] ?? ''); }
+            if ($ow > 0) {
+              $titleN = 'Booking cancelled';
+              $ciLbl = $ci->format('Y-m-d');
+              $coLbl = $co->format('Y-m-d');
+              $msgN = 'Customer #' . (int)$uid . ' cancelled booking #' . (int)$rent_id . ' for room ' . ($roomTitle !== '' ? $roomTitle : ('#'.$room_id)) . ' (' . $ciLbl . ' to ' . $coLbl . ').';
+              $typeN = 'system';
+              $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, NULL)');
+              $nt->bind_param('isss', $ow, $titleN, $msgN, $typeN);
+              $nt->execute();
+              $nt->close();
+            }
+
+            // Notify the customer (confirmation)
+            try {
+              $titleC = 'Booking cancelled';
+              $msgC = 'Your booking #' . (int)$rent_id . ' for room ' . ($roomTitle !== '' ? $roomTitle : ('#'.$room_id)) . ' (' . $ciLbl . ' to ' . $coLbl . ') has been cancelled.';
+              $typeC = 'system';
+              $nc = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, NULL)');
+              $nc->bind_param('isss', $uid, $titleC, $msgC, $typeC);
+              $nc->execute();
+              $nc->close();
+            } catch (Throwable $eCc) { /* ignore */ }
+          } catch (Throwable $eN) { /* ignore notification failure */ }
         }
       } elseif ($action === 'checkin' && $cur === 'booked' && $now >= $ci && $now < $co) {
         $up = db()->prepare("UPDATE room_rents SET status='checked_in' WHERE rent_id=? AND status='booked'");
@@ -88,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch user's rentals
 $items = [];
-$sql = 'SELECT rr.rent_id, rr.room_id, rr.checkin_date, rr.checkout_date, rr.guests, rr.price_per_day, rr.total_amount, rr.status,
+$sql = 'SELECT rr.rent_id, rr.room_id, rr.checkin_date, rr.checkout_date, rr.guests, rr.price_per_night, rr.total_amount, rr.status,
                r.title AS room_title,
                rm.meal_name,
                rm.price AS meal_price
@@ -136,7 +176,7 @@ function fmt_date($d) { return $d ? date('Y-m-d', strtotime((string)$d)) : ''; }
             <th>Check-out</th>
             <th>Guests</th>
             <th>Meal</th>
-            <th>Price/Day</th>
+            <th>Price/Night</th>
             <th>Total</th>
             <th>Status</th>
             <th>Actions</th>
@@ -151,38 +191,22 @@ function fmt_date($d) { return $d ? date('Y-m-d', strtotime((string)$d)) : ''; }
               <td><?php echo htmlspecialchars(fmt_date($it['checkout_date'])); ?></td>
               <td><?php echo (int)$it['guests']; ?></td>
               <td><?php echo htmlspecialchars($it['meal_name'] ? ucwords(str_replace('_',' ', $it['meal_name'])) : 'No meals'); ?></td>
-              <td>LKR <?php echo number_format((float)$it['price_per_day'], 2); ?></td>
+              <td>LKR <?php echo number_format((float)$it['price_per_night'], 2); ?></td>
               <td class="fw-semibold">LKR <?php echo number_format((float)$it['total_amount'], 2); ?></td>
               <td>
-                <?php $st = (string)($it['status'] ?? ''); $cls = ['booked'=>'primary','checked_in'=>'success','checked_out'=>'secondary','cancelled'=>'danger'][$st] ?? 'secondary'; ?>
+                <?php $st = (string)($it['status'] ?? ''); $cls = ['pending'=>'warning','booked'=>'primary','checked_in'=>'success','checked_out'=>'secondary','cancelled'=>'danger'][$st] ?? 'secondary'; ?>
                 <span class="badge bg-<?php echo $cls; ?>"><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $st ?: 'booked'))); ?></span>
               </td>
               <td>
                 <div class="d-flex gap-2 flex-wrap">
                   <a href="<?php echo $base_url; ?>/public/includes/view_room.php?id=<?php echo (int)$it['room_id']; ?>" class="btn btn-outline-secondary btn-sm">View</a>
                   <?php $nowTs = time(); $ciTs = strtotime((string)$it['checkin_date']); $coTs = strtotime((string)$it['checkout_date']); $st = (string)$it['status']; ?>
-                  <?php if ($st === 'booked' && $nowTs < $ciTs): ?>
+                  <?php if (in_array($st, ['pending','booked'], true) && $nowTs < $ciTs): ?>
                     <form method="post" class="d-inline">
                       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
                       <input type="hidden" name="rent_id" value="<?php echo (int)$it['rent_id']; ?>">
                       <input type="hidden" name="action" value="cancel">
                       <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Cancel this booking?');">Cancel</button>
-                    </form>
-                  <?php endif; ?>
-                  <?php if ($st === 'booked' && $nowTs >= $ciTs && $nowTs < $coTs): ?>
-                    <form method="post" class="d-inline">
-                      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
-                      <input type="hidden" name="rent_id" value="<?php echo (int)$it['rent_id']; ?>">
-                      <input type="hidden" name="action" value="checkin">
-                      <button type="submit" class="btn btn-outline-primary btn-sm">Check-in</button>
-                    </form>
-                  <?php endif; ?>
-                  <?php if ($st === 'checked_in'): ?>
-                    <form method="post" class="d-inline">
-                      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
-                      <input type="hidden" name="rent_id" value="<?php echo (int)$it['rent_id']; ?>">
-                      <input type="hidden" name="action" value="checkout">
-                      <button type="submit" class="btn btn-outline-success btn-sm">Check-out</button>
                     </form>
                   <?php endif; ?>
                 </div>

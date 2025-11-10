@@ -18,7 +18,7 @@ try {
             rr.checkout_date,
             rr.guests,
             rr.meal_id,
-            rr.price_per_day AS rent_price_per_day,
+            rr.price_per_night AS rent_price_per_night,
             rr.total_amount,
             rr.status AS rent_status,
             rr.created_at AS rent_created_at,
@@ -106,7 +106,7 @@ function loc_line($r) {
                 <li class="list-group-item px-0 py-1"><strong>Check-out:</strong> <?php echo htmlspecialchars(date('Y-m-d H:i', strtotime((string)$r['checkout_date']))); ?></li>
                 <li class="list-group-item px-0 py-1"><strong>Guests:</strong> <?php echo (int)($r['guests'] ?? 0); ?></li>
                 <li class="list-group-item px-0 py-1"><strong>Meal:</strong> <?php echo htmlspecialchars((string)($r['meal_name'] ?? 'No meal')); ?></li>
-                <li class="list-group-item px-0 py-1"><strong>Price/Day:</strong> LKR <?php echo number_format((float)($r['rent_price_per_day'] ?? 0), 2); ?></li>
+                <li class="list-group-item px-0 py-1"><strong>Price/Night:</strong> LKR <?php echo number_format((float)($r['rent_price_per_night'] ?? 0), 2); ?></li>
                 <li class="list-group-item px-0 py-1"><strong>Total:</strong> LKR <?php echo number_format((float)($r['total_amount'] ?? 0), 2); ?></li>
               </ul>
               <?php $parts = []; if (!empty($r['city_name'])) $parts[] = (string)$r['city_name']; if (!empty($r['district_name'])) $parts[] = (string)$r['district_name']; if (!empty($r['province_name'])) $parts[] = (string)$r['province_name']; $loc = implode(', ', $parts); ?>
