@@ -91,6 +91,20 @@ require_role('owner');
       </div>
     </div>
 
+    <!-- property approval -->
+
+      <div class="col-12 col-md-4 col-lg-3">
+        <div class="card h-100 text-center">
+          <div class="card-body d-flex flex-column">
+            <i class="bi bi-journal-check text-primary card-icon mb-2"></i>
+            <h5 class="card-title mb-0">Property Rent Approvals</h5>
+            <p class="card-text text-muted">Approve or decline pending property rent requests from customers.</p>
+            <a href="property/property_rent_approval.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ROOM SECTION -->
     <h2 class="section-title">Rooms</h2>
     <div class="row g-3">

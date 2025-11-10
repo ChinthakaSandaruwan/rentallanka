@@ -9,7 +9,7 @@ if (empty($_SESSION['csrf_token'])) {
 $error = '';
 $okmsg = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER["REQUEST_METHOD"] === 'POST') {
   $token = $_POST['csrf_token'] ?? '';
   if (!hash_equals($_SESSION['csrf_token'], $token)) {
     $error = 'Invalid request';
@@ -97,6 +97,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $st->close();
     }
   }
+}
+
+// If POST occurred, redirect to avoid resubmission prompt (PRG pattern)
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+  $msg = $okmsg ?: $error ?: 'Action completed.';
+  $typ = $okmsg ? 'success' : ($error ? 'error' : 'success');
+  redirect_with_message(rtrim($base_url,'/') . '/admin/property/property_approval.php', $msg, $typ);
 }
 
 // Fetch pending properties

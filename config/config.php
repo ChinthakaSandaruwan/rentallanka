@@ -4,6 +4,25 @@ require_once __DIR__ . '/security_bootstrap.php';
 
 $base_url = 'http://localhost/rentallanka';
 
+// Centralize error logging to project log file
+try {
+    $logFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'error' . DIRECTORY_SEPARATOR . 'error.log';
+    $logDir = dirname($logFile);
+    if (!is_dir($logDir)) { @mkdir($logDir, 0775, true); }
+    if (function_exists('ini_set')) {
+        @ini_set('log_errors', '1');
+        @ini_set('error_log', $logFile);
+        // Optional: keep output clean in production; in dev you may set to '1'
+        @ini_set('display_errors', '0');
+    }
+} catch (Throwable $e) {
+    // swallow any logging setup issues
+}
+
+if (!function_exists('app_log')) {
+    function app_log(string $msg): void { error_log($msg); }
+}
+
 // Database connection for XAMPP default setup
 // Adjust credentials as needed for your environment
 define('DB_HOST', '127.0.0.1');

@@ -8,6 +8,71 @@ if ($uid <= 0) {
   redirect_with_message($GLOBALS['base_url'] . '/auth/login.php', 'Please log in', 'error');
 }
 
+if (!function_exists('slugify')) {
+  function slugify($text) {
+    $text = strtolower((string)$text);
+    $text = preg_replace('/[^a-z0-9]+/u', '-', $text);
+    $text = trim($text, '-');
+    if ($text === '' || $text === null) { $text = 'item'; }
+    return $text;
+  }
+}
+
+if (!function_exists('create_webp_copy')) {
+  function create_webp_copy($sourcePath, $quality = 80) {
+    if (!is_file($sourcePath)) { return ''; }
+    if (!function_exists('imagecreatetruecolor') || !function_exists('imagewebp')) { return ''; }
+    $info = @getimagesize($sourcePath);
+    if ($info === false) { return ''; }
+    $mime = (string)($info['mime'] ?? '');
+    $src = null;
+    if (strpos($mime, 'jpeg') !== false) { $src = @imagecreatefromjpeg($sourcePath); }
+    elseif (strpos($mime, 'png') !== false) { $src = @imagecreatefrompng($sourcePath); }
+    elseif (strpos($mime, 'gif') !== false) { $src = @imagecreatefromgif($sourcePath); }
+    elseif (strpos($mime, 'webp') !== false) { $src = @imagecreatefromwebp($sourcePath); }
+    if (!$src) { return ''; }
+    $target = preg_replace('/\.[a-zA-Z0-9]+$/', '', $sourcePath) . '.webp';
+    @imagepalettetotruecolor($src);
+    @imagealphablending($src, true);
+    @imagesavealpha($src, true);
+    $ok = @imagewebp($src, $target, max(0, min(100, (int)$quality)));
+    @imagedestroy($src);
+    return $ok ? $target : '';
+  }
+}
+
+if (!function_exists('resize_image_constrain')) {
+  function resize_image_constrain($path, $maxW, $maxH) {
+    if (!is_file($path)) { return false; }
+    if (!function_exists('imagecreatetruecolor') || !function_exists('imagescale')) { return false; }
+    $info = @getimagesize($path);
+    if ($info === false) { return false; }
+    $w = (int)($info[0] ?? 0); $h = (int)($info[1] ?? 0);
+    if ($w <= 0 || $h <= 0) { return false; }
+    if ($w <= $maxW && $h <= $maxH) { return true; }
+    $mime = (string)($info['mime'] ?? '');
+    $src = null; $writer = null; $ext = '';
+    if (strpos($mime, 'jpeg') !== false) { $src = @imagecreatefromjpeg($path); $writer = 'jpeg'; $ext = 'jpg'; }
+    elseif (strpos($mime, 'png') !== false) { $src = @imagecreatefrompng($path); $writer = 'png'; $ext = 'png'; }
+    elseif (strpos($mime, 'gif') !== false) { $src = @imagecreatefromgif($path); $writer = 'gif'; $ext = 'gif'; }
+    elseif (strpos($mime, 'webp') !== false) { $src = @imagecreatefromwebp($path); $writer = 'webp'; $ext = 'webp'; }
+    if (!$src) { return false; }
+    $ratio = min($maxW / $w, $maxH / $h);
+    $newW = max(1, (int)floor($w * $ratio));
+    $newH = max(1, (int)floor($h * $ratio));
+    $dst = @imagescale($src, $newW, $newH, IMG_BILINEAR_FIXED);
+    if (!$dst) { @imagedestroy($src); return false; }
+    $ok = false;
+    if ($writer === 'jpeg') { $ok = @imagejpeg($dst, $path, 85); }
+    elseif ($writer === 'png') { $ok = @imagepng($dst, $path); }
+    elseif ($writer === 'gif') { $ok = @imagegif($dst, $path); }
+    elseif ($writer === 'webp') { $ok = @imagewebp($dst, $path, 85); }
+    @imagedestroy($dst);
+    @imagedestroy($src);
+    return $ok;
+  }
+}
+
 // Serve geo data for selects
 if (isset($_GET['geo'])) {
   header('Content-Type: application/json');

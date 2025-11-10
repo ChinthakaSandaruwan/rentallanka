@@ -17,11 +17,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $token = $_POST['csrf_token'] ?? '';
   $action = $_POST['action'] ?? '';
   $rent_id = (int)($_POST['rent_id'] ?? 0);
+  $scope = (string)($_POST['scope'] ?? 'room');
   if (!hash_equals($csrf, $token)) {
     redirect_with_message($base_url . '/public/includes/my_rentals.php', 'Invalid request.', 'error');
   }
+  if ($scope === 'property' && $rent_id > 0 && $action === 'cancel') {
+    // Property rent cancel
+    // Load property rent for this user
+    $st = db()->prepare('SELECT rent_id, property_id, status, created_at FROM property_rents WHERE rent_id=? AND customer_id=? LIMIT 1');
+    $st->bind_param('ii', $rent_id, $uid);
+    $st->execute();
+    $r = $st->get_result()->fetch_assoc();
+    $st->close();
+    $ok = false;
+    if ($r) {
+      $cur = strtolower((string)($r['status'] ?? ''));
+      $property_id = (int)($r['property_id'] ?? 0);
+      if (in_array($cur, ['pending','booked'], true)) {
+        if (function_exists('app_log')) { app_log('[my_rentals] property_cancel attempt uid='.(int)$uid.' rent_id='.(int)$rent_id.' cur_status='.$cur); }
+        $up = db()->prepare("UPDATE property_rents SET status='cancelled' WHERE rent_id=? AND LOWER(status) IN ('pending','booked')");
+        $up->bind_param('i', $rent_id);
+        $ok = $up->execute();
+        if (function_exists('app_log')) { app_log('[my_rentals] property_cancel update affected='.(int)$up->affected_rows.' ok='.(int)$ok); }
+        $up->close();
+        if ($ok) {
+          if (function_exists('app_log')) { app_log('[my_rentals] property_cancel success uid='.(int)$uid.' rent_id='.(int)$rent_id); }
+          // Notifications
+          try {
+            $propTitle = '';
+            $ow = 0;
+            $gr = db()->prepare('SELECT owner_id, title FROM properties WHERE property_id=? LIMIT 1');
+            $gr->bind_param('i', $property_id);
+            $gr->execute();
+            $rr = $gr->get_result()->fetch_assoc();
+            $gr->close();
+            if ($rr) { $ow = (int)$rr['owner_id']; $propTitle = (string)($rr['title'] ?? ''); }
+            if ($ow > 0) {
+              $titleN = 'Property rent cancelled';
+              $msgN = 'Customer #' . (int)$uid . ' cancelled rent request #' . (int)$rent_id . ' for property ' . ($propTitle !== '' ? $propTitle : ('#'.$property_id)) . '.';
+              $typeN = 'system';
+              $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, ?)');
+              $pidN = $property_id;
+              $nt->bind_param('isssi', $ow, $titleN, $msgN, $typeN, $pidN);
+              $nt->execute();
+              $nt->close();
+            }
+            // Customer confirmation
+            try {
+              $titleC = 'Property rent cancelled';
+              $msgC = 'Your rent request #' . (int)$rent_id . ' for property ' . ($propTitle !== '' ? $propTitle : ('#'.$property_id)) . ' has been cancelled.';
+              $typeC = 'system';
+              $nc = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, ?)');
+              $pidC = $property_id;
+              $nc->bind_param('isssi', $uid, $titleC, $msgC, $typeC, $pidC);
+              $nc->execute();
+              $nc->close();
+            } catch (Throwable $eCc) { /* ignore */ }
+          } catch (Throwable $eN) { /* ignore notification failure */ }
+        }
+      }
+    }
+    $msg = $ok ? 'Cancelled.' : 'Action not allowed.';
+    $typ = $ok ? 'success' : 'error';
+    redirect_with_message($base_url . '/public/includes/my_rentals.php', $msg, $typ);
+  }
   if ($rent_id > 0 && in_array($action, ['cancel','checkin','checkout'], true)) {
-    // Load rental for this user
+    // Load rental for this user (rooms)
     $st = db()->prepare('SELECT rent_id, room_id, status, checkin_date, checkout_date FROM room_rents WHERE rent_id=? AND customer_id=? LIMIT 1');
     $st->bind_param('ii', $rent_id, $uid);
     $st->execute();
@@ -34,18 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $cur = (string)$r['status'];
       $room_id = (int)$r['room_id'];
       $ok = false;
-      if ($action === 'cancel' && in_array($cur, ['pending','booked'], true) && $now < $ci) {
-        $up = db()->prepare("UPDATE room_rents SET status='cancelled' WHERE rent_id=? AND status='booked'");
-        $up->bind_param('i', $rent_id);
-        $ok = $up->execute();
-        $up->close();
-        // If it was pending, ensure it is also captured
-        if (!$ok && $cur === 'pending') {
-          $up2 = db()->prepare("UPDATE room_rents SET status='cancelled' WHERE rent_id=? AND status='pending'");
-          $up2->bind_param('i', $rent_id);
-          $ok = $up2->execute();
-          $up2->close();
-        }
+      if ($action === 'cancel' && $cur === 'pending') {
+        $up2 = db()->prepare("UPDATE room_rents SET status='cancelled' WHERE rent_id=? AND status='pending'");
+        $up2->bind_param('i', $rent_id);
+        $ok = $up2->execute();
+        $up2->close();
         if ($ok) {
           // Free room if no other active bookings
           $q = db()->prepare("SELECT COUNT(*) AS c FROM room_rents WHERE room_id=? AND status IN ('booked','pending')");
@@ -119,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           }
         }
       }
-      $msg = $ok ? 'Action completed.' : 'Action not allowed.';
+      $msg = $ok ? 'Cancelled.' : 'Action not allowed.';
       $typ = $ok ? 'success' : 'error';
       redirect_with_message($base_url . '/public/includes/my_rentals.php', $msg, $typ);
     }
@@ -145,6 +199,21 @@ while ($row = $res->fetch_assoc()) { $items[] = $row; }
 $st->close();
 
 function fmt_date($d) { return $d ? date('Y-m-d', strtotime((string)$d)) : ''; }
+
+// Fetch user's property rent requests
+$props = [];
+try {
+  $ps = db()->prepare('SELECT pr.rent_id, pr.property_id, pr.price_per_month, pr.status, pr.created_at, p.title AS property_title
+                       FROM property_rents pr
+                       LEFT JOIN properties p ON p.property_id = pr.property_id
+                       WHERE pr.customer_id = ?
+                       ORDER BY pr.rent_id DESC');
+  $ps->bind_param('i', $uid);
+  $ps->execute();
+  $pr = $ps->get_result();
+  while ($row = $pr->fetch_assoc()) { $props[] = $row; }
+  $ps->close();
+} catch (Throwable $e) { $props = []; }
 ?>
 <!doctype html>
 <html lang="en">
@@ -201,13 +270,63 @@ function fmt_date($d) { return $d ? date('Y-m-d', strtotime((string)$d)) : ''; }
                 <div class="d-flex gap-2 flex-wrap">
                   <a href="<?php echo $base_url; ?>/public/includes/view_room.php?id=<?php echo (int)$it['room_id']; ?>" class="btn btn-outline-secondary btn-sm">View</a>
                   <?php $nowTs = time(); $ciTs = strtotime((string)$it['checkin_date']); $coTs = strtotime((string)$it['checkout_date']); $st = (string)$it['status']; ?>
-                  <?php if (in_array($st, ['pending','booked'], true) && $nowTs < $ciTs): ?>
+                  <?php if (in_array($st, ['pending','booked'], true)): ?>
                     <form method="post" class="d-inline">
                       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
                       <input type="hidden" name="rent_id" value="<?php echo (int)$it['rent_id']; ?>">
                       <input type="hidden" name="action" value="cancel">
                       <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Cancel this booking?');">Cancel</button>
                     </form>
+                  <?php endif; ?>
+                </div>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
+  <hr class="my-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h5 mb-0"><i class="bi bi-house-door me-2"></i>My Property Rent Requests</h2>
+  </div>
+  <?php if (!$props): ?>
+    <div class="alert alert-light border">You have no property rent requests yet.</div>
+  <?php else: ?>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Property</th>
+            <th>Price/Month</th>
+            <th>Status</th>
+            <th>Requested At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($props as $p): ?>
+            <tr>
+              <td>#<?php echo (int)$p['rent_id']; ?></td>
+              <td><?php echo htmlspecialchars($p['property_title'] ?? ('Property #' . (int)$p['property_id'])); ?></td>
+              <td>LKR <?php echo number_format((float)($p['price_per_month'] ?? 0), 2); ?></td>
+              <td>
+                <?php $stp = (string)($p['status'] ?? ''); $cls = ['pending'=>'warning','booked'=>'primary','cancelled'=>'secondary'][$stp] ?? 'secondary'; ?>
+                <span class="badge bg-<?php echo $cls; ?>"><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $stp ?: 'pending'))); ?></span>
+              </td>
+              <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime((string)($p['created_at'] ?? '')))); ?></td>
+              <td>
+                <div class="d-flex gap-2 flex-wrap">
+                  <a href="<?php echo $base_url; ?>/public/includes/view_property.php?id=<?php echo (int)$p['property_id']; ?>" class="btn btn-outline-secondary btn-sm">View</a>
+                  <?php if (in_array(strtolower((string)$p['status']), ['pending','booked'], true)): ?>
+                  <form method="post" class="d-inline" onsubmit="return confirm('Cancel this request?');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
+                    <input type="hidden" name="rent_id" value="<?php echo (int)$p['rent_id']; ?>">
+                    <input type="hidden" name="action" value="cancel">
+                    <input type="hidden" name="scope" value="property">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
+                  </form>
                   <?php endif; ?>
                 </div>
               </td>

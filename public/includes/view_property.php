@@ -1,7 +1,20 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
 
+// Make this page cache-friendly to avoid browser resubmission prompts on refresh/back
+if (!headers_sent()) {
+  header('Cache-Control: private, max-age=300');
+  header('Pragma:'); // clear pragma
+  header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 300) . ' GMT');
+}
+
 $pid = (int)($_GET['id'] ?? 0);
+// Safety PRG: if any POST reaches here accidentally, redirect to GET URL
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $pid > 0) {
+  http_response_code(303);
+  header('Location: ' . rtrim($base_url,'/') . '/public/includes/view_property.php?id=' . $pid);
+  exit;
+}
 if ($pid <= 0) {
   http_response_code(302);
   header('Location: /rentallanka/index.php');
@@ -140,7 +153,55 @@ function norm_url($p) {
     </div>
   </div>
 </div>
+<div class="position-fixed top-0 start-0 w-100 h-100" style="pointer-events:none;z-index:-1"></div>
+<!-- Rent Modal -->
+<div class="modal fade" id="rentPropertyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Rent Property</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0" id="rentPropertyModalBody">
+        <div class="p-4 text-center text-muted">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function(){
+  function openRentModal(pid){
+    const elBody = document.getElementById('rentPropertyModalBody');
+    elBody.innerHTML = '<div class="p-4 text-center text-muted">Loading…</div>';
+    const url = '<?php echo rtrim($base_url, '/'); ?>/public/includes/rent_property.php?id=' + encodeURIComponent(pid) + '&ajax=1';
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.text())
+      .then(html => { elBody.innerHTML = html; })
+      .catch(() => { elBody.innerHTML = '<div class="p-4 text-danger">Failed to load. Please try again.</div>'; });
+    const m = new bootstrap.Modal(document.getElementById('rentPropertyModal'));
+    m.show();
+  }
+  // Insert Rent button next to title area if property is available and viewer is not owner
+  document.addEventListener('DOMContentLoaded', function(){
+    try {
+      var available = <?php echo json_encode(strtolower((string)($prop['status'] ?? '')) === 'available'); ?>;
+      var isOwner = <?php echo json_encode(((int)($prop['owner_id'] ?? 0)) === (int)($_SESSION['user']['user_id'] ?? 0)); ?>;
+      if (available && !isOwner) {
+        var container = document.querySelector('.card .card-header')?.parentElement;
+        var target = document.querySelector('.col-12.col-lg-5 .card .card-body');
+        if (target) {
+          var wrap = document.createElement('div');
+          wrap.className = 'mt-3';
+          wrap.innerHTML = '<button type="button" class="btn btn-primary" id="btnRentProperty"><i class="bi bi-bag-check me-1"></i>Rent Now</button>';
+          target.appendChild(wrap);
+          document.getElementById('btnRentProperty').addEventListener('click', function(){ openRentModal(<?php echo (int)$prop['property_id']; ?>); });
+        }
+      }
+    } catch(e) {}
+  });
+})();
+</script>
 <?php
 // JSON-LD structured data
 $addressParts = [
