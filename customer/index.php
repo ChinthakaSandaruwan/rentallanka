@@ -81,9 +81,7 @@ require_role('customer');
         <h1 class="h3 mb-2">Welcome Back, Customer!</h1>
         <p class="mb-0 opacity-75">Manage your profile, rentals, and more from one place.</p>
       </div>
-      <a href="../auth/logout.php" class="btn logout-btn mt-3 mt-md-0">
-        <i class="bi bi-box-arrow-right me-1"></i> Logout
-      </a>
+     
     </div>
 
     <!-- Cards -->
@@ -130,7 +128,7 @@ require_role('customer');
               <h5 class="card-title mb-0">Wishlist</h5>
             </div>
             <p class="card-text text-muted">Keep track of your favorite properties for future bookings.</p>
-            <a href="wishlist.php" class="btn btn-primary mt-auto w-100">
+            <a href="../public/includes/wish_list.php" class="btn btn-primary mt-auto w-100">
               <i class="bi bi-arrow-right-circle me-1"></i> Open
             </a>
           </div>

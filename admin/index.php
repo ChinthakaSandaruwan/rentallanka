@@ -22,8 +22,8 @@ require_role('admin'); ?>
   <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
 
   <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h3 mb-0">Admin Dashboard</h1>
+    <div class="d-flex justify-content-center align-items-center mb-3">
+      <h1 class="h3 mb-0 text-center">Admin Dashboard</h1>
     </div>
 
     <div class="row g-3">

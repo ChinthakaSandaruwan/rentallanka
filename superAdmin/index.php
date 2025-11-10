@@ -11,9 +11,8 @@
 <body>
   <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
   <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-center align-items-center mb-3">
       <h1 class="h3 mb-0">Super Admin Dashboard</h1>
-      <a href="../auth/logout.php" class="btn btn-outline-danger btn-sm">Logout</a>
     </div>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
       <div class="col">
