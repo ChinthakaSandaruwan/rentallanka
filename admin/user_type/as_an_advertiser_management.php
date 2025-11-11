@@ -87,6 +87,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   }
 }
 
+// POST-Redirect-GET: redirect after POST so refresh does not resubmit
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+  $msg = $ok ?: ($err ?: 'Action completed.');
+  $typ = $ok ? 'success' : 'error';
+  redirect_with_message(rtrim($base_url,'/') . '/admin/user_type/as_an_advertiser_management.php', $msg, $typ);
+  exit;
+}
+
 // Fetch pending role-change requests from dedicated table
 $rows = [];
 try {
@@ -118,9 +126,7 @@ try {
       <a href="index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
     </div>
 
-    <?php if ($flash): ?><div class="alert <?= $flash_type==='success'?'alert-success':'alert-danger' ?>"><?= htmlspecialchars($flash) ?></div><?php endif; ?>
-    <?php if ($ok): ?><div class="alert alert-success"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
-    <?php if ($err): ?><div class="alert alert-danger"><?= htmlspecialchars($err) ?></div><?php endif; ?>
+    <?php /* Flash and messages are shown via SweetAlert2 (navbar); removed Bootstrap alerts */ ?>
 
     <div class="card">
       <div class="card-body p-0">
@@ -150,19 +156,21 @@ try {
                   <td><span class="badge bg-warning text-uppercase"><?= htmlspecialchars($r['status'] ?? '') ?></span></td>
                   <td><?= htmlspecialchars($r['created_at'] ?? '') ?></td>
                   <td class="text-end">
-                    <form method="post" class="d-inline">
+                    <form method="post" class="d-inline adv-approve-form">
                       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                       <input type="hidden" name="request_id" value="<?= (int)$r['request_id'] ?>">
                       <input type="hidden" name="user_id" value="<?= (int)$r['user_id'] ?>">
-                      <button class="btn btn-sm btn-success" name="action" value="approve" onclick="return confirm('Approve upgrade for this user?');">
+                      <input type="hidden" name="action" value="approve">
+                      <button class="btn btn-sm btn-success" type="submit">
                         <i class="bi bi-check2-circle me-1"></i>Approve
                       </button>
                     </form>
-                    <form method="post" class="d-inline ms-1">
+                    <form method="post" class="d-inline ms-1 adv-dismiss-form">
                       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                       <input type="hidden" name="request_id" value="<?= (int)$r['request_id'] ?>">
                       <input type="hidden" name="user_id" value="<?= (int)$r['user_id'] ?>">
-                      <button class="btn btn-sm btn-outline-secondary" name="action" value="mark_read">
+                      <input type="hidden" name="action" value="mark_read">
+                      <button class="btn btn-sm btn-outline-secondary" type="submit">
                         <i class="bi bi-x-circle me-1"></i>Dismiss
                       </button>
                     </form>
@@ -180,5 +188,44 @@ try {
   </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-</body>
-</html>
+    <script>
+      (function(){
+        try {
+          // Approve confirm
+          document.querySelectorAll('form.adv-approve-form').forEach(function(form){
+            form.addEventListener('submit', async function(e){
+              e.preventDefault();
+              const uid = form.querySelector('input[name="user_id"]').value;
+              const rid = form.querySelector('input[name="request_id"]').value;
+              const res = await Swal.fire({
+                title: 'Approve advertiser request?',
+                text: 'Approve upgrade for user #' + uid + ' (request #' + rid + ')?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, approve',
+                cancelButtonText: 'Cancel'
+              });
+              if (res.isConfirmed) { form.submit(); }
+            });
+          });
+          // Dismiss confirm
+          document.querySelectorAll('form.adv-dismiss-form').forEach(function(form){
+            form.addEventListener('submit', async function(e){
+              e.preventDefault();
+              const rid = form.querySelector('input[name="request_id"]').value;
+              const res = await Swal.fire({
+                title: 'Dismiss this request?',
+                text: 'Request #' + rid + ' will be marked rejected.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, dismiss',
+                cancelButtonText: 'Cancel'
+              });
+              if (res.isConfirmed) { form.submit(); }
+            });
+          });
+        } catch(_) {}
+      })();
+    </script>
+  </body>
+  </html>

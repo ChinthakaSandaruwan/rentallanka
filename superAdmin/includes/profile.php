@@ -111,7 +111,7 @@ $stmt->close();
           </ul>
 
           <h5 class="mb-3">Edit Profile</h5>
-          <form method="post" class="row g-3">
+          <form method="post" id="form_profile" class="row g-3">
             <div class="col-12 col-md-6">
               <label class="form-label">Name</label>
               <input type="text" class="form-control" name="name" value="<?= htmlspecialchars($sa['name'] ?? '') ?>" maxlength="100" required>
@@ -126,12 +126,11 @@ $stmt->close();
             </div>
             <div class="col-12">
               <input type="hidden" name="action" value="update_profile">
-              <button class="btn btn-primary" type="submit">Save</button>
             </div>
           </form>
 
           <h5 class="mt-4 mb-3">Change Password</h5>
-          <form method="post" class="row g-3">
+          <form method="post" id="form_password" class="row g-3">
             <div class="col-12 col-md-6">
               <label class="form-label">New Password</label>
               <input type="password" class="form-control" name="new_password" minlength="8" maxlength="128" required>
@@ -140,9 +139,11 @@ $stmt->close();
               <label class="form-label">Confirm Password</label>
               <input type="password" class="form-control" name="confirm_password" minlength="8" maxlength="128" required>
             </div>
-            <div class="col-12">
+            <div class="col-12 d-flex gap-2">
               <input type="hidden" name="action" value="change_password">
               <button class="btn btn-warning" type="submit">Change Password</button>
+              <button class="btn btn-primary" type="submit" form="form_profile">Save Changes</button>
+
             </div>
           </form>
         </div>

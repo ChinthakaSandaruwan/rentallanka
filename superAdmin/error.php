@@ -18,6 +18,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = 'Log already empty';
         }
     }
+    // Enforce POST-Redirect-GET
+    $self_url = rtrim($base_url, '/') . '/superAdmin/error.php';
+    if (!headers_sent()) {
+        if (!empty($error)) {
+            redirect_with_message($self_url, $error, 'error');
+        } elseif (!empty($message)) {
+            redirect_with_message($self_url, $message, 'success');
+        } else {
+            header('Location: ' . $self_url);
+            exit;
+        }
+    }
 }
 
 // Read (tail) the log content safely (up to ~1MB)
@@ -55,16 +67,16 @@ if (file_exists($logFile)) {
     <h1 class="h4 mb-0">Error Log Viewer</h1>
     <div class="d-flex gap-2">
       <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
-      <form method="post" class="d-inline">
+      <form method="post" class="d-inline" data-swal="clear-log">
         <input type="hidden" name="action" value="clear" />
-        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Clear error log?')">Clear Log</button>
+        <button type="submit" class="btn btn-outline-danger btn-sm">Clear Log</button>
       </form>
       <a href="error.php" class="btn btn-outline-primary btn-sm">Refresh</a>
     </div>
   </div>
 
-  <?php if ($message): ?><div class="alert alert-success"><?= htmlspecialchars($message) ?></div><?php endif; ?>
-  <?php if ($error): ?><div class="alert alert-danger"><?= htmlspecialchars($error) ?></div><?php endif; ?>
+  <?php [$flash, $flash_type] = get_flash(); ?>
+  <?php if ($flash): ?><?php endif; ?>
 
   <div class="card">
     <div class="card-body">
@@ -76,6 +88,30 @@ if (file_exists($logFile)) {
     </div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var flash = <?php echo json_encode($flash ?? ''); ?>;
+    var flashType = <?php echo json_encode($flash_type ?? 'info'); ?>;
+    if (flash) {
+      Swal.fire({ toast: true, position: 'top-end', icon: (flashType === 'error' ? 'error' : (flashType === 'warning' ? 'warning' : 'success')), title: flash, showConfirmButton: false, timer: 3000, timerProgressBar: true });
+    }
+    var clearForm = document.querySelector('form[data-swal="clear-log"]');
+    if (clearForm) {
+      clearForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        Swal.fire({
+          title: 'Clear error log?',
+          text: 'This will truncate the log file.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, clear',
+          cancelButtonText: 'Cancel'
+        }).then(res => { if (res.isConfirmed) clearForm.submit(); });
+      });
+    }
+  });
+</script>
 </body>
 </html>

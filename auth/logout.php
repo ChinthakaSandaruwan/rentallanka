@@ -1,5 +1,7 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
+require_once __DIR__ . '/../config/config.php';
+
+// Clear all session data and destroy session
 $_SESSION['super_admin_id'] = null;
 unset(
     $_SESSION['super_admin_id'],
@@ -18,6 +20,8 @@ if (ini_get('session.use_cookies')) {
     setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
 }
 session_destroy();
-header('Location: ../index.php');
+
+// Redirect with flash so SweetAlert2 shows a small alert on landing page
+redirect_with_message(rtrim($base_url, '/') . '/index.php', 'Logged out', 'info');
 exit;
 ?>

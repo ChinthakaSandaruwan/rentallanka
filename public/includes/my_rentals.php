@@ -233,7 +233,7 @@ try {
   </div>
 
   <?php if (!$items): ?>
-    <div class="alert alert-light border">You have no rentals yet.</div>
+    <p class="text-muted">You have no rentals yet.</p>
   <?php else: ?>
     <div class="table-responsive">
       <table class="table table-sm align-middle">
@@ -271,11 +271,11 @@ try {
                   <a href="<?php echo $base_url; ?>/public/includes/view_room.php?id=<?php echo (int)$it['room_id']; ?>" class="btn btn-outline-secondary btn-sm">View</a>
                   <?php $nowTs = time(); $ciTs = strtotime((string)$it['checkin_date']); $coTs = strtotime((string)$it['checkout_date']); $st = (string)$it['status']; ?>
                   <?php if (in_array($st, ['pending','booked'], true)): ?>
-                    <form method="post" class="d-inline">
+                    <form method="post" class="d-inline rent-cancel-form">
                       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
                       <input type="hidden" name="rent_id" value="<?php echo (int)$it['rent_id']; ?>">
                       <input type="hidden" name="action" value="cancel">
-                      <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Cancel this booking?');">Cancel</button>
+                      <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
                     </form>
                   <?php endif; ?>
                 </div>
@@ -291,7 +291,7 @@ try {
     <h2 class="h5 mb-0"><i class="bi bi-house-door me-2"></i>My Property Rent Requests</h2>
   </div>
   <?php if (!$props): ?>
-    <div class="alert alert-light border">You have no property rent requests yet.</div>
+    <p class="text-muted">You have no property rent requests yet.</p>
   <?php else: ?>
     <div class="table-responsive">
       <table class="table table-sm align-middle">
@@ -320,7 +320,7 @@ try {
                 <div class="d-flex gap-2 flex-wrap">
                   <a href="<?php echo $base_url; ?>/public/includes/view_property.php?id=<?php echo (int)$p['property_id']; ?>" class="btn btn-outline-secondary btn-sm">View</a>
                   <?php if (in_array(strtolower((string)$p['status']), ['pending','booked'], true)): ?>
-                  <form method="post" class="d-inline" onsubmit="return confirm('Cancel this request?');">
+                  <form method="post" class="d-inline prop-cancel-form">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
                     <input type="hidden" name="rent_id" value="<?php echo (int)$p['rent_id']; ?>">
                     <input type="hidden" name="action" value="cancel">
@@ -338,6 +338,45 @@ try {
   <?php endif; ?>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  (function(){
+    try {
+      // Room booking cancellation
+      document.querySelectorAll('form.rent-cancel-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const rid = form.querySelector('input[name="rent_id"]').value;
+          const res = await Swal.fire({
+            title: 'Cancel booking?',
+            text: 'Cancel booking #' + rid + '?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, cancel',
+            cancelButtonText: 'Keep'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+      // Property request cancellation
+      document.querySelectorAll('form.prop-cancel-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const rid = form.querySelector('input[name="rent_id"]').value;
+          const res = await Swal.fire({
+            title: 'Cancel request?',
+            text: 'Cancel request #' + rid + '?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, cancel',
+            cancelButtonText: 'Keep'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+    } catch(_) {}
+  })();
+</script>
 </body>
 </html>
 

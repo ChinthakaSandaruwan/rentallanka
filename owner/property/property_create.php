@@ -347,11 +347,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $created_id = (int)$new_id;
-        $flash = 'Property created successfully.';
-        if ($uploaded_primary || $uploaded_gallery_count > 0) {
-          $flash .= ' Uploaded images: ' . ($uploaded_primary ? 'primary' : 'no primary') . ', gallery ' . $uploaded_gallery_count . '.';
-        }
-        $flash_type = 'success';
+        $msg = 'Property created successfully.';
+        redirect_with_message($GLOBALS['base_url'] . '/owner/property/property_create.php', $msg, 'success');
+        exit;
       } else {
         $error = 'Failed to create property';
         $stmt->close();
@@ -380,20 +378,7 @@ if (empty($flash)) {
       <h1 class="h3 mb-0">Create Property</h1>
       <a href="../../owner/index.php" class="btn btn-outline-secondary btn-sm">Dashboard</a>
     </div>
-    <?php
-      if (!empty($error)) {
-        echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">'
-          . htmlspecialchars($error)
-          . '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
-      }
-      if (!empty($flash)) {
-        $map = ['error' => 'danger', 'danger' => 'danger', 'success' => 'success', 'warning' => 'warning', 'info' => 'info'];
-        $type = $map[$flash_type ?? 'info'] ?? 'info';
-        echo '<div class="alert alert-' . $type . ' alert-dismissible fade show" role="alert">'
-          . htmlspecialchars($flash)
-          . '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
-      }
-    ?>
+    <?php /* Alerts handled via SweetAlert2. Flash is shown globally in navbar. */ ?>
 
     <?php if (!is_null($remaining_property_slots)): ?>
       <div class="mb-3">
@@ -574,6 +559,18 @@ if (empty($flash)) {
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    (function(){
+      try {
+        const err = <?= json_encode($error ?? '') ?>;
+        if (err) {
+          const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3500, timerProgressBar: true });
+          Toast.fire({ icon: 'error', title: String(err) });
+        }
+      } catch(_) {}
+    })();
+  </script>
   <script src="js/property_create.js" defer></script>
 </body>
 </html>

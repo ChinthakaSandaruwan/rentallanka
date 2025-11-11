@@ -38,8 +38,7 @@ if (!$prop) {
     echo json_encode(['status' => 'error', 'message' => 'Property not found.']);
     exit;
   }
-  echo '<!doctype html><html><body><div class="container p-4"><div class="alert alert-warning">Property not found.</div></div></body></html>';
-  exit;
+  redirect_with_message(rtrim($base_url,'/') . '/public/includes/property.php?id='.(int)$pid, 'Property not found.', 'error');
 }
 // Prevent owners from renting their own property
 if ((int)($prop['owner_id'] ?? 0) === $uid) {
@@ -50,8 +49,7 @@ if ((int)($prop['owner_id'] ?? 0) === $uid) {
     echo json_encode(['status' => 'error', 'message' => 'You cannot rent your own property.']);
     exit;
   }
-  echo '<!doctype html><html><body><div class="container p-4"><div class="alert alert-danger">You cannot rent your own property.</div></div></body></html>';
-  exit;
+  redirect_with_message(rtrim($base_url,'/') . '/public/includes/property.php?id='.(int)$pid, 'You cannot rent your own property.', 'error');
 }
 if (strtolower((string)($prop['status'] ?? '')) !== 'available') {
   if (function_exists('app_log')) { app_log('[rent_property] blocked: property not available pid='.(int)$pid.' status='.(string)($prop['status'] ?? '')); }
@@ -61,8 +59,7 @@ if (strtolower((string)($prop['status'] ?? '')) !== 'available') {
     echo json_encode(['status' => 'error', 'message' => 'This property is not available for rent.']);
     exit;
   }
-  echo '<!doctype html><html><body><div class="container p-4"><div class="alert alert-danger">This property is not available for rent.</div></div></body></html>';
-  exit;
+  redirect_with_message(rtrim($base_url,'/') . '/public/includes/property.php?id='.(int)$pid, 'This property is not available for rent.', 'error');
 }
 
 // CSRF token
@@ -135,10 +132,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   if ($isAjax) {
     header('Content-Type: application/json');
     if ($success) {
-      $summary = '<div class="alert alert-success"><div class="fw-semibold mb-1">Rent request pending</div>'
-               . '<div>Your request ID is <span class="fw-bold">#' . (int)$rentId . '</span>. We have recorded your request and it is pending owner approval.</div>'
-               . '</div>';
-      echo json_encode(['status' => 'success', 'message' => 'Rent pending', 'html' => $summary, 'rent_id' => (int)$rentId]);
+      echo json_encode(['status' => 'success', 'message' => 'Rent request pending', 'rent_id' => (int)$rentId]);
     } else {
       if (function_exists('app_log')) { app_log('[rent_property] ajax_error uid='.(int)$uid.' pid='.(int)$pid.' msg='.(string)($errors ? $errors[0] : 'unknown')); }
       echo json_encode(['status' => 'error', 'message' => ($errors ? implode("\n", $errors) : 'Rent request failed')]);
@@ -175,12 +169,13 @@ if ($isAjax) {
     <form method="post" id="formPropertyRent" action="<?php echo rtrim($base_url, '/'); ?>/public/includes/rent_property.php">
       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
       <input type="hidden" name="property_id" value="<?php echo (int)$pid; ?>">
-      <div class="alert alert-info">This request will be sent to the owner for approval.</div>
+      <p class="text-muted">This request will be sent to the owner for approval.</p>
       <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary">Submit Request</button>
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </form>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
       (function(){
         const form = document.getElementById('formPropertyRent');
@@ -198,10 +193,14 @@ if ($isAjax) {
               const url = '<?php echo rtrim($base_url, '/'); ?>/public/includes/my_rentals.php?flash=' + encodeURIComponent('Request ' + rid + ' submitted and pending approval.') + '&type=success';
               window.location.href = url;
             } else {
-              alert(data.message || 'Failed');
+              if (window.Swal) {
+                Swal.fire({ icon: 'error', title: 'Error', text: String(data.message || 'Failed'), confirmButtonText: 'OK' });
+              }
             }
           } catch (e) {
-            alert('Network error');
+            if (window.Swal) {
+              Swal.fire({ icon: 'error', title: 'Network error', text: 'Please try again.', confirmButtonText: 'OK' });
+            }
           }
         });
 

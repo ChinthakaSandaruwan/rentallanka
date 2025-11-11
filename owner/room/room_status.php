@@ -94,16 +94,10 @@ try {
     <a href="../index.php" class="btn btn-outline-secondary btn-sm">Back</a>
   </div>
 
-  <?php if (!empty($flash)): ?>
-    <?php $map = ['error'=>'danger','danger'=>'danger','success'=>'success','warning'=>'warning','info'=>'info']; $type = $map[$flash_type ?? 'info'] ?? 'info'; ?>
-    <div class="alert alert-<?php echo $type; ?> alert-dismissible fade show" role="alert">
-      <?php echo htmlspecialchars($flash); ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  <?php endif; ?>
+  <?php /* Flash is shown globally via SweetAlert2 in navbar; removed Bootstrap alerts */ ?>
 
   <?php if (!$rooms): ?>
-    <div class="alert alert-info">You have no rooms yet.</div>
+    <div class="text-muted">You have no rooms yet.</div>
   <?php else: ?>
     <div class="table-responsive">
       <table class="table table-sm align-middle">
@@ -131,7 +125,7 @@ try {
               <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime((string)($rm['created_at'] ?? '')))); ?></td>
               <td>
                 <?php $hasActive = !empty($activeMap[(int)$rm['room_id'] ?? 0]); ?>
-                <form method="post" class="d-flex gap-2 align-items-center">
+                <form method="post" class="d-flex gap-2 align-items-center room-status-form">
                   <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
                   <input type="hidden" name="room_id" value="<?php echo (int)$rm['room_id']; ?>">
                   <select name="status" class="form-select form-select-sm" style="max-width: 180px;">
@@ -152,5 +146,29 @@ try {
   <?php endif; ?>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  (function(){
+    try {
+      document.querySelectorAll('form.room-status-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const rid = form.querySelector('input[name="room_id"]').value;
+          const sel = form.querySelector('select[name="status"]');
+          const next = sel ? sel.value : '';
+          const res = await Swal.fire({
+            title: 'Change status?',
+            text: 'Set room #' + rid + ' to ' + next + '?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, change',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+    } catch(_) {}
+  })();
+</script>
 </body>
 </html>

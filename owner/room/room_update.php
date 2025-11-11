@@ -102,6 +102,12 @@ if ($room_id > 0) {
   }
 }
 
+// After POST handling, if there is an error, redirect with flash to avoid resubmission warning
+if (!empty($error)) {
+  redirect_with_message($GLOBALS['base_url'] . '/owner/room/room_update.php?id=' . (int)$room_id, $error, 'error');
+  exit;
+}
+
 // If no id provided, prepare a list of user's rooms for selection
 $owner_rooms = [];
 if ($room_id <= 0) {
@@ -399,19 +405,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <a href="../index.php" class="btn btn-outline-secondary btn-sm">Dashboard</a>
   </div>
 
-  <?php if (!empty($error)): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      <?php echo htmlspecialchars($error); ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  <?php endif; ?>
-  <?php if (!empty($flash)): ?>
-    <?php $map = ['error'=>'danger','danger'=>'danger','success'=>'success','warning'=>'warning','info'=>'info']; $type = $map[$flash_type ?? 'info'] ?? 'info'; ?>
-    <div class="alert alert-<?php echo $type; ?> alert-dismissible fade show" role="alert">
-      <?php echo htmlspecialchars($flash); ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  <?php endif; ?>
+  <?php /* Flash and errors are shown via SweetAlert2 (navbar); removed Bootstrap alerts */ ?>
 
   <?php if (!$room): ?>
     <div class="card mb-3">
@@ -436,7 +430,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </form>
           <div class="text-muted mt-3 small">Or open directly via URL: /owner/room/room_update.php?id=YOUR_ROOM_ID</div>
         <?php else: ?>
-          <div class="alert alert-info mb-0">You have no rooms to update yet.</div>
+          <div class="text-muted mb-0">You have no rooms to update yet.</div>
         <?php endif; ?>
       </div>
     </div>
@@ -595,7 +589,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                           <button type="submit" class="btn btn-outline-primary btn-sm">Make Primary</button>
                         </form>
                       <?php endif; ?>
-                      <form method="post" class="d-inline" onsubmit="return confirm('Delete this image?');">
+                      <form method="post" class="d-inline room-image-del-form">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                         <input type="hidden" name="room_id" value="<?php echo (int)$room_id; ?>">
                         <input type="hidden" name="image_action" value="delete_image">
@@ -617,6 +611,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  (function(){
+    try {
+      document.querySelectorAll('form.room-image-del-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const imgEl = form.closest('.card')?.querySelector('img.card-img-top');
+          const label = imgEl ? 'this image' : 'image';
+          const res = await Swal.fire({
+            title: 'Delete image?',
+            text: 'This action cannot be undone. Delete ' + label + '?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+    } catch(_) {}
+  })();
+</script>
 <script src="js/room_update.js" defer></script>
 </body>
 </html>

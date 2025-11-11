@@ -176,15 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card shadow-sm">
                     <div class="card-body p-4">
                         <h3 class="mb-3 text-center">Create Account</h3>
-                        <?php if ($flash): ?>
-                            <div class="alert alert-info"><?php echo htmlspecialchars($flash); ?></div>
-                        <?php endif; ?>
-                        <?php if ($error): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
-                        <?php endif; ?>
-                        <?php if ($info): ?>
-                            <div class="alert alert-success"><?php echo htmlspecialchars($info); ?></div>
-                        <?php endif; ?>
+                        
                         <?php if ($stage === 'request'): ?>
                             <form method="post" class="vstack gap-3">
                                 <div>
@@ -231,5 +223,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+      (function(){
+        try {
+          const flash = <?= json_encode($flash) ?>;
+          const error = <?= json_encode($error) ?>;
+          const info  = <?= json_encode($info) ?>;
+          const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3500, timerProgressBar: true });
+          if (error) { Toast.fire({ icon: 'error', title: String(error) }); }
+          else if (info) { Toast.fire({ icon: 'success', title: String(info) }); }
+          else if (flash) { Toast.fire({ icon: 'info', title: String(flash) }); }
+        } catch(_) {}
+      })();
+    </script>
 </body>
 </html>

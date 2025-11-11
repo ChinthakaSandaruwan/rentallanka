@@ -263,8 +263,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $remaining_room_slots = $remaining_room_slots - 1;
         }
 
-        $flash = 'Room created successfully.';
-        $flash_type = 'success';
+        redirect_with_message($GLOBALS['base_url'] . '/owner/room/room_create.php', 'Room created successfully.', 'success');
+        exit;
       } else {
         $error = 'Failed to create room';
         $stmt->close();
@@ -274,6 +274,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 [$flash, $flash_type] = [$flash ?: (get_flash()[0] ?? ''), $flash_type ?: (get_flash()[1] ?? '')];
+if (!empty($error)) {
+  redirect_with_message($GLOBALS['base_url'] . '/owner/room/room_create.php', $error, 'error');
+  exit;
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -296,12 +300,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <span class="badge bg-primary">Remaining Room Slots: <?php echo (int)$remaining_room_slots; ?></span>
     </div>
   <?php endif; ?>
-  <?php if (!empty($flash)): ?>
-    <div class="alert <?php echo ($flash_type==='success')?'alert-success':'alert-danger'; ?> alert-dismissible fade show" role="alert">
-      <?php echo htmlspecialchars($flash); ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  <?php endif; ?>
+  <?php /* Flash is shown via global SweetAlert2 in navbar; removed Bootstrap alert markup */ ?>
   <div class="card">
     <div class="card-header">Details</div>
     <div class="card-body">

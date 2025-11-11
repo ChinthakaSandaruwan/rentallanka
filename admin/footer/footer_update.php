@@ -1,5 +1,50 @@
 <?php require_once __DIR__ . '/../../public/includes/auth_guard.php'; require_role('admin'); ?>
 <?php require_once __DIR__ . '/../../config/config.php'; ?>
+<?php
+// Handle POST BEFORE any output to allow redirects
+$saved = false; $error = '';
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+  try {
+    $email = trim((string)($_POST['footer_email'] ?? ''));
+    $phone = trim((string)($_POST['footer_phone'] ?? ''));
+    $urlKeys = [
+      'footer_social_facebook','footer_social_twitter','footer_social_google','footer_social_instagram','footer_social_linkedin','footer_social_github'
+    ];
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      throw new Exception('Invalid email');
+    }
+    if ($phone !== '' && !preg_match('/^0[7][01245678][0-9]{7}$/', $phone)) {
+      throw new Exception('Invalid phone (use 07XXXXXXXX)');
+    }
+    foreach ($urlKeys as $uk) {
+      $u = trim((string)($_POST[$uk] ?? ''));
+      if ($u !== '' && !filter_var($u, FILTER_VALIDATE_URL)) {
+        throw new Exception('Invalid URL provided');
+      }
+    }
+    $fields = [
+      'footer_company_name','footer_about','footer_address','footer_email','footer_phone',
+      'footer_social_facebook','footer_social_twitter','footer_social_google','footer_social_instagram','footer_social_linkedin','footer_social_github',
+      'footer_products_links','footer_useful_links','footer_copyright_text',
+      'footer_show_social','footer_show_products','footer_show_useful_links','footer_show_contact'
+    ];
+    foreach ($fields as $k) {
+      $v = $_POST[$k] ?? '';
+      if (in_array($k, ['footer_show_social','footer_show_products','footer_show_useful_links','footer_show_contact'], true)) {
+        $v = ($v === '1') ? '1' : '0';
+      }
+      setting_set($k, $v);
+    }
+    $saved = true;
+  } catch (Throwable $e) { $error = $e->getMessage() ?: 'Save failed'; }
+
+  // Redirect now (PRG)
+  $msg = $saved ? 'Saved' : ($error ?: 'Action completed.');
+  $typ = $saved ? 'success' : 'error';
+  redirect_with_message(rtrim($base_url,'/') . '/admin/footer/footer_update.php', $msg, $typ);
+  exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,56 +62,11 @@
     <a href="../index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
   </div>
 
-  <?php
-  $saved = false; $error = '';
-  if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-      try {
-          // Basic validations
-          $email = trim((string)($_POST['footer_email'] ?? ''));
-          $phone = trim((string)($_POST['footer_phone'] ?? ''));
-          $urlKeys = [
-            'footer_social_facebook','footer_social_twitter','footer_social_google','footer_social_instagram','footer_social_linkedin','footer_social_github'
-          ];
-          if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-              throw new Exception('Invalid email');
-          }
-          if ($phone !== '' && !preg_match('/^0[7][01245678][0-9]{7}$/', $phone)) {
-              throw new Exception('Invalid phone (use 07XXXXXXXX)');
-          }
-          foreach ($urlKeys as $uk) {
-              $u = trim((string)($_POST[$uk] ?? ''));
-              if ($u !== '' && !filter_var($u, FILTER_VALIDATE_URL)) {
-                  throw new Exception('Invalid URL provided');
-              }
-          }
+  <?php $val = fn(string $k, string $d='') => (string)(setting_get($k, $d) ?? $d); ?>
 
-          $fields = [
-            'footer_company_name','footer_about','footer_address','footer_email','footer_phone',
-            'footer_social_facebook','footer_social_twitter','footer_social_google','footer_social_instagram','footer_social_linkedin','footer_social_github',
-            'footer_products_links','footer_useful_links','footer_copyright_text',
-            'footer_show_social','footer_show_products','footer_show_useful_links','footer_show_contact'
-          ];
-          foreach ($fields as $k) {
-              $v = $_POST[$k] ?? '';
-              if (in_array($k, ['footer_show_social','footer_show_products','footer_show_useful_links','footer_show_contact'], true)) {
-                  $v = ($v === '1') ? '1' : '0';
-              }
-              setting_set($k, $v);
-          }
-          $saved = true;
-      } catch (Throwable $e) { $error = $e->getMessage() ?: 'Save failed'; }
-  }
+  <?php /* Alerts handled by SweetAlert2 via JS below */ ?>
 
-  $val = fn(string $k, string $d='') => (string)(setting_get($k, $d) ?? $d);
-  ?>
-
-  <?php if ($saved): ?>
-    <div class="alert alert-success">Saved</div>
-  <?php elseif ($error !== ''): ?>
-    <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-  <?php endif; ?>
-
-  <form method="post" class="row g-3 needs-validation" novalidate>
+  <form method="post" class="row g-3 needs-validation" novalidate id="formFooter">
     <div class="col-12 col-lg-6">
       <div class="card h-100">
         <div class="card-body">
@@ -236,6 +236,38 @@
         form.classList.add('was-validated');
       }, false);
     });
+  })();
+</script>
+<script>
+  (function(){
+    try {
+      // Show result via SweetAlert2
+      const saved = <?= json_encode($saved) ?>;
+      const err = <?= json_encode($error) ?>;
+      if (saved) {
+        Swal.fire({ icon: 'success', title: 'Success', text: 'Saved', confirmButtonText: 'OK' });
+      } else if (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: String(err), confirmButtonText: 'OK' });
+      }
+
+      // Confirmation before saving
+      const form = document.getElementById('formFooter');
+      if (form) {
+        form.addEventListener('submit', async function(e){
+          if (!form.checkValidity()) return; // validation handler will prevent if invalid
+          e.preventDefault();
+          const res = await Swal.fire({
+            title: 'Save footer settings?',
+            text: 'Your changes will be applied site-wide.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, save',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      }
+    } catch(_) {}
   })();
 </script>
 </body>

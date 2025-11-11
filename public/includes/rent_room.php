@@ -37,8 +37,7 @@ if (!$room) {
     echo json_encode(['status' => 'error', 'message' => 'Room not found.']);
     exit;
   }
-  echo '<!doctype html><html><body><div class="container p-4"><div class="alert alert-warning">Room not found.</div></div></body></html>';
-  exit;
+  redirect_with_message(rtrim($base_url,'/') . '/public/includes/view_room.php?id='.(int)$rid, 'Room not found.', 'error');
 }
 // Prevent owners from renting their own rooms
 if ((int)($room['owner_id'] ?? 0) === $uid) {
@@ -48,8 +47,7 @@ if ((int)($room['owner_id'] ?? 0) === $uid) {
     echo json_encode(['status' => 'error', 'message' => 'You cannot rent your own room.']);
     exit;
   }
-  echo '<!doctype html><html><body><div class="container p-4"><div class="alert alert-danger">You cannot rent your own room.</div></div></body></html>';
-  exit;
+  redirect_with_message(rtrim($base_url,'/') . '/public/includes/view_room.php?id='.(int)$rid, 'You cannot rent your own room.', 'error');
 }
 if (($room['status'] ?? '') !== 'available') {
   http_response_code(409);
@@ -58,8 +56,7 @@ if (($room['status'] ?? '') !== 'available') {
     echo json_encode(['status' => 'error', 'message' => 'This room is not available for rent.']);
     exit;
   }
-  echo '<!doctype html><html><body><div class="container p-4"><div class="alert alert-danger">This room is not available for rent.</div></div></body></html>';
-  exit;
+  redirect_with_message(rtrim($base_url,'/') . '/public/includes/view_room.php?id='.(int)$rid, 'This room is not available for rent.', 'error');
 }
 
 $unavailable = [];
@@ -220,15 +217,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($isAjax) {
     header('Content-Type: application/json');
     if ($success) {
-      $summary = '<div class="alert alert-success"><div class="fw-semibold mb-1">Booking pending</div>'
-               . '<div>Your booking ID is <span class="fw-bold">#' . (int)$rentId . '</span>. We have recorded your request and it is pending. We will notify the owner.</div>'
-               . '</div>';
-      echo json_encode(['status' => 'success', 'message' => 'Booking pending', 'html' => $summary, 'rent_id' => (int)$rentId]);
+      echo json_encode(['status' => 'success', 'message' => 'Booking pending', 'rent_id' => (int)$rentId]);
     } else {
       echo json_encode(['status' => 'error', 'message' => ($errors ? implode("\n", $errors) : 'Booking failed')]);
     }
     exit;
   }
+  // Non-AJAX: redirect to My Rentals with flash via navbar
+  $msg = $success ? ('Booking #' . (int)$rentId . ' submitted and pending approval.') : (($errors ? implode(" \n", $errors) : 'Booking failed'));
+  $typ = $success ? 'success' : 'error';
+  redirect_with_message(rtrim($base_url,'/') . '/public/includes/my_rentals.php', $msg, $typ);
 }
 
 // AJAX response for GET: return fragment with booking form card only
@@ -292,7 +290,8 @@ if ($isAjax && $_SERVER['REQUEST_METHOD'] !== 'POST') {
       </form>
     </div>
   </div>
-  <script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
     (function(){
       const priceInfo = document.getElementById('priceInfo');
       const alertHost = document.getElementById('formAlert');
@@ -348,35 +347,9 @@ if ($isAjax && $_SERVER['REQUEST_METHOD'] !== 'POST') {
         <a href="<?php echo $base_url; ?>/public/includes/view_room.php?id=<?php echo (int)$rid; ?>" class="btn btn-outline-secondary btn-sm">Back</a>
       </div>
 
-      <?php if ($success): ?>
-        <div class="alert alert-success">
-          <div class="fw-semibold mb-1">Booking confirmed</div>
-          <div>Your booking ID is <span class="fw-bold">#<?php echo (int)$rentId; ?></span>. We have reserved the room for your selected dates.</div>
-        </div>
-        <div class="card mt-3">
-          <div class="card-body">
-            <dl class="row mb-0">
-              <dt class="col-sm-4">Check-in</dt><dd class="col-sm-8"><?php echo htmlspecialchars($ci); ?></dd>
-              <dt class="col-sm-4">Check-out</dt><dd class="col-sm-8"><?php echo htmlspecialchars($co); ?></dd>
-              <dt class="col-sm-4">Guests</dt><dd class="col-sm-8"><?php echo (int)$guests; ?></dd>
-              <dt class="col-sm-4">Meal</dt><dd class="col-sm-8"><?php echo htmlspecialchars(($meal_id > 0 && isset($meals[$meal_id])) ? ucwords(str_replace('_',' ', (string)$meals[$meal_id]['name'])) : 'No meals'); ?></dd>
-              <dt class="col-sm-4">Room Per Night</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$pricePerDay, 2); ?></dd>
-              <dt class="col-sm-4">Meal Per Night</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$mealPerDay, 2); ?></dd>
-              <dt class="col-sm-4">Price Per Night</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$pricePerDayWithMeal, 2); ?></dd>
-              <dt class="col-sm-4">Total</dt><dd class="col-sm-8 fw-bold text-primary">LKR <?php echo number_format((float)$total, 2); ?></dd>
-            </dl>
-          </div>
-        </div>
-      <?php else: ?>
+      <?php if (!$success): ?>
         <?php if ($errors): ?>
-          <div class="alert alert-danger">
-            <div class="fw-semibold">Please fix the following:</div>
-            <ul class="mb-0">
-              <?php foreach ($errors as $e): ?>
-                <li><?php echo htmlspecialchars($e); ?></li>
-              <?php endforeach; ?>
-            </ul>
-          </div>
+          <div class="text-danger small">Please fix the errors below and try again.</div>
         <?php endif; ?>
 
         <div class="card">
@@ -510,10 +483,11 @@ if ($isAjax && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     }
 
     function showAlert(html) {
-      if (!alertHost) return;
-      alertHost.innerHTML = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' + html + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+      if (window.Swal) {
+        Swal.fire({ icon: 'error', title: 'Error', html: html, confirmButtonText: 'OK' });
+      }
     }
-    function clearAlert() { if (alertHost) alertHost.innerHTML = ''; }
+    function clearAlert() { /* not needed with SweetAlert2 */ }
 
     function update() {
       if (!priceInfo) return;

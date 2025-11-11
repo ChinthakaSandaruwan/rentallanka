@@ -1,5 +1,6 @@
  <?php
  require_once __DIR__ . '/../../public/includes/auth_guard.php';
+ require_once __DIR__ . '/../../config/config.php';
 
 $uid = (int)($_SESSION['user']['user_id'] ?? 0);
 if ($uid <= 0) {
@@ -56,10 +57,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         db()->begin_transaction();
         try {
-            $dl = db()->prepare('DELETE FROM locations WHERE room_id=?');
+            // Delete dependent rows first to satisfy foreign keys
+            $dl = db()->prepare('DELETE FROM room_locations WHERE room_id=?');
             $dl->bind_param('i', $room_id);
             $dl->execute();
             $dl->close();
+
+            // Optional per-room meal prices
+            try {
+                $dm = db()->prepare('DELETE FROM room_meals WHERE room_id=?');
+                $dm->bind_param('i', $room_id);
+                $dm->execute();
+                $dm->close();
+            } catch (Throwable $e) { /* ignore */ }
 
             $di = db()->prepare('DELETE FROM room_images WHERE room_id=?');
             $di->bind_param('i', $room_id);
@@ -118,19 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="../index.php" class="btn btn-outline-secondary btn-sm">Dashboard</a>
     </div>
 
-    <?php if (!empty($error)): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?php echo htmlspecialchars($error); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-    <?php if (!empty($flash)): ?>
-        <?php $map = ['error'=>'danger','danger'=>'danger','success'=>'success','warning'=>'warning','info'=>'info']; $type = $map[$flash_type ?? 'info'] ?? 'info'; ?>
-        <div class="alert alert-<?php echo $type; ?> alert-dismissible fade show" role="alert">
-            <?php echo htmlspecialchars($flash); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
+    <?php /* Flash and errors are shown via global SweetAlert2 (navbar); removed Bootstrap alerts */ ?>
 
     <?php
     $cards = [];
@@ -158,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h5 class="card-title mb-1"><?php echo htmlspecialchars($c['title'] ?: 'Untitled'); ?></h5>
                         <div class="text-muted mb-3">LKR <?php echo number_format((float)$c['price_per_day'], 2); ?> / day</div>
                         <div class="mt-auto">
-                            <form method="post" class="d-inline">
+                            <form method="post" class="d-inline room-del-form">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                 <input type="hidden" name="room_id" value="<?php echo (int)$c['room_id']; ?>">
                                 <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
@@ -170,12 +168,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endforeach; ?>
         <?php if (empty($cards)): ?>
             <div class="col">
-                <div class="alert alert-info">You have no rooms to delete.</div>
+                <div class="text-muted py-3">You have no rooms to delete.</div>
             </div>
         <?php endif; ?>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  (function(){
+    try {
+      document.querySelectorAll('form.room-del-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const titleEl = form.closest('.card')?.querySelector('.card-title');
+          const title = titleEl ? titleEl.textContent.trim() : 'this room';
+          const res = await Swal.fire({
+            title: 'Delete room?',
+            text: 'This action cannot be undone. Delete ' + title + '?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+    } catch(_) {}
+  })();
+</script>
 <script src="js/room_delete.js" defer></script>
 </body>
 </html>

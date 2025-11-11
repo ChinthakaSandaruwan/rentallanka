@@ -145,17 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card shadow-sm">
                     <div class="card-body p-4">
                         <h3 class="mb-3 text-center">Login with OTP</h3>
-                        <?php if ($flash): ?>
-                            <div class="alert alert-info"><?php echo htmlspecialchars($flash); ?></div>
-                        <?php endif; ?>
-                        <?php if ($error): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
-                        <?php endif; ?>
-                        <?php if ($info): ?>
-                            <div class="alert alert-success"><?php echo htmlspecialchars($info); ?></div>
-                        <?php endif; ?>
+                        <?php /* Alerts handled by SweetAlert2 below; Bootstrap alerts removed */ ?>
                         <?php if ($stage === 'request'): ?>
-                            <form method="post" class="vstack gap-3">
+                            <form method="post" class="vstack gap-3" id="formOtpRequest">
                                 <div>
                                     <label class="form-label">Phone</label>
                                     <input type="text" class="form-control" name="phone" maxlength="10" pattern="^[0]{1}[7]{1}[01245678]{1}[0-9]{7}$" title="Enter number like 07XXXXXXXX" placeholder="e.g. 07XXXXXXXX" required />
@@ -165,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </form>
                             <a href="<?php echo $base_url; ?>/auth/register.php" class="btn btn-outline-secondary w-100 mt-2">Don't have an account? Register</a>
                         <?php else: ?>
-                            <form method="post" class="vstack gap-3">
+                            <form method="post" class="vstack gap-3" id="formOtpVerify">
                                 <div>
                                     <label class="form-label">Enter OTP</label>
                                     <input type="text" class="form-control" name="otp" maxlength="6" pattern="\d{6}" placeholder="6-digit code" required />
@@ -185,5 +177,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+      (function(){
+        try {
+          const flash = <?= json_encode($flash) ?>;
+          const error = <?= json_encode($error) ?>;
+          const info  = <?= json_encode($info) ?>;
+          const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+          });
+          if (error) {
+            Toast.fire({ icon: 'error', title: String(error) });
+          } else if (info) {
+            Toast.fire({ icon: 'success', title: String(info) });
+          } else if (flash) {
+            Toast.fire({ icon: 'info', title: String(flash) });
+          }
+
+          // No confirmation prompts; forms submit normally.
+        } catch(_) {}
+      })();
+    </script>
 </body>
 </html>

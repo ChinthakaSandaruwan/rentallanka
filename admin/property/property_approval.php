@@ -134,15 +134,7 @@ while ($res && ($r = $res->fetch_assoc())) { $rows[] = $r; }
         <a href="../index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
       </div>
     </div>
-    <?php if ($flash): ?>
-      <div class="alert <?php echo ($flash_type==='success')?'alert-success':'alert-danger'; ?>" role="alert"><?php echo htmlspecialchars($flash); ?></div>
-    <?php endif; ?>
-    <?php if ($okmsg): ?>
-      <div class="alert alert-success" role="alert"><?php echo htmlspecialchars($okmsg); ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-      <div class="alert alert-danger" role="alert"><?php echo htmlspecialchars($error); ?></div>
-    <?php endif; ?>
+    <?php /* Flash and inline messages are shown via SweetAlert2 in navbar; remove Bootstrap alerts */ ?>
 
     <div class="card">
       <div class="card-body p-0">
@@ -170,13 +162,13 @@ while ($res && ($r = $res->fetch_assoc())) { $rows[] = $r; }
                   <td><?php echo htmlspecialchars($p['created_at']); ?></td>
                   <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" href="property_view.php?id=<?php echo (int)$p['property_id']; ?>">View</a>
-                    <form method="post" class="d-inline">
+                    <form method="post" class="d-inline pa-approve-form">
                       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                       <input type="hidden" name="property_id" value="<?php echo (int)$p['property_id']; ?>">
                       <input type="hidden" name="action" value="approve">
                       <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-lg me-1"></i>Approve</button>
                     </form>
-                    <form method="post" class="d-inline" onsubmit="return confirm('Reject this property?');">
+                    <form method="post" class="d-inline pa-reject-form">
                       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                       <input type="hidden" name="property_id" value="<?php echo (int)$p['property_id']; ?>">
                       <input type="hidden" name="action" value="reject">
@@ -195,6 +187,42 @@ while ($res && ($r = $res->fetch_assoc())) { $rows[] = $r; }
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script>
+    (function(){
+      try {
+        // Approve confirmation
+        document.querySelectorAll('form.pa-approve-form').forEach(function(form){
+          form.addEventListener('submit', async function(e){
+            e.preventDefault();
+            const res = await Swal.fire({
+              title: 'Approve this property?',
+              text: 'It will be set to available.',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, approve',
+              cancelButtonText: 'Cancel'
+            });
+            if (res.isConfirmed) { form.submit(); }
+          });
+        });
+        // Reject confirmation
+        document.querySelectorAll('form.pa-reject-form').forEach(function(form){
+          form.addEventListener('submit', async function(e){
+            e.preventDefault();
+            const res = await Swal.fire({
+              title: 'Reject this property?',
+              text: 'It will be set to unavailable and the owner will be notified.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, reject',
+              cancelButtonText: 'Cancel'
+            });
+            if (res.isConfirmed) { form.submit(); }
+          });
+        });
+      } catch(_) {}
+    })();
+  </script>
 </body>
 </html>
 

@@ -110,9 +110,6 @@ if ($rc) { $rr = $rc->fetch_assoc(); $admin_count = (int)($rr['c'] ?? 0); }
     </div>
 
     <?php if ($flash): ?>
-      <div class="alert alert-<?php echo $flashType === 'error' ? 'danger' : 'success'; ?>" role="alert">
-        <?php echo htmlspecialchars($flash); ?>
-      </div>
     <?php endif; ?>
 
     <div class="mb-3">
@@ -194,7 +191,7 @@ if ($rc) { $rr = $rc->fetch_assoc(); $admin_count = (int)($rr['c'] ?? 0); }
                 <td class="text-nowrap">
                   <a class="btn btn-sm btn-outline-primary" href="admin_management.php?action=edit&user_id=<?php echo (int)$row['user_id']; ?>">Edit</a>
                   <?php if ($admin_count > 1): ?>
-                    <a class="btn btn-sm btn-outline-danger" href="admin_management.php?action=delete&user_id=<?php echo (int)$row['user_id']; ?>" onclick="return confirm('Delete this admin?');">Delete</a>
+                    <a class="btn btn-sm btn-outline-danger" href="admin_management.php?action=delete&user_id=<?php echo (int)$row['user_id']; ?>" data-swal="delete">Delete</a>
                   <?php else: ?>
                     <button type="button" class="btn btn-sm btn-outline-danger" disabled>Delete</button>
                   <?php endif; ?>
@@ -208,6 +205,7 @@ if ($rc) { $rr = $rc->fetch_assoc(); $admin_count = (int)($rr['c'] ?? 0); }
 
   </div>
   <?php require_once __DIR__ . '/../public/includes/footer.php'; ?>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
   <script>
     (() => {
@@ -223,6 +221,39 @@ if ($rc) { $rr = $rc->fetch_assoc(); $admin_count = (int)($rr['c'] ?? 0); }
         }, false);
       });
     })();
+    document.addEventListener('DOMContentLoaded', () => {
+      const flash = <?php echo json_encode($flash); ?>;
+      const flashType = <?php echo json_encode($flashType); ?>;
+      if (flash) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: flashType === 'error' ? 'error' : 'success',
+          title: flash,
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        });
+      }
+
+      document.querySelectorAll('a[data-swal="delete"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          Swal.fire({
+            title: 'Delete this admin?',
+            text: 'This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = link.getAttribute('href');
+            }
+          });
+        });
+      });
+    });
   </script>
 </body>
 </html>

@@ -165,7 +165,8 @@ $sa_count = count($rows);
     <h1 class="h4 mb-0">Super Admin Management</h1>
     <a class="btn btn-outline-secondary btn-sm" href="index.php">Back to Dashboard</a>
   </div>
-  <?php if ($flash): ?><div class="alert alert-<?= $flash_type === 'error' ? 'danger' : 'success' ?>"><?= htmlspecialchars($flash) ?></div><?php endif; ?>
+  <?php if ($flash): ?>
+  <?php endif; ?>
 
   <div class="row g-3">
     <div class="col-12 order-1">
@@ -208,7 +209,7 @@ $sa_count = count($rows);
             </form>
           <?php else: ?>
             <?php if ($sa_count >= 2): ?>
-              <div class="alert alert-warning mb-0">Maximum super admins (2) reached. Delete or edit existing accounts to proceed.</div>
+              
             <?php else: ?>
               <form method="post" class="vstack gap-3">
                 <div>
@@ -273,7 +274,7 @@ $sa_count = count($rows);
                     <td>
                       <a class="btn btn-sm btn-outline-primary" href="super_admin_management.php?edit=<?= (int)$r['super_admin_id'] ?>">Edit</a>
                       <?php if ($sa_count > 1 && (int)$r['super_admin_id'] !== (int)($_SESSION['super_admin_id'] ?? 0)): ?>
-                        <form method="post" class="d-inline" onsubmit="return confirm('Delete this super admin?');">
+                        <form method="post" class="d-inline" data-swal="delete-sa" data-sa-name="<?= htmlspecialchars($r['name']) ?>">
                           <input type="hidden" name="action" value="delete_sa">
                           <input type="hidden" name="super_admin_id" value="<?= (int)$r['super_admin_id'] ?>">
                           <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
@@ -291,7 +292,35 @@ $sa_count = count($rows);
       </div>
     </div>
   </div>
-</div>
+ </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const flash = <?php echo json_encode($flash ?? ''); ?>;
+    const flashType = <?php echo json_encode($flash_type ?? 'info'); ?>;
+    const maxReached = <?php echo json_encode(($sa_count >= 2)); ?>;
+    if (flash) {
+      Swal.fire({ toast: true, position: 'top-end', icon: (flashType === 'error' ? 'error' : 'success'), title: flash, showConfirmButton: false, timer: 3000, timerProgressBar: true });
+    }
+    if (maxReached) {
+      Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Maximum super admins (2) reached', showConfirmButton: false, timer: 3500, timerProgressBar: true });
+    }
+    document.querySelectorAll('form[data-swal="delete-sa"]').forEach(frm => {
+      frm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const name = frm.getAttribute('data-sa-name') || 'this account';
+        Swal.fire({
+          title: 'Delete super admin?',
+          text: name + ' will be removed.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete',
+          cancelButtonText: 'Cancel'
+        }).then(res => { if (res.isConfirmed) frm.submit(); });
+      });
+    });
+  });
+</script>
 </body>
 </html>

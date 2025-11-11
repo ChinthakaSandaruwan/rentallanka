@@ -133,16 +133,7 @@
     <a href="../index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
   </div>
 
-  
-
-  <?php if (!empty($flash)): ?>
-    <div class="alert <?= $flash_type==='success'?'alert-success':'alert-danger' ?>" role="alert"><?= htmlspecialchars($flash) ?></div>
-  <?php elseif ($alert['msg'] !== ''): ?>
-    <div class="alert alert-<?= $alert['type'] ?>"><?= $alert['msg'] ?></div>
-  <?php endif; ?>
-  <?php if (!empty($expire_msg)): ?>
-    <div class="alert alert-info"><?= htmlspecialchars($expire_msg) ?></div>
-  <?php endif; ?>
+  <?php /* Alerts handled by SweetAlert2 via JS below */ ?>
 
   <div class="row g-3 mb-3">
     <div class="col-12 col-md-3">
@@ -258,7 +249,7 @@
                   <?php endif; ?>
                 </td>
                 <td class="text-nowrap">
-                  <form method="post" class="d-inline">
+                  <form method="post" class="d-inline bp-payment-form">
                     <input type="hidden" name="action" value="set_payment_status">
                     <input type="hidden" name="bought_package_id" value="<?= (int)$r['bought_package_id'] ?>">
                     <select name="payment_status" class="form-select form-select-sm d-inline-block" style="width: 120px;">
@@ -305,6 +296,32 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function(){
+    try {
+      const expireMsg = <?= json_encode($expire_msg) ?>;
+      if (expireMsg) {
+        Swal.fire({ icon: 'info', title: 'Info', text: String(expireMsg), confirmButtonText: 'OK' });
+      }
+      document.querySelectorAll('form.bp-payment-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const sel = form.querySelector('select[name="payment_status"]');
+          const to = sel ? sel.value : '';
+          const res = await Swal.fire({
+            title: 'Update payment status?',
+            text: to ? ('Set payment status to ' + to + '?') : 'Update payment status?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, update',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+    } catch(_) {}
+  })();
+</script>
 </body>
 </html>
 

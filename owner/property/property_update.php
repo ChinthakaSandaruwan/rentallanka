@@ -92,7 +92,6 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'] ?? 'update';
         if ($action === 'img_set_primary') {
             $image_id = (int)($_POST['image_id'] ?? 0);
-            // verify image belongs to this property
             $chk = db()->prepare('SELECT image_id, image_path FROM property_images WHERE image_id=? AND property_id=?');
             $chk->bind_param('ii', $image_id, $id);
             $chk->execute();
@@ -104,6 +103,8 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 try { $sp = db()->prepare('UPDATE property_images SET is_primary=1 WHERE image_id=?'); $sp->bind_param('i', $image_id); $sp->execute(); $sp->close(); } catch (Throwable $e) {}
                 try { $up = db()->prepare('UPDATE properties SET image=? WHERE property_id=?'); $up->bind_param('si', $img['image_path'], $id); $up->execute(); $up->close(); } catch (Throwable $e) {}
                 $flash = 'Primary image updated.'; $flash_type = 'success';
+                redirect_with_message($GLOBALS['base_url'] . '/owner/property/property_update.php?id=' . $id, $flash, $flash_type);
+                exit;
             } else {
                 $error = 'Image not found';
             }
@@ -144,7 +145,8 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
                         try { $up = db()->prepare('UPDATE properties SET image=NULL WHERE property_id=?'); $up->bind_param('i', $id); $up->execute(); $up->close(); } catch (Throwable $e) {}
                     }
                 }
-                $flash = 'Image deleted.'; $flash_type = 'success';
+                redirect_with_message($GLOBALS['base_url'] . '/owner/property/property_update.php?id=' . $id, 'Image deleted.', 'success');
+                exit;
             } else {
                 $error = 'Image not found';
             }
@@ -326,16 +328,18 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $prop['google_map_link'] = $google_map_link;
                     $prop['postal_code'] = $postal_code;
 
-                    $flash = 'Property updated successfully.';
-                    if ($uploaded_primary || $uploaded_gallery_count > 0) {
-                        $flash .= ' Uploaded images: ' . ($uploaded_primary ? 'primary' : 'no primary') . ', gallery ' . $uploaded_gallery_count . '.';
-                    }
-                    $flash_type = 'success';
+                    redirect_with_message($GLOBALS['base_url'] . '/owner/property/property_update.php?id=' . $id, 'Property updated successfully.', 'success');
+                    exit;
                 } else {
                     $error = 'Failed to update property';
                 }
             }
         }
+    }
+    // After handling POST (success branches already redirected). If there is an error, redirect with flash to avoid resubmission warning.
+    if (!empty($error)) {
+        redirect_with_message($GLOBALS['base_url'] . '/owner/property/property_update.php?id=' . $id, $error, 'error');
+        exit;
     }
 }
 
@@ -361,20 +365,7 @@ if (empty($flash)) { [$flash, $flash_type] = get_flash(); }
       </a>
     </div>
   </div>
-  <?php
-    if (!empty($error)) {
-      echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">'
-        . htmlspecialchars($error)
-        . '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
-    }
-    if (!empty($flash)) {
-      $map = ['error' => 'danger', 'danger' => 'danger', 'success' => 'success', 'warning' => 'warning', 'info' => 'info'];
-      $type = $map[$flash_type ?? 'info'] ?? 'info';
-      echo '<div class="alert alert-' . $type . ' alert-dismissible fade show" role="alert">'
-        . htmlspecialchars($flash)
-        . '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
-    }
-  ?>
+  <?php /* Alerts handled by SweetAlert2. Flash via navbar; errors shown as toast below. */ ?>
 
   <?php if ($selection_mode): ?>
     <div class="card">
@@ -626,6 +617,18 @@ if (empty($flash)) { [$flash, $flash_type] = get_flash(); }
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  (function(){
+    try {
+      const err = <?= json_encode($error ?? '') ?>;
+      if (err) {
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3500, timerProgressBar: true });
+        Toast.fire({ icon: 'error', title: String(err) });
+      }
+    } catch(_) {}
+  })();
+</script>
 <script src="js/property_update.js" defer></script>
 </body>
 </html>

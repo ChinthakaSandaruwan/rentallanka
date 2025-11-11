@@ -211,6 +211,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         unset($_SESSION['sa_stage'], $_SESSION['sa_pending']);
         $stage = 'phone';
     }
+    // Enforce POST-Redirect-GET to avoid resubmission prompt
+    $self_url = rtrim($base_url, '/') . '/superAdmin/auth/super_admin_login.php';
+    if (!headers_sent()) {
+        if ($error !== '') {
+            redirect_with_message($self_url, $error, 'error');
+        } elseif ($info !== '') {
+            redirect_with_message($self_url, $info, 'info');
+        } else {
+            header('Location: ' . $self_url);
+            exit;
+        }
+    }
 }
 
 [$flash, $flash_type] = get_flash();
@@ -235,13 +247,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="card-body p-4">
                         <h3 class="mb-3 text-center">Super Admin Login</h3>
                         <?php if ($flash): ?>
-                            <div class="alert alert-info"><?php echo htmlspecialchars($flash); ?></div>
                         <?php endif; ?>
                         <?php if ($error): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
                         <?php endif; ?>
                         <?php if ($info): ?>
-                            <div class="alert alert-success"><?php echo htmlspecialchars($info); ?></div>
                         <?php endif; ?>
 
                         <?php if ($stage === 'phone'): ?>
@@ -295,6 +304,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         (function(){
@@ -311,6 +321,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             }
         })();
+        document.addEventListener('DOMContentLoaded', function(){
+            var flash = <?php echo json_encode($flash); ?>;
+            var flashType = <?php echo json_encode($flash_type ?? 'info'); ?>;
+            var errorMsg = <?php echo json_encode($error); ?>;
+            var infoMsg = <?php echo json_encode($info); ?>;
+
+            function showToast(message, type){
+                if (!message) return;
+                var icon = 'info';
+                switch(String(type)){
+                    case 'error': icon = 'error'; break;
+                    case 'success': icon = 'success'; break;
+                    case 'warning': icon = 'warning'; break;
+                    case 'info': icon = 'info'; break;
+                    default:
+                        // map common keywords in message if type unknown
+                        if (/invalid|fail|error|expired|too many/i.test(message)) icon = 'error';
+                        else if (/sent|logged in|success|created|updated|saved/i.test(message)) icon = 'success';
+                }
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: icon,
+                    title: message,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            }
+
+            // Priority: error, info, then flash
+            if (errorMsg) {
+                showToast(errorMsg, 'error');
+            } else if (infoMsg) {
+                showToast(infoMsg, 'success');
+            } else if (flash) {
+                showToast(flash, flashType);
+            }
+        });
     </script>
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 

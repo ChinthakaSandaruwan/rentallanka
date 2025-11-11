@@ -91,15 +91,25 @@ require_role('owner');
       </div>
     </div>
 
-    <!-- property approval -->
-
+    <!-- Property tools -->
+    <div class="row g-3 mt-1">
       <div class="col-12 col-md-4 col-lg-3">
         <div class="card h-100 text-center">
           <div class="card-body d-flex flex-column">
-            <i class="bi bi-journal-check text-primary card-icon mb-2"></i>
+            <i class="bi bi-clipboard-check text-primary card-icon mb-2"></i>
             <h5 class="card-title mb-0">Property Rent Approvals</h5>
             <p class="card-text text-muted">Approve or decline pending property rent requests from customers.</p>
             <a href="property/property_rent_approval.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4 col-lg-3">
+        <div class="card h-100 text-center">
+          <div class="card-body d-flex flex-column">
+            <i class="bi bi-toggle2-on text-secondary card-icon mb-2"></i>
+            <h5 class="card-title mb-0">Property Status</h5>
+            <p class="card-text text-muted">Change property availability.</p>
+            <a href="property/property_status.php" class="btn btn-secondary mt-auto">Open</a>
           </div>
         </div>
       </div>
@@ -133,7 +143,7 @@ require_role('owner');
       <div class="col-12 col-md-4 col-lg-3">
         <div class="card h-100 text-center">
           <div class="card-body d-flex flex-column">
-            <i class="bi bi-pencil text-warning card-icon mb-2"></i>
+            <i class="bi bi-pencil-square text-warning card-icon mb-2"></i>
             <h5 class="card-title mb-0">Update Room</h5>
             <p class="card-text text-muted">Edit room details.</p>
             <a href="room/room_update.php" class="btn btn-warning mt-auto text-dark">Update Room</a>
@@ -158,10 +168,10 @@ require_role('owner');
       <div class="col-12 col-md-4 col-lg-3">
         <div class="card h-100 text-center">
           <div class="card-body d-flex flex-column">
-            <i class="bi bi-check-circle text-primary card-icon mb-2"></i>
-            <h5 class="card-title mb-0">Rented Room</h5>
+            <i class="bi bi-calendar-check text-success card-icon mb-2"></i>
+            <h5 class="card-title mb-0">Rented Rooms</h5>
             <p class="card-text text-muted">View your rented rooms.</p>
-            <a href="room/room_rented.php" class="btn btn-primary mt-auto">Rented Room</a>
+            <a href="room/room_rented.php" class="btn btn-success mt-auto">Open</a>
           </div>
         </div>
       </div>
@@ -171,10 +181,10 @@ require_role('owner');
       <div class="col-12 col-md-4 col-lg-3">
         <div class="card h-100 text-center">
           <div class="card-body d-flex flex-column">
-            <i class="bi bi-check-circle text-primary card-icon mb-2"></i>
+            <i class="bi bi-toggle2-on text-secondary card-icon mb-2"></i>
             <h5 class="card-title mb-0">Room Status</h5>
-            <p class="card-text text-muted">View your room status.</p>
-            <a href="room/room_status.php" class="btn btn-primary mt-auto">Room Status</a>
+            <p class="card-text text-muted">Change room availability.</p>
+            <a href="room/room_status.php" class="btn btn-secondary mt-auto">Open</a>
           </div>
         </div>
       </div>
@@ -183,10 +193,10 @@ require_role('owner');
       <div class="col-12 col-md-4 col-lg-3">
         <div class="card h-100 text-center">
           <div class="card-body d-flex flex-column">
-            <i class="bi bi-check-circle text-primary card-icon mb-2"></i>
-            <h5 class="card-title mb-0">Room Approval</h5>
-            <p class="card-text text-muted">View your room approval.</p>
-            <a href="room/room_rent_approval.php" class="btn btn-primary mt-auto">Room Approval</a>
+            <i class="bi bi-clipboard-check text-primary card-icon mb-2"></i>
+            <h5 class="card-title mb-0">Room Approvals</h5>
+            <p class="card-text text-muted">Approve or decline room bookings.</p>
+            <a href="room/room_rent_approval.php" class="btn btn-primary mt-auto">Open</a>
           </div>
         </div>
       </div>  

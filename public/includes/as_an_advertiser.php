@@ -103,6 +103,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
   }
 }
+
+// POST-Redirect-GET: redirect with flash so SweetAlert2 shows message via navbar
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+  $msg = $ok ?: ($err ?: 'Action completed.');
+  $typ = $ok ? 'success' : 'error';
+  redirect_with_message(rtrim($base_url,'/') . '/public/includes/as_an_advertiser.php', $msg, $typ);
+  exit;
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -124,10 +132,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         </div>
 
         <?php if (!$loggedIn): ?>
-          <div class="alert alert-warning">Please <a href="<?= $base_url ?>/auth/login.php" class="alert-link">log in</a> to request an upgrade.</div>
+          <p class="text-muted">Please <a href="<?= $base_url ?>/auth/login.php">log in</a> to request an upgrade.</p>
         <?php endif; ?>
-        <?php if ($err): ?><div class="alert alert-danger"><?= htmlspecialchars($err) ?></div><?php endif; ?>
-        <?php if ($ok): ?><div class="alert alert-success"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
 
         <div class="card shadow-sm">
           <div class="card-body p-4">
@@ -138,10 +144,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 <li>We may contact you for verification.</li>
               </ul>
               <?php if ($hasPending): ?>
-                <div class="alert alert-info d-flex align-items-center" role="alert">
-                  <i class="bi bi-hourglass-split me-2"></i>
-                  <div>Your request has been sent and is pending admin review.</div>
-                </div>
+                <p class="text-muted d-flex align-items-center"><i class="bi bi-hourglass-split me-2"></i><span>Your request has been sent and is pending admin review.</span></p>
               <?php endif; ?>
               <form method="post" class="needs-validation" novalidate>
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>" />
@@ -154,7 +157,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 </div>
               </form>
             <?php elseif ($loggedIn && $role === 'owner'): ?>
-              <div class="alert alert-info">Your account is already an Owner.</div>
+              <p class="text-muted">Your account is already an Owner.</p>
             <?php else: ?>
               <p class="mb-0">Log in as a Customer to request an upgrade.</p>
             <?php endif; ?>
@@ -165,14 +168,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     (() => {
       'use strict';
       const forms = document.querySelectorAll('.needs-validation');
       Array.from(forms).forEach(form => {
-        form.addEventListener('submit', (e) => {
-          if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
-          form.classList.add('was-validated');
+        form.addEventListener('submit', async (e) => {
+          if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); form.classList.add('was-validated'); return; }
+          e.preventDefault();
+          // SweetAlert2 confirmation before sending request
+          try {
+            const res = await Swal.fire({
+              title: 'Send upgrade request?',
+              text: 'We will notify an admin to review your request.',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, send',
+              cancelButtonText: 'Cancel'
+            });
+            if (res.isConfirmed) { form.submit(); }
+          } catch(_) { form.submit(); }
         });
       });
     })();

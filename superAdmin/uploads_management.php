@@ -196,19 +196,18 @@ if ($rel !== '') {
     <h3 class="mb-0">Uploads Management</h3>
     <div class="d-flex align-items-center gap-2">
       <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
-      <form method="post" class="d-inline">
+      <form method="post" class="d-inline" data-swal="clean">
         <input type="hidden" name="action" value="clean">
-        <button class="btn btn-outline-secondary btn-sm" type="submit" onclick="return confirm('Clean zero-byte files and empty folders?');">Clean</button>
+        <button class="btn btn-outline-secondary btn-sm" type="submit">Clean</button>
       </form>
-      <form method="post" class="d-inline">
+      <form method="post" class="d-inline" data-swal="delete-all">
         <input type="hidden" name="action" value="delete_all">
-        <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Delete ALL files and folders inside the current folder? This cannot be undone.');">Delete All</button>
+        <button class="btn btn-outline-danger btn-sm" type="submit">Delete All</button>
       </form>
     </div>
   </div>
 
   <?php if ($flash): ?>
-    <div class="alert alert-<?= $flash_type === 'error' ? 'danger' : 'success' ?>"><?= htmlspecialchars($flash) ?></div>
   <?php endif; ?>
 
   <nav aria-label="breadcrumb">
@@ -279,7 +278,7 @@ if ($rel !== '') {
               <input type="text" name="new_name" class="form-control form-control-sm" placeholder="New name" required>
               <button class="btn btn-sm btn-outline-secondary" type="submit">Rename</button>
             </form>
-            <form method="post" class="d-inline" onsubmit="return confirm('Delete this <?= $it['is_dir'] ? 'folder' : 'file' ?>?');">
+            <form method="post" class="d-inline" data-swal="delete-item" data-item-type="<?= $it['is_dir'] ? 'folder' : 'file' ?>" data-item-name="<?= htmlspecialchars($it['name']) ?>">
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="item" value="<?= htmlspecialchars($it['name']) ?>">
               <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
@@ -290,6 +289,70 @@ if ($rel !== '') {
     </div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const flash = <?php echo json_encode($flash ?? ''); ?>;
+    const flashType = <?php echo json_encode($flash_type ?? 'info'); ?>;
+    if (flash) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: (flashType === 'error') ? 'error' : (flashType === 'warning' ? 'warning' : 'success'),
+        title: flash,
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
+    }
+
+    const cleanForm = document.querySelector('form[data-swal="clean"]');
+    if (cleanForm) {
+      cleanForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        Swal.fire({
+          title: 'Clean uploads?',
+          text: 'Remove zero-byte files and empty folders.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, clean',
+          cancelButtonText: 'Cancel'
+        }).then(res => { if (res.isConfirmed) cleanForm.submit(); });
+      });
+    }
+
+    const delAllForm = document.querySelector('form[data-swal="delete-all"]');
+    if (delAllForm) {
+      delAllForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        Swal.fire({
+          title: 'Delete ALL items?',
+          text: 'This will remove all files and folders in this directory. This cannot be undone.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete all',
+          cancelButtonText: 'Cancel'
+        }).then(res => { if (res.isConfirmed) delAllForm.submit(); });
+      });
+    }
+
+    document.querySelectorAll('form[data-swal="delete-item"]').forEach(frm => {
+      frm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const itemType = frm.getAttribute('data-item-type') || 'item';
+        const itemName = frm.getAttribute('data-item-name') || '';
+        Swal.fire({
+          title: `Delete this ${itemType}?`,
+          text: itemName ? `\"${itemName}\" will be removed.` : '',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete',
+          cancelButtonText: 'Cancel'
+        }).then(res => { if (res.isConfirmed) frm.submit(); });
+      });
+    });
+  });
+</script>
 </body>
 </html>

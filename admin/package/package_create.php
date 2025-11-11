@@ -32,7 +32,8 @@ if ($is_post) {
     $ok = $stmt->execute();
     $stmt->close();
     if (!$ok) { throw new Exception('Create failed'); }
-    $alert = ['type' => 'success', 'msg' => 'Package created'];
+    redirect_with_message(rtrim($base_url,'/') . '/admin/package/package_create.php', 'Package created', 'success');
+    exit;
   } catch (Throwable $e) {
     $alert = ['type' => 'danger', 'msg' => htmlspecialchars($e->getMessage())];
   }
@@ -58,13 +59,11 @@ if ($is_post) {
     </div>
   </div>
 
-  <?php if ($alert['msg'] !== ''): ?>
-    <div class="alert alert-<?= $alert['type'] ?>"><?= $alert['msg'] ?></div>
-  <?php endif; ?>
+  <?php /* Alerts handled by SweetAlert2 via JS below; Bootstrap alerts removed */ ?>
 
   <div class="card">
     <div class="card-body">
-      <form method="post" class="row g-3 needs-validation" novalidate>
+      <form method="post" class="row g-3 needs-validation" novalidate id="formPackageCreate">
         <div class="col-12 col-md-6">
           <label for="package_name" class="form-label">Package Name</label>
           <input type="text" id="package_name" name="package_name" class="form-control" maxlength="120" required>
@@ -118,6 +117,36 @@ if ($is_post) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script>
+  (function(){
+    try {
+      const alertMsg = <?= json_encode($alert['msg']) ?>;
+      const alertType = (<?= json_encode($alert['type']) ?> || '').toLowerCase();
+      if (alertMsg) {
+        const icon = ({ success:'success', danger:'error', error:'error', warning:'warning', info:'info' })[alertType] || 'error';
+        Swal.fire({ icon, title: icon==='success'?'Success':icon==='warning'?'Warning':icon==='info'?'Info':'Error', text: String(alertMsg), confirmButtonText: 'OK' });
+      }
+
+      const form = document.getElementById('formPackageCreate');
+      if (form) {
+        form.addEventListener('submit', async function(e){
+          if (!form.checkValidity()) return; // validation script will block if invalid
+          e.preventDefault();
+          const name = (form.querySelector('#package_name')?.value || '').trim();
+          const res = await Swal.fire({
+            title: 'Create package?',
+            text: name ? ('Create package "' + name + '"?') : 'Create this package?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, create',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      }
+    } catch(_) {}
+  })();
+</script>
 <script>
   (() => {
     'use strict';

@@ -49,14 +49,9 @@ if ($is_post) {
     $ok = $stmt->execute();
     $stmt->close();
     if (!$ok) { throw new Exception('Update failed'); }
-    $alert = ['type' => 'success', 'msg' => 'Package updated'];
-
-    // reload
-    $st = db()->prepare('SELECT * FROM packages WHERE package_id=? LIMIT 1');
-    $st->bind_param('i', $pid);
-    $st->execute();
-    $package = $st->get_result()->fetch_assoc();
-    $st->close();
+    // PRG redirect so refresh doesn't resubmit; flash handled by navbar (SweetAlert2)
+    redirect_with_message(rtrim($base_url,'/') . '/admin/package/package_update.php?package_id=' . (int)$pid, 'Package updated', 'success');
+    exit;
   } catch (Throwable $e) {
     $alert = ['type' => 'danger', 'msg' => htmlspecialchars($e->getMessage())];
   }
@@ -82,9 +77,7 @@ if ($is_post) {
     </div>
   </div>
 
-  <?php if ($alert['msg'] !== ''): ?>
-    <div class="alert alert-<?= $alert['type'] ?>"><?= $alert['msg'] ?></div>
-  <?php endif; ?>
+  <?php /* Alerts handled via SweetAlert2 below; Bootstrap alerts removed */ ?>
 
   <?php if (!$package): ?>
     <?php
@@ -201,7 +194,7 @@ if ($is_post) {
   <?php else: ?>
   <div class="card">
     <div class="card-body">
-      <form method="post" class="row g-3 needs-validation" novalidate>
+      <form method="post" class="row g-3 needs-validation" novalidate id="formPackageUpdate">
         <input type="hidden" name="package_id" value="<?= (int)$package['package_id'] ?>">
         <div class="col-12 col-md-6">
           <label for="package_name" class="form-label">Package Name</label>
@@ -261,6 +254,35 @@ if ($is_post) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script>
+  (function(){
+    try {
+      const msg = <?= json_encode($alert['msg']) ?>;
+      const typ = (<?= json_encode($alert['type']) ?> || '').toLowerCase();
+      if (msg) {
+        const icon = ({ success:'success', danger:'error', error:'error', warning:'warning', info:'info' })[typ] || 'error';
+        Swal.fire({ icon, title: icon==='success'?'Success':icon==='warning'?'Warning':icon==='info'?'Info':'Error', text: String(msg), confirmButtonText: 'OK' });
+      }
+      const form = document.getElementById('formPackageUpdate');
+      if (form) {
+        form.addEventListener('submit', async function(e){
+          if (!form.checkValidity()) return;
+          e.preventDefault();
+          const name = (form.querySelector('#package_name')?.value || '').trim();
+          const res = await Swal.fire({
+            title: 'Save changes?',
+            text: name ? ('Update package "' + name + '"?') : 'Update this package?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, update',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      }
+    } catch(_) {}
+  })();
+</script>
 <script>
   (() => {
     'use strict';

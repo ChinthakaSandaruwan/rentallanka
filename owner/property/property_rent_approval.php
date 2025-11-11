@@ -126,8 +126,7 @@ $st->close();
     <a href="../index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
   </div>
 
-  <?php if ($ok): ?><div class="alert alert-success"><?php echo htmlspecialchars($ok); ?></div><?php endif; ?>
-  <?php if ($err): ?><div class="alert alert-danger"><?php echo htmlspecialchars($err); ?></div><?php endif; ?>
+  <?php /* Alerts handled globally via SweetAlert2 (navbar). Removed Bootstrap alerts. */ ?>
 
   <div class="card">
     <div class="card-body p-0">
@@ -152,15 +151,17 @@ $st->close();
                 <td>LKR <?php echo number_format((float)($it['price_per_month'] ?? 0), 2); ?></td>
                 <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime((string)$it['created_at']))); ?></td>
                 <td class="text-end">
-                  <form method="post" class="d-inline">
+                  <form method="post" class="d-inline rent-approve-form">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
                     <input type="hidden" name="rent_id" value="<?php echo (int)$it['rent_id']; ?>">
-                    <button class="btn btn-sm btn-success" name="action" value="approve"><i class="bi bi-check2-circle me-1"></i>Approve</button>
+                    <input type="hidden" name="action" value="approve">
+                    <button class="btn btn-sm btn-success" type="submit"><i class="bi bi-check2-circle me-1"></i>Approve</button>
                   </form>
-                  <form method="post" class="d-inline ms-1" onsubmit="return confirm('Decline this request?');">
+                  <form method="post" class="d-inline ms-1 rent-decline-form">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
                     <input type="hidden" name="rent_id" value="<?php echo (int)$it['rent_id']; ?>">
-                    <button class="btn btn-sm btn-outline-danger" name="action" value="decline"><i class="bi bi-x-circle me-1"></i>Decline</button>
+                    <input type="hidden" name="action" value="decline">
+                    <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-x-circle me-1"></i>Decline</button>
                   </form>
                 </td>
               </tr>
@@ -175,6 +176,43 @@ $st->close();
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  (function(){
+    try {
+      document.querySelectorAll('form.rent-approve-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const rid = form.querySelector('input[name="rent_id"]').value;
+          const res = await Swal.fire({
+            title: 'Approve rent request?',
+            text: 'Approve request #' + rid + '?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, approve',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+      document.querySelectorAll('form.rent-decline-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const rid = form.querySelector('input[name="rent_id"]').value;
+          const res = await Swal.fire({
+            title: 'Decline rent request?',
+            text: 'This cannot be undone. Decline request #' + rid + '?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, decline',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+    } catch(_) {}
+  })();
+</script>
 </body>
 </html>
 

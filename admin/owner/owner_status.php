@@ -69,6 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
     }
   }
+  // POST-Redirect-GET to avoid resubmission on refresh
+  $msg = $flash ?: ($error ?: 'Action completed.');
+  $typ = $flash ? ($flash_type ?: 'success') : ($error ? 'error' : 'success');
+  $url = rtrim($base_url,'/') . '/admin/owner/owner_status.php?user_id=' . (int)$user_id;
+  redirect_with_message($url, $msg, $typ);
+  exit;
 }
 ?>
 <!DOCTYPE html>
@@ -90,12 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
 
-    <?php if (!empty($error)): ?>
-      <div class="alert alert-danger" role="alert"><?php echo htmlspecialchars($error); ?></div>
-    <?php endif; ?>
-    <?php if (!empty($flash)): ?>
-      <div class="alert alert-<?php echo $flash_type==='error'?'danger':'success'; ?>" role="alert"><?php echo htmlspecialchars($flash); ?></div>
-    <?php endif; ?>
+    <?php /* Alerts handled by SweetAlert2 via navbar flash handler */ ?>
 
     <?php if ($owner): ?>
     <div class="card">
@@ -116,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
         </div>
 
-        <form method="post" class="row g-3">
+        <form method="post" class="row g-3" id="formOwnerStatus">
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
           <div class="col-12 col-md-6">
             <label for="status" class="form-label">Status<span class="text-danger">*</span></label>
@@ -241,5 +242,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script>
+    (function(){
+      try {
+        const form = document.getElementById('formOwnerStatus');
+        if (form) {
+          form.addEventListener('submit', async function(e){
+            e.preventDefault();
+            const sel = form.querySelector('#status');
+            const to = sel ? sel.options[sel.selectedIndex].textContent.trim() : '';
+            const res = await Swal.fire({
+              title: 'Change status?',
+              text: to ? ('Change owner status to ' + to + '?') : 'Change owner status?',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, change',
+              cancelButtonText: 'Cancel'
+            });
+            if (res.isConfirmed) { form.submit(); }
+          });
+        }
+      } catch(_) {}
+    })();
+  </script>
 </body>
 </html>

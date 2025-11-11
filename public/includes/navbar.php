@@ -101,6 +101,24 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       </div>
     </div>
   </nav>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    (function(){
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const msg = params.get('flash');
+        const type = (params.get('type') || 'info').toLowerCase();
+        const icon = ({ success:'success', error:'error', danger:'error', warning:'warning', info:'info' })[type] || 'info';
+        if (msg) {
+          Swal.fire({ icon, title: (icon==='success'?'Success':icon==='error'?'Error':icon==='warning'?'Warning':'Info'), text: msg, confirmButtonText: 'OK' });
+          params.delete('flash'); params.delete('type');
+          const qs = params.toString();
+          const newUrl = window.location.pathname + (qs?('?'+qs):'') + window.location.hash;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      } catch(_) {}
+    })();
+  </script>
   
   <?php if ($loggedIn && in_array($role, ['owner','admin','customer'], true)): ?>
   <div class="modal fade" id="nlModal" tabindex="-1" aria-hidden="true">

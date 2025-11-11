@@ -98,9 +98,7 @@ if ($types !== '') {
       </div>
     </div>
 
-    <?php if (!empty($flash)): ?>
-      <div class="alert alert-<?php echo $flash_type==='error'?'danger':'success'; ?>" role="alert"><?php echo htmlspecialchars($flash); ?></div>
-    <?php endif; ?>
+    <?php /* Alerts handled by SweetAlert2 via JS below */ ?>
 
     <div class="card">
       <div class="card-header">Customers</div>
@@ -154,7 +152,7 @@ if ($types !== '') {
                       </span>
                     </td>
                     <td>
-                      <form method="post" class="d-inline" onsubmit="return confirm('Delete this customer?');">
+                      <form method="post" class="d-inline delete-form">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                         <input type="hidden" name="user_id" value="<?php echo (int)$c['user_id']; ?>">
                         <button type="submit" class="btn btn-sm btn-danger">
@@ -173,5 +171,34 @@ if ($types !== '') {
 
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script>
+    (function(){
+      try {
+        // Flash via SweetAlert2
+        const msg = <?= json_encode($flash) ?>;
+        const typ = (<?= json_encode($flash_type) ?> || 'info').toLowerCase();
+        if (msg) {
+          const icon = ({ success:'success', error:'error', danger:'error', warning:'warning', info:'info' })[typ] || 'info';
+          Swal.fire({ icon, title: icon==='success'?'Success':icon==='error'?'Error':icon==='warning'?'Warning':'Info', text: String(msg), confirmButtonText: 'OK' });
+        }
+
+        // Replace confirm() with SweetAlert2 for delete actions
+        document.querySelectorAll('form.delete-form').forEach(function(form){
+          form.addEventListener('submit', async function(e){
+            e.preventDefault();
+            const res = await Swal.fire({
+              title: 'Delete this customer?',
+              text: 'This action cannot be undone.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, delete',
+              cancelButtonText: 'Cancel'
+            });
+            if (res.isConfirmed) { form.submit(); }
+          });
+        });
+      } catch(_) {}
+    })();
+  </script>
 </body>
 </html>

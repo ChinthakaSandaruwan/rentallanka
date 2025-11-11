@@ -70,12 +70,7 @@ if (!$flash && $sess_flash) { $flash = $sess_flash; $flash_type = $sess_flash_ty
       </div>
     </div>
 
-    <?php if (!empty($error)): ?>
-      <div class="alert alert-danger" role="alert"><?php echo htmlspecialchars($error); ?></div>
-    <?php endif; ?>
-    <?php if (!empty($flash)): ?>
-      <div class="alert alert-<?php echo $flash_type==='error'?'danger':'success'; ?>" role="alert"><?php echo htmlspecialchars($flash); ?></div>
-    <?php endif; ?>
+    <?php /* Alerts handled by SweetAlert2 via JS below */ ?>
 
     <div class="card">
       <div class="card-header">Details</div>
@@ -125,6 +120,21 @@ if (!$flash && $sess_flash) { $flash = $sess_flash; $flash_type = $sess_flash_ty
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script>
+    (function(){
+      try {
+        const err = <?= json_encode($error) ?>;
+        const msg = <?= json_encode($flash) ?>;
+        const typ = (<?= json_encode($flash_type) ?> || 'info').toLowerCase();
+        const icon = ({ success:'success', error:'error', danger:'error', warning:'warning', info:'info' })[typ] || 'info';
+        if (err) {
+          Swal.fire({ icon: 'error', title: 'Error', text: String(err), confirmButtonText: 'OK' });
+        } else if (msg) {
+          Swal.fire({ icon, title: icon==='success'?'Success':icon==='warning'?'Warning':'Info', text: String(msg), confirmButtonText: 'OK' });
+        }
+      } catch(_) {}
+    })();
+  </script>
   <script>
     (() => {
       'use strict';

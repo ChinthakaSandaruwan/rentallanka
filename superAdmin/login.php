@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card shadow-sm">
           <div class="card-body">
             <h3 class="mb-3 text-center">Super Admin Login</h3>
-            <?php if ($err): ?><div class="alert alert-danger"><?php echo htmlspecialchars($err); ?></div><?php endif; ?>
+            <?php if ($err): ?><?php endif; ?>
             <form method="post" class="vstack gap-3">
               <div>
                 <label class="form-label">name</label>
@@ -59,6 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
   </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        var err = <?php echo json_encode($err); ?>;
+        if (err) {
+          Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err, showConfirmButton: false, timer: 3000, timerProgressBar: true });
+        }
+      });
+    </script>
 </body>
 </html>

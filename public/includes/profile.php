@@ -205,9 +205,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="col-12 d-flex gap-2">
               <input type="hidden" name="action" value="update_user_profile" />
-              <button class="btn btn-primary" type="submit">Save</button>
+              <button class="btn btn-primary" type="submit">Save Changes</button>
               <?php if ($display['role'] === 'customer'): ?>
-                <button class="btn btn-outline-danger" name="action" value="delete_user_account" type="submit" onclick="return confirm('Delete your account? This cannot be undone.');">Delete Account</button>
+                <button class="btn btn-outline-danger" name="action" value="delete_user_account" type="submit">Delete Account</button>
               <?php endif; ?>
             </div>
           </form>
@@ -218,17 +218,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   (() => {
     'use strict';
     const forms = document.querySelectorAll('.needs-validation');
     Array.from(forms).forEach(form => {
-      form.addEventListener('submit', event => {
+      form.addEventListener('submit', async (event) => {
+        const submitter = event.submitter || document.activeElement;
+        // Bootstrap validation
         if (!form.checkValidity()) {
           event.preventDefault();
           event.stopPropagation();
+          form.classList.add('was-validated');
+          return;
         }
-        form.classList.add('was-validated');
+        // SweetAlert2 confirm for delete account
+        if (submitter && submitter.name === 'action' && submitter.value === 'delete_user_account') {
+          event.preventDefault();
+          try {
+            const res = await Swal.fire({
+              title: 'Delete your account?',
+              text: 'This action cannot be undone.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, delete',
+              cancelButtonText: 'Cancel'
+            });
+            if (res.isConfirmed) { form.submit(); }
+          } catch (_) { form.submit(); }
+        }
       }, false);
     });
   })();

@@ -122,12 +122,7 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1 class="h3 mb-0">Delete Property</h1>
     <a href="../index.php" class="btn btn-outline-secondary btn-sm">Dashboard</a>
   </div>
-  <?php if ($flash): ?>
-    <div class="alert <?php echo ($flash_type==='success')?'alert-success':'alert-danger'; ?> alert-dismissible fade show" role="alert">
-      <?php echo htmlspecialchars($flash); ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  <?php endif; ?>
+  <?php /* Flash/messages shown via SweetAlert2 in navbar; removed Bootstrap alerts */ ?>
 
   <?php if ($selection_mode): ?>
     <div class="card">
@@ -152,7 +147,7 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if (isset($p['price_per_month'])): ?>
                       <div class="h6 mb-3">LKR <?php echo number_format((float)$p['price_per_month'], 2); ?>/mo</div>
                     <?php endif; ?>
-                    <form method="post" class="mt-auto needs-validation" novalidate>
+                    <form method="post" class="mt-auto needs-validation prop-del-form" novalidate>
                       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                       <input type="hidden" name="property_id" value="<?php echo (int)$p['property_id']; ?>">
                       <button type="submit" class="btn btn-danger w-100">Delete</button>
@@ -170,7 +165,7 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="card-body">
         <div id="formAlert"></div>
         <p class="mb-3">Are you sure you want to delete <strong>PROP-<?php echo str_pad((string)$pid, 6, '0', STR_PAD_LEFT); ?></strong>? This will remove all its images.</p>
-        <form method="post" class="needs-validation" novalidate>
+        <form method="post" class="needs-validation prop-del-form" novalidate>
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
           <input type="hidden" name="property_id" value="<?php echo (int)$pid; ?>">
           <button type="submit" class="btn btn-danger">Delete</button>
@@ -181,6 +176,29 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  (function(){
+    try {
+      document.querySelectorAll('form.prop-del-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const codeEl = form.closest('.card-body')?.querySelector('.fw-semibold') || null;
+          const code = codeEl ? codeEl.textContent.trim() : (form.querySelector('input[name="property_id"]').value || 'this property');
+          const res = await Swal.fire({
+            title: 'Delete property?',
+            text: 'This action cannot be undone. Delete ' + code + '?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+    } catch(_) {}
+  })();
+</script>
 <script src="js/property_delete.js" defer></script>
 </body>
 </html>

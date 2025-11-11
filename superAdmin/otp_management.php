@@ -127,8 +127,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'User phone not found';
             }
         }
+    } elseif ($action === 'delete_all_otps') {
+        // Danger: delete all OTP records
+        db()->query('DELETE FROM user_otps');
+        $message = 'All OTPs deleted';
     }
 }
+
+// Enforce POST-Redirect-GET to avoid resubmission prompt on refresh/back
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $self_url = rtrim($base_url, '/') . '/superAdmin/otp_management.php';
+    if (!headers_sent()) {
+        if (!empty($error)) {
+            redirect_with_message($self_url, $error, 'error');
+        } elseif (!empty($message)) {
+            redirect_with_message($self_url, $message, 'success');
+        } else {
+            header('Location: ' . $self_url);
+            exit;
+        }
+    }
+}
+
+[$flash, $flash_type] = get_flash();
 
 $q = trim($_GET['q'] ?? '');
 $where = '';
@@ -164,13 +185,17 @@ $stmt->close();
     <div class="container py-4">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h2 class="h4 mb-0">OTP Management</h2>
-            <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+            <div class="d-flex gap-2">
+              <form method="post" class="d-inline" data-swal="delete-all-otps">
+                <input type="hidden" name="action" value="delete_all_otps" />
+                <button type="submit" class="btn btn-outline-danger btn-sm">Delete All OTPs</button>
+              </form>
+              <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+            </div>
         </div>
         <?php if ($message): ?>
-            <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
         <?php endif; ?>
         <?php if ($error): ?>
-            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
 
         <div class="card mb-4">
@@ -179,8 +204,9 @@ $stmt->close();
                 <form method="post">
                     <div class="row g-3">
                         <div class="col-12">
-                            <div class="alert alert-secondary py-2 mb-0">
-                                <strong>Current OTP Mode:</strong> <?php echo htmlspecialchars(strtoupper($otp_mode)); ?>
+                            <div class="py-2 mb-0">
+                                <span class="fw-semibold">Current OTP Mode:</span>
+                                <span class="badge bg-info text-dark"><?php echo htmlspecialchars(strtoupper($otp_mode)); ?></span>
                             </div>
                         </div>
                         <div class="col-12 col-md-3 d-flex align-items-end">
@@ -310,6 +336,37 @@ $stmt->close();
     </table>
     </div>
     </div>
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+      <script>
+        document.addEventListener('DOMContentLoaded', function(){
+          var flash = <?php echo json_encode($flash ?? ''); ?>;
+          var flashType = <?php echo json_encode($flash_type ?? 'info'); ?>;
+          var msg = <?php echo json_encode($message); ?>;
+          var err = <?php echo json_encode($error); ?>;
+          if (flash) {
+            Swal.fire({ toast: true, position: 'top-end', icon: (flashType === 'error' ? 'error' : (flashType === 'warning' ? 'warning' : 'success')), title: flash, showConfirmButton: false, timer: 3000, timerProgressBar: true });
+          } else if (err) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err, showConfirmButton: false, timer: 3000, timerProgressBar: true });
+          } else if (msg) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: msg, showConfirmButton: false, timer: 3000, timerProgressBar: true });
+          }
+          // Confirm delete all OTPs
+          var delAll = document.querySelector('form[data-swal="delete-all-otps"]');
+          if (delAll) {
+            delAll.addEventListener('submit', function(e){
+              e.preventDefault();
+              Swal.fire({
+                title: 'Delete all OTPs?',
+                text: 'This will remove all OTP records. This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete all',
+                cancelButtonText: 'Cancel'
+              }).then(res => { if (res.isConfirmed) delAll.submit(); });
+            });
+          }
+        });
+      </script>
 </body>
 </html>

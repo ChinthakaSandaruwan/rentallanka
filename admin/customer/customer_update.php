@@ -106,6 +106,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
 }
+// POST-Redirect-GET to avoid resubmission on refresh (after processing above)
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+  $msg = $flash ?: ($error ?: 'Action completed.');
+  $typ = $flash ? ($flash_type ?: 'success') : ($error ? 'error' : 'success');
+  $url = rtrim($base_url,'/') . '/admin/customer/customer_update.php?user_id=' . (int)$user_id;
+  redirect_with_message($url, $msg, $typ);
+  exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -126,12 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
 
-    <?php if (!empty($error)): ?>
-      <div class="alert alert-danger" role="alert"><?php echo htmlspecialchars($error); ?></div>
-    <?php endif; ?>
-    <?php if (!empty($flash)): ?>
-      <div class="alert alert-<?php echo $flash_type==='error'?'danger':'success'; ?>" role="alert"><?php echo htmlspecialchars($flash); ?></div>
-    <?php endif; ?>
+    <?php /* Alerts handled by SweetAlert2 via JS below */ ?>
 
     <?php if ($customer): ?>
     <div class="card">
@@ -147,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
           <?php endif; ?>
         </div>
-        <form method="post" class="row g-3 needs-validation" novalidate enctype="multipart/form-data">
+        <form method="post" class="row g-3 needs-validation" novalidate enctype="multipart/form-data" id="formCustomerUpdate">
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
           <div class="col-12 col-md-6">
@@ -303,6 +306,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script>
+    (function(){
+      try {
+        const err = <?= json_encode($error) ?>;
+        const msg = <?= json_encode($flash) ?>;
+        const typ = (<?= json_encode($flash_type) ?> || 'info').toLowerCase();
+        const icon = ({ success:'success', error:'error', danger:'error', warning:'warning', info:'info' })[typ] || 'info';
+        if (err) {
+          Swal.fire({ icon: 'error', title: 'Error', text: String(err), confirmButtonText: 'OK' });
+        } else if (msg) {
+          Swal.fire({ icon, title: icon==='success'?'Success':icon==='warning'?'Warning':'Info', text: String(msg), confirmButtonText: 'OK' });
+        }
+
+        const form = document.getElementById('formCustomerUpdate');
+        if (form) {
+          form.addEventListener('submit', async function(e){
+            if (!form.checkValidity()) return; // existing validation script will handle blocking
+            e.preventDefault();
+            const name = (form.querySelector('#name')?.value || '').trim();
+            const res = await Swal.fire({
+              title: 'Save changes?',
+              text: name ? ('Update customer ' + name + '?') : 'Update this customer?',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, update',
+              cancelButtonText: 'Cancel'
+            });
+            if (res.isConfirmed) { form.submit(); }
+          });
+        }
+      } catch(_) {}
+    })();
+  </script>
   <script>
     (() => {
       'use strict';

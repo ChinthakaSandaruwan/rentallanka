@@ -101,11 +101,7 @@ if (($_GET['action'] ?? '') === 'edit') {
       </div>
     </div>
 
-    <?php if ($flash): ?>
-      <div class="alert alert-<?php echo $flashType === 'error' ? 'danger' : 'success'; ?>" role="alert">
-        <?php echo htmlspecialchars($flash); ?>
-      </div>
-    <?php endif; ?>
+    <?php /* Flash handled by SweetAlert2 via navbar; removed Bootstrap alert markup */ ?>
 
     <div class="mb-3">
       <form method="get" class="row g-2 align-items-stretch">
@@ -185,7 +181,7 @@ if (($_GET['action'] ?? '') === 'edit') {
                 <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                 <td class="text-nowrap">
                   <a class="btn btn-sm btn-outline-primary" href="owner_management.php?action=edit&user_id=<?php echo (int)$row['user_id']; ?>">Edit</a>
-                  <a class="btn btn-sm btn-outline-danger" href="owner_management.php?action=delete&user_id=<?php echo (int)$row['user_id']; ?>" onclick="return confirm('Delete this owner?');">Delete</a>
+                  <a class="btn btn-sm btn-outline-danger owner-del" href="owner_management.php?action=delete&user_id=<?php echo (int)$row['user_id']; ?>">Delete</a>
                 </td>
               </tr>
             <?php endforeach; ?>
@@ -210,6 +206,27 @@ if (($_GET['action'] ?? '') === 'edit') {
           form.classList.add('was-validated');
         }, false);
       });
+    })();
+  </script>
+  <script>
+    (function(){
+      try {
+        document.querySelectorAll('a.owner-del').forEach(function(a){
+          a.addEventListener('click', async function(e){
+            e.preventDefault();
+            const url = this.getAttribute('href');
+            const res = await Swal.fire({
+              title: 'Delete this owner?',
+              text: 'This action cannot be undone.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, delete',
+              cancelButtonText: 'Cancel'
+            });
+            if (res.isConfirmed && url) { window.location.href = url; }
+          });
+        });
+      } catch(_) {}
     })();
   </script>
 </body>

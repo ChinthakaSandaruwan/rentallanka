@@ -151,12 +151,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
               <h1 class="h4 mt-2 mb-0">Admin Login</h1>
             </div>
             <p class="text-muted small mb-3 text-center">Only phone + OTP for Admin accounts.</p>
-            <?php if ($err): ?>
-              <div class="alert alert-danger" role="alert"><?= htmlspecialchars($err) ?></div>
-            <?php endif; ?>
-            <?php if ($ok): ?>
-              <div class="alert alert-success" role="alert"><?= htmlspecialchars($ok) ?></div>
-            <?php endif; ?>
+            <?php /* Alerts handled by SweetAlert2 via JS below */ ?>
 
             <?php if ($stage === 'request'): ?>
               <form method="post" class="needs-validation mb-3" novalidate>
@@ -206,7 +201,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       </div>
     </div>
   </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    (function(){
+      try {
+        const err = <?= json_encode($err) ?>;
+        const ok  = <?= json_encode($ok) ?>;
+        if (err) {
+          Swal.fire({ icon: 'error', title: 'Error', text: String(err), confirmButtonText: 'OK' });
+        } else if (ok) {
+          Swal.fire({ icon: 'success', title: 'Success', text: String(ok), confirmButtonText: 'OK' });
+        }
+      } catch(_) {}
+    })();
+  </script>
   <script>
     (() => {
       'use strict';

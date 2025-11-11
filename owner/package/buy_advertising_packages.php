@@ -116,26 +116,24 @@
 
   
 
-  <?php if (!empty($flash)): ?>
-    <div class="alert <?= $flash_type==='success'?'alert-success':'alert-danger' ?>" role="alert"><?= htmlspecialchars($flash) ?></div>
-  <?php elseif ($alert['msg'] !== ''): ?>
-    <div class="alert alert-<?= $alert['type'] ?>"><?= $alert['msg'] ?></div>
-  <?php endif; ?>
+  <?php /* Flash/messages handled globally via SweetAlert2 in navbar; removed Bootstrap alerts */ ?>
 
   <?php if ($current): ?>
-    <div class="alert alert-info">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <strong>Current Package:</strong> <?= htmlspecialchars((string)$current['package_name']) ?>
-          <?php if (!empty($current['end_date'])): ?>
-            <span class="ms-2">Ends: <?= htmlspecialchars((string)$current['end_date']) ?></span>
-          <?php endif; ?>
-          <?php $curTypeLbl = ((int)($current['remaining_rooms'] ?? 0) > 0 || (int)($current['max_rooms'] ?? 0) > 0) ? 'Room' : 'Property'; ?>
-          <?php $curDurLbl = ((string)($current['package_type'] ?? 'monthly') === 'yearly') ? 'Yearly' : 'Monthly'; ?>
-          <span class="ms-2">Type: <?= $curTypeLbl ?> | Duration: <?= $curDurLbl ?></span>
-          <span class="ms-2">Remaining Properties: <?= (int)$current['remaining_properties'] ?> | Remaining Rooms: <?= (int)$current['remaining_rooms'] ?></span>
+    <div class="card border-0 bg-light mb-3">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <strong>Current Package:</strong> <?= htmlspecialchars((string)$current['package_name']) ?>
+            <?php if (!empty($current['end_date'])): ?>
+              <span class="ms-2">Ends: <?= htmlspecialchars((string)$current['end_date']) ?></span>
+            <?php endif; ?>
+            <?php $curTypeLbl = ((int)($current['remaining_rooms'] ?? 0) > 0 || (int)($current['max_rooms'] ?? 0) > 0) ? 'Room' : 'Property'; ?>
+            <?php $curDurLbl = ((string)($current['package_type'] ?? 'monthly') === 'yearly') ? 'Yearly' : 'Monthly'; ?>
+            <span class="ms-2">Type: <?= $curTypeLbl ?> | Duration: <?= $curDurLbl ?></span>
+            <span class="ms-2">Remaining Properties: <?= (int)$current['remaining_properties'] ?> | Remaining Rooms: <?= (int)$current['remaining_rooms'] ?></span>
+          </div>
+          <span class="badge bg-secondary">Status: <?= htmlspecialchars((string)$current['payment_status']) ?></span>
         </div>
-        <span class="badge bg-secondary">Status: <?= htmlspecialchars((string)$current['payment_status']) ?></span>
       </div>
     </div>
   <?php endif; ?>
@@ -143,7 +141,7 @@
   <div class="row g-3">
     <?php if (count($packages) === 0): ?>
       <div class="col-12">
-        <div class="alert alert-warning">No packages available right now.</div>
+        <div class="text-center text-muted py-4">No packages available right now.</div>
       </div>
     <?php endif; ?>
     <?php foreach ($packages as $pkg): ?>
@@ -186,6 +184,18 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function(){
+    try {
+      <?php if (count($packages) === 0): ?>
+      if (window.Swal) {
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3500, timerProgressBar: true });
+        Toast.fire({ icon: 'warning', title: 'No packages available right now.' });
+      }
+      <?php endif; ?>
+    } catch (_) {}
+  })();
+  </script>
 </body>
 </html>
 

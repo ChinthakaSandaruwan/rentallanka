@@ -4,7 +4,6 @@
 // CSRF token
 if (empty($_SESSION['csrf_token'])) { $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); }
 
-$alert = ['type'=>'','msg'=>''];
 $room = null;
 $room_id = (int)($_GET['room_id'] ?? 0);
 
@@ -22,7 +21,7 @@ if ($room_id > 0) {
   }
 }
 
-// Handle deletion
+// Handle deletion (PRG)
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   try {
     if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) { throw new Exception('Invalid CSRF token'); }
@@ -34,14 +33,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (!$st->execute()) { throw new Exception('Failed to delete'); }
     $affected = db()->affected_rows;
     $st->close();
-    if ($affected > 0) {
-      $alert = ['type'=>'success','msg'=>'Room deleted successfully.'];
-      $room = null; $room_id = 0;
-    } else {
-      $alert = ['type'=>'warning','msg'=>'No room deleted. It may not exist.'];
-    }
+    $msg = ($affected > 0) ? 'Room deleted successfully.' : 'No room deleted. It may not exist.';
+    $typ = ($affected > 0) ? 'success' : 'warning';
+    redirect_with_message(rtrim($base_url,'/') . '/admin/room/room_delete.php', $msg, $typ);
+    exit;
   } catch (Throwable $e) {
-    $alert = ['type'=>'danger','msg'=>htmlspecialchars($e->getMessage())];
+    redirect_with_message(rtrim($base_url,'/') . '/admin/room/room_delete.php', 'Error: ' . ($e->getMessage() ?: 'Delete failed'), 'error');
+    exit;
   }
 }
 ?>
@@ -65,9 +63,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     </div>
   </div>
 
-  <?php if ($alert['msg'] !== ''): ?>
-    <div class="alert alert-<?= $alert['type'] ?>"><?= $alert['msg'] ?></div>
-  <?php endif; ?>
+  <?php /* Alerts handled by SweetAlert2 via navbar; Bootstrap alerts removed */ ?>
 
   <?php if ($room_id <= 0 || !$room): ?>
     <?php
@@ -150,7 +146,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                   </td>
                   <td><?= htmlspecialchars((string)($r['created_at'] ?? '')) ?></td>
                   <td class="text-end">
-                    <form method="post" class="d-inline" onsubmit="return confirm('Delete room #<?= (int)($r['room_id'] ?? 0) ?>? This cannot be undone.');">
+                    <form method="post" class="d-inline rd-del-form">
                       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                       <input type="hidden" name="room_id" value="<?= (int)($r['room_id'] ?? 0) ?>">
                       <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash me-1"></i>Delete</button>
@@ -177,8 +173,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
           <div class="fw-semibold"><?= htmlspecialchars((string)$room['title']) ?></div>
         </div>
         <?php endif; ?>
-        <div class="alert alert-warning">This action cannot be undone.</div>
-        <form method="post" class="d-flex gap-2">
+        <div class="text-muted small mb-2">This action cannot be undone.</div>
+        <form method="post" class="d-flex gap-2" id="formDeleteConfirm">
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
           <input type="hidden" name="room_id" value="<?= (int)$room['room_id'] ?>">
           <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Delete Room</button>
@@ -190,5 +186,44 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script>
+  (function(){
+    try {
+      // List view delete confirm
+      document.querySelectorAll('form.rd-del-form').forEach(function(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const id = form.querySelector('input[name="room_id"]').value;
+          const res = await Swal.fire({
+            title: 'Delete room #' + id + '?',
+            text: 'This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { form.submit(); }
+        });
+      });
+      // Detail confirm
+      const dc = document.getElementById('formDeleteConfirm');
+      if (dc) {
+        dc.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const id = dc.querySelector('input[name="room_id"]').value;
+          const res = await Swal.fire({
+            title: 'Delete room #' + id + '?',
+            text: 'This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel'
+          });
+          if (res.isConfirmed) { dc.submit(); }
+        });
+      }
+    } catch(_) {}
+  })();
+</script>
 </body>
 </html>
