@@ -44,14 +44,43 @@ $resolve = function(string $u) use ($base): string {
   return $base . '/' . ltrim($u, '/');
 };
 ?>
+<style>
+  /* ===========================
+     RENTALLANKA FOOTER THEME
+     Matches navbar/sections tokens
+     =========================== */
+  :root {
+    --rl-primary: #004E98;
+    --rl-light: #EBEBEB;
+    --rl-secondary: #C0C0C0;
+    --rl-accent: #3A6EA5;
+    --rl-dark: #FF6700;
+    --rl-bg: #ffffff;
+    --rl-text: #1f2a37;
+    --rl-muted: #6b7280;
+    --rl-border: #E5E7EB;
+    --rl-shadow-sm: 0 2px 12px rgba(0,0,0,.06);
+  }
+
+  .rl-footer { background: var(--rl-bg); color: var(--rl-muted); border-top: 1px solid var(--rl-border); box-shadow: var(--rl-shadow-sm); }
+  .rl-footer .rl-wrap { padding: clamp(1.5rem, 2vw, 2.5rem) 0; }
+  .rl-footer h6 { color: var(--rl-primary); font-weight: 800; letter-spacing: .2px; }
+  .rl-footer p { color: var(--rl-text); }
+  .rl-footer a { color: var(--rl-text); text-decoration: none; }
+  .rl-footer a:hover { color: var(--rl-primary); text-decoration: none; }
+  .rl-footer .rl-social a { color: var(--rl-text); margin-right: .75rem; }
+  .rl-footer .rl-social a:hover { color: var(--rl-primary); }
+  .rl-footer .rl-copy { background: #f8fafc; border-top: 1px solid var(--rl-border); color: var(--rl-muted); }
+  @media (max-width: 575px) { .rl-footer .rl-wrap { padding: 1.25rem 0; } }
+</style>
 <!-- Bootstrap Icons CDN -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
 <!-- Footer -->
-<footer class="text-center text-lg-start bg-body-tertiary text-muted">
+<footer class="rl-footer text-center text-lg-start text-muted">
   <!-- Section: Social media -->
   <?php if ($show_social): ?>
-  <section class="d-flex justify-content-center justify-content-lg-between p-4 border-bottom">
+  <section class="d-flex justify-content-center justify-content-lg-between p-4 border-bottom rl-wrap">
     <!-- Left -->
     <div class="me-5 d-none d-lg-block">
       <span>Get connected with us on social networks:</span>
@@ -59,7 +88,7 @@ $resolve = function(string $u) use ($base): string {
     <!-- Left -->
 
     <!-- Right -->
-   <div>
+   <div class="rl-social">
   <?php foreach ($social as $s): $url = trim($get($s['k'],'')); if ($url==='') continue; ?>
   <a href="<?= htmlspecialchars($url) ?>" class="me-4 text-reset text-decoration-none">
     <i class="bi <?= htmlspecialchars($s['icon']) ?>"></i>
@@ -73,10 +102,10 @@ $resolve = function(string $u) use ($base): string {
   <!-- Section: Social media -->
 
   <!-- Section: Links  -->
-  <section>
-    <div class="container text-center text-md-start mt-5">
+  <section class="rl-wrap">
+    <div class="container text-center text-md-start">
       <!-- Grid row -->
-      <div class="row mt-3">
+      <div class="row g-4">
         <!-- Grid column -->
         <div class="col-md-3 col-lg-4 col-xl-3 mx-auto mb-4">
           <!-- Content -->
@@ -132,7 +161,7 @@ $resolve = function(string $u) use ($base): string {
   <!-- Section: Links  -->
 
   <!-- Copyright -->
-  <div class="text-center p-4" style="background-color: rgba(0, 0, 0, 0.05);">
+  <div class="text-center p-4 rl-copy">
     <?= htmlspecialchars($get('footer_copyright_text','&copy; '.date('Y').' Copyright:')) ?>
     <a class="text-reset text-decoration-none fw-bold" href="<?= htmlspecialchars($base_url) ?>"><?= htmlspecialchars($company) ?></a>
   </div>

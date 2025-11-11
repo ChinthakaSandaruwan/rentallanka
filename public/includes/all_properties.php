@@ -269,6 +269,25 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
 </div>
   <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    function updateWishlistBadgeDelta(delta) {
+      try {
+        const nav = document.querySelector('a[href$="/public/includes/wish_list.php"]');
+        if (!nav) return;
+        let badge = nav.querySelector('.badge');
+        if (!badge) {
+          if (delta <= 0) return;
+          badge = document.createElement('span');
+          badge.className = 'position-absolute top-0 end-0 translate-middle-y badge rounded-pill';
+          badge.textContent = '0';
+          nav.appendChild(badge);
+        }
+        const current = parseInt(badge.textContent || '0', 10) || 0;
+        const next = Math.max(0, current + (delta || 0));
+        badge.textContent = String(next);
+        if (next <= 0) { badge.classList.add('d-none'); }
+        else { badge.classList.remove('d-none'); }
+      } catch(_) {}
+    }
     async function wishToggle(btn, id) {
       btn.disabled = true;
       try {
@@ -286,10 +305,12 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
             btn.classList.remove('btn-outline-primary');
             btn.classList.add('btn-outline-danger');
             btn.innerHTML = '<i class="bi bi-heart-fill"></i> Added';
+            updateWishlistBadgeDelta(1);
           } else {
             btn.classList.remove('btn-outline-danger');
             btn.classList.add('btn-outline-primary');
             btn.innerHTML = '<i class="bi bi-heart"></i> Wishlist';
+            updateWishlistBadgeDelta(-1);
           }
         } else if (data.status === 'error') {
           const msg = String(data.message || 'Action failed');

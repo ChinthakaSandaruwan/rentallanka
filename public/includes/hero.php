@@ -63,10 +63,11 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
       height: 100%;
       background: linear-gradient(
         135deg,
-        rgba(0, 78, 152, 0.75) 0%,
-        rgba(58, 110, 165, 0.65) 50%,
-        rgba(255, 103, 0, 0.45) 100%
+        rgba(0, 0, 0, 0.55) 0%,
+        rgba(0, 0, 0, 0.35) 60%,
+        rgba(0, 0, 0, 0.20) 100%
       );
+      pointer-events: none;
       z-index: 1;
     }
     
@@ -76,28 +77,19 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      right: auto;
+      bottom: auto;
       width: 90%;
       max-width: 1200px;
       z-index: 2;
       text-align: center;
       padding: 2rem;
+      animation: none !important;
+      transition: none !important;
     }
     
-    /* Slide-in Animation */
-    .rl-hero .carousel-item.active .carousel-caption {
-      animation: slideInUp 0.8s ease-out;
-    }
-    
-    @keyframes slideInUp {
-      from {
-        opacity: 0;
-        transform: translate(-50%, -40%);
-      }
-      to {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-      }
-    }
+    /* Disable any animations to prevent shifting on load */
+    .rl-hero .carousel-item .carousel-caption { animation: none !important; }
     
     /* Hero Title */
     .rl-hero-title {
@@ -364,12 +356,4 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
       </div>
     </div>
   </div>
-  <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Previous</span>
-  </button>
-  <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Next</span>
-  </button>
 </div>
