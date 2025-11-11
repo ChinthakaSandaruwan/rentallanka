@@ -89,7 +89,7 @@ $stmt->close();
 ?>
 <section id="properties-section" class="container py-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="h4 mb-0"><i class="bi bi-building me-1"></i>Properties</h2>
+    <h2 class="h4 mb-0">Properties</h2>
     <a href="owner/property_management.php" class="btn btn-sm btn-outline-primary d-none">View all</a>
   </div>
   <div class="row g-3">
@@ -97,7 +97,7 @@ $stmt->close();
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100 border shadow-sm position-relative overflow-hidden">
           <?php if (!empty($p['status'])): ?>
-            <span class="badge bg-success position-absolute top-0 start-0 m-2 text-uppercase small"><?php echo htmlspecialchars($p['status']); ?></span>
+            <span class="badge bg-success position-absolute top-0 start-0 m-2 text-uppercase small z-3"><?php echo htmlspecialchars($p['status']); ?></span>
           <?php endif; ?>
           <?php if (!empty($p['image'])): ?>
             <?php $src = $p['image']; if ($src && !preg_match('#^https?://#i', $src) && $src[0] !== '/') { $src = '/'.ltrim($src, '/'); } ?>

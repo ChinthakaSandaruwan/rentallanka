@@ -250,6 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Super Admin Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <meta name="robots" content="noindex,nofollow" />
     <meta http-equiv="Cache-Control" content="no-store" />
     <style>body{background:#f6f7fb}</style>

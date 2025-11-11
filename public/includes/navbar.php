@@ -61,13 +61,12 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/'||$reqPath==='/index.php')?'active':'' ?>" href="<?= $base_url ?>/index.php"><i class="bi bi-house-door me-1"></i>Home</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_properties.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_properties.php"><i class="bi bi-building me-1"></i>Properties</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_rooms.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_rooms.php"><i class="bi bi-door-open me-1"></i>Rooms</a></li>
-          <li class="nav-item">
-            <span class="nav-link disabled text-muted" tabindex="-1" aria-disabled="true"><?= htmlspecialchars($who) ?></span>
-          </li>
-
           <?php if ($loggedIn && !$isSuper && in_array($role, ['customer','owner','admin'], true)): ?>
             <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/my_rentals.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/my_rentals.php"><i class="bi bi-receipt me-1"></i>My Rentals</a></li>
           <?php endif; ?>
+          <li class="nav-item">
+            <span class="nav-link disabled text-muted" tabindex="-1" aria-disabled="true"><?= htmlspecialchars($who) ?></span>
+          </li>
 
         </ul>
 
@@ -110,8 +109,10 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
               </button>
               <ul class="dropdown-menu dropdown-menu-end mt-2 shadow" aria-labelledby="accountDropdownBtn">
                 <li><a class="dropdown-item" href="<?= $dashUrl ?>"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+                <?php if ($role === 'customer'): ?>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="<?= $base_url ?>/public/includes/as_an_advertiser.php"><i class="bi bi-briefcase me-1"></i>As an advertiser</a></li>
+                  <li><a class="dropdown-item" href="<?= $base_url ?>/public/includes/as_an_advertiser.php"><i class="bi bi-briefcase me-1"></i>As an advertiser</a></li>
+                <?php endif; ?>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="<?= $base_url ?>/public/includes/profile.php"><i class="bi bi-person-lines-fill me-1"></i>Profile</a></li>
                 <li><hr class="dropdown-divider"></li>

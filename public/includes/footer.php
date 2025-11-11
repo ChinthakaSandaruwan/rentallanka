@@ -95,7 +95,7 @@ $resolve = function(string $u) use ($base): string {
           <!-- Links -->
           <h6 class="text-uppercase fw-bold mb-4">Products</h6>
           <?php foreach ($links_products as $line): $parts = explode('|', $line, 2); $label=trim($parts[0]??''); $url=$resolve((string)($parts[1]??'#')); if ($label==='') continue; ?>
-          <p><a href="<?= htmlspecialchars($url) ?>" class="text-reset"><?= htmlspecialchars($label) ?></a></p>
+          <p><a href="<?= htmlspecialchars($url) ?>" class="text-reset text-decoration-none"><?= htmlspecialchars($label) ?></a></p>
           <?php endforeach; ?>
         </div>
         <?php endif; ?>
@@ -107,7 +107,7 @@ $resolve = function(string $u) use ($base): string {
           <!-- Links -->
           <h6 class="text-uppercase fw-bold mb-4">Useful links</h6>
           <?php foreach ($links_useful as $line): $parts = explode('|', $line, 2); $label=trim($parts[0]??''); $url=$resolve((string)($parts[1]??'#')); if ($label==='') continue; ?>
-          <p><a href="<?= htmlspecialchars($url) ?>" class="text-reset"><?= htmlspecialchars($label) ?></a></p>
+          <p><a href="<?= htmlspecialchars($url) ?>" class="text-reset text-decoration-none"><?= htmlspecialchars($label) ?></a></p>
           <?php endforeach; ?>
         </div>
         <?php endif; ?>
@@ -134,7 +134,7 @@ $resolve = function(string $u) use ($base): string {
   <!-- Copyright -->
   <div class="text-center p-4" style="background-color: rgba(0, 0, 0, 0.05);">
     <?= htmlspecialchars($get('footer_copyright_text','&copy; '.date('Y').' Copyright:')) ?>
-    <a class="text-reset fw-bold" href="<?= htmlspecialchars($base_url) ?>"><?= htmlspecialchars($company) ?></a>
+    <a class="text-reset text-decoration-none fw-bold" href="<?= htmlspecialchars($base_url) ?>"><?= htmlspecialchars($company) ?></a>
   </div>
   <!-- Copyright -->
 </footer>

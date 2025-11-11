@@ -68,19 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Enter valid NIC';
             $stage = 'request';
         } else {
-            // Block if NIC already exists (pre-check)
-            $stmtNic = db()->prepare('SELECT user_id FROM users WHERE nic = ? LIMIT 1');
-            if ($stmtNic) {
-                $stmtNic->bind_param('s', $nic);
-                $stmtNic->execute();
-                $nicRow = $stmtNic->get_result()->fetch_assoc();
-                $stmtNic->close();
-                if ($nicRow) {
-                    $error = 'NIC already exists. Please use a different NIC or contact support.';
-                    $stage = 'request';
-                }
-            }
-            if (!$error) {
             // If number already exists -> go to login
             $stmt = db()->prepare('SELECT user_id FROM users WHERE phone = ? LIMIT 1');
             $stmt->bind_param('s', $phone07);

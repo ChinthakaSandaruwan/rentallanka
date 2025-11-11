@@ -45,6 +45,6 @@ if (ini_get('session.use_cookies')) {
 session_destroy();
 
 // Redirect with flash so SweetAlert2 shows a small alert on landing page
-redirect_with_message(rtrim($base_url, '/') . '/index.php', 'Logged out', 'info');
+redirect_with_message(rtrim($base_url, '/') . '/index.php', 'Logged Out', 'info');
 exit;
 ?>

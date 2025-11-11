@@ -63,7 +63,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
           $bought_package_id = (int)$ust->insert_id;
           $ust->close();
 
-          $slipDir = dirname(__DIR__) . '/uploads/package_slips';
+          $slipDir = __DIR__ . '/../../uploads/package_slips';
           if (!is_dir($slipDir)) { @mkdir($slipDir, 0775, true); }
           $ext = pathinfo($_FILES['payment_slip']['name'], PATHINFO_EXTENSION);
           $fname = 'pkgslip_' . $bought_package_id . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext);
@@ -120,6 +120,12 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
       $res = db()->query('SELECT * FROM packages WHERE status="active" ORDER BY price ASC');
       if ($res) { while ($row = $res->fetch_assoc()) { $packages[] = $row; } }
   } catch (Throwable $e) { $packages = []; }
+  // Fetch bank details
+  $banks = [];
+  try {
+      $bres = db()->query('SELECT bank_name, branch, account_number, account_holder_name FROM bank_details ORDER BY bank_id DESC');
+      if ($bres) { while ($row = $bres->fetch_assoc()) { $banks[] = $row; } }
+  } catch (Throwable $e) { $banks = []; }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -138,7 +144,6 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
     <a href="../index.php" class="btn btn-outline-secondary btn-sm">Dashboard</a>
   </div>
 
-  
 
   <?php /* Flash/messages handled globally via SweetAlert2 in navbar; removed Bootstrap alerts */ ?>
 
@@ -205,6 +210,36 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
       </div>
     <?php endforeach; ?>
   </div>
+  <?php if (!empty($banks)): ?>
+  <div class="card my-4">
+    <div class="card-header">Bank Details for Payments</div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Bank</th>
+              <th>Branch</th>
+              <th>Account Number</th>
+              <th>Account Holder</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($banks as $b): ?>
+              <tr>
+                <td><?= htmlspecialchars($b['bank_name'] ?? '') ?></td>
+                <td><?= htmlspecialchars($b['branch'] ?? '') ?></td>
+                <td><span class="fw-semibold"><?= htmlspecialchars($b['account_number'] ?? '') ?></span></td>
+                <td><?= htmlspecialchars($b['account_holder_name'] ?? '') ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      <div class="text-muted small">Make the payment to one of the above accounts and upload the payment slip below.</div>
+    </div>
+  </div>
+  <?php endif; ?>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

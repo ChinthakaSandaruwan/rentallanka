@@ -19,4 +19,4 @@ unset($_SESSION['super_admin_id']);
 if (($_SESSION['role'] ?? '') === 'super_admin') {
     unset($_SESSION['role']);
 }
-redirect_with_message($base_url . '/index.php', 'Super admin logged out');
+redirect_with_message($base_url . '/index.php', 'Super admin logged Out');

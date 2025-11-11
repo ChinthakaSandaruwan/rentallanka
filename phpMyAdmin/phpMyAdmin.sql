@@ -459,3 +459,15 @@ INSERT INTO `super_admins` (`super_admin_id`, `email`, `name`, `password_hash`, 
       CONSTRAINT `fk_property_rents_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`property_id`) ON DELETE CASCADE,
       CONSTRAINT `fk_property_rents_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+    -- bank details table 
+    CREATE TABLE IF NOT EXISTS `bank_details` (
+      `bank_id` INT NOT NULL AUTO_INCREMENT,
+      `bank_name` VARCHAR(100) NOT NULL,
+      `branch` VARCHAR(100) NOT NULL,
+      `account_number` VARCHAR(50) NOT NULL,
+      `account_holder_name` VARCHAR(100) NOT NULL,
+      `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`bank_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

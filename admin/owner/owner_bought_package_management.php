@@ -278,7 +278,16 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
                 </td>
                 <td>
                   <?php if (!empty($r['last_slip'])): ?>
-                    <a href="<?= htmlspecialchars((string)$r['last_slip']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">View Slip</a>
+                    <?php
+                      $sl = (string)$r['last_slip'];
+                      if ($sl !== '') {
+                        if (!preg_match('#^https?://#i', $sl)) {
+                          if ($sl[0] === '/') { $sl = rtrim($base_url, '/') . $sl; }
+                          else { $sl = rtrim($base_url, '/') . '/' . ltrim($sl, '/'); }
+                        }
+                      }
+                    ?>
+                    <a href="<?= htmlspecialchars($sl) ?>" target="_blank" class="btn btn-sm btn-outline-primary">View Slip</a>
                   <?php else: ?>
                     <span class="text-muted small">No slip</span>
                   <?php endif; ?>

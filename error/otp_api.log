@@ -1,0 +1,1 @@
+2025-11-11 10:40:07 -> {"ok":false,"http":500,"errno":0,"error":"SMS credentials not configured (sms_user_id/api_key)","body":"{\"message\":\"An error occurred\",\"error\":\"The api key field is required. (and 1 more error)\"}"}

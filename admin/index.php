@@ -108,6 +108,20 @@ require_role('admin'); ?>
         </div>
       </div>
 
+      <!-- Bank Details -->
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h5 class="card-title mb-0">Bank Details</h5>
+              <i class="bi bi-bank card-icon text-info"></i>
+            </div>
+            <p class="card-text text-muted">Manage bank details.</p>
+            <a href="bank_details.php" class="btn btn-info mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
+
       <!-- Profile -->
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100">

@@ -107,7 +107,7 @@ $stmt->close();
       <div class="col-12 col-sm-6 col-lg-3">
         <div class="card h-100 border shadow-sm position-relative">
           <?php if (!empty($r['status'])): ?>
-            <span class="badge bg-success position-absolute top-0 start-0 m-2 text-uppercase small"><?php echo htmlspecialchars($r['status']); ?></span>
+            <span class="badge bg-success position-absolute top-0 start-0 m-2 text-uppercase small z-3"><?php echo htmlspecialchars($r['status']); ?></span>
           <?php endif; ?>
           <?php if (!empty($r['image_path'])): ?>
             <?php $src = $r['image_path']; if ($src && !preg_match('#^https?://#i', $src) && $src[0] !== '/') { $src = '/'.ltrim($src, '/'); } ?>

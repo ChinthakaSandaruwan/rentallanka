@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['loggedin'] = true;
                     $_SESSION['role'] = $row['role'];
                     unset($_SESSION['otp_stage'], $_SESSION['otp_user_id'], $_SESSION['otp_phone']);
-                    redirect_with_message($base_url . '/index.php', 'Logged in');
+                    redirect_with_message($base_url . '/index.php', 'Logged In');
                     }
                 }
             }
