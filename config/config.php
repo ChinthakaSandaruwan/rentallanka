@@ -74,6 +74,22 @@ if ($__session_status === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Global maintenance mode enforcement
+try {
+    $flagFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'maintain.flag';
+    if (is_file($flagFile)) {
+        $isSuper = isset($_SESSION['super_admin_id']) && (int)$_SESSION['super_admin_id'] > 0;
+        $path = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
+        $onMaintenancePage = (strpos($path, '/maintenance.php') !== false);
+        if (!$isSuper && !$onMaintenancePage) {
+            if (!headers_sent()) {
+                header('Location: ' . rtrim($base_url, '/') . '/maintenance.php');
+            }
+            exit;
+        }
+    }
+} catch (Throwable $e) { /* ignore */ }
+
 // Fallback alert function used by global handlers. If an app-level
 // implementation exists elsewhere, that will override this.
 if (!function_exists('send_system_alert')) {

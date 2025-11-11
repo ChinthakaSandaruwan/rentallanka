@@ -76,6 +76,16 @@ require_once __DIR__ . '/../public/includes/auth_guard.php'; require_super_admin
           </div>
         </div>
       </div>
+
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">Maintenance Mode</h5>
+            <p class="card-text text-muted">Toggle maintenance mode.</p>
+            <a href="maintain/enableIand_disable_maintain_screen.php" class="btn btn-primary mt-auto">Open</a>
+          </div>
+        </div>
+      </div>
     </div>
 
    </div>
