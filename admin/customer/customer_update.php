@@ -104,30 +104,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$valid) {
       $error = 'Invalid input';
     } else {
-      if ($img_path !== null) {
-        $stmt = db()->prepare('UPDATE users SET email = ?, nic = ?, name = ?, phone = ?, status = ?, profile_image = ? WHERE user_id = ? AND role = ?');
-      } else {
-        $stmt = db()->prepare('UPDATE users SET email = ?, nic = ?, name = ?, phone = ?, status = ? WHERE user_id = ? AND role = ?');
-      }
-      if ($stmt) {
-        if ($img_path !== null) {
-          $stmt->bind_param('ssssssis', $email, $nic, $name, $phone, $status, $img_path, $user_id, $role);
-        } else {
-          $stmt->bind_param('sssssis', $email, $nic, $name, $phone, $status, $user_id, $role);
+      // Duplicate NIC check (exclude current record)
+      if ($nic !== '') {
+        $stmtDup = db()->prepare('SELECT user_id FROM users WHERE nic = ? AND user_id <> ? LIMIT 1');
+        if ($stmtDup) {
+          $stmtDup->bind_param('si', $nic, $user_id);
+          $stmtDup->execute();
+          $dup = $stmtDup->get_result()->fetch_assoc();
+          $stmtDup->close();
+          if ($dup) {
+            $error = 'NIC already exists for another user';
+          }
         }
-        if ($stmt->execute()) {
-          $stmt->close();
-          $flash = 'Customer updated';
-          $flash_type = 'success';
-          // Reload customer (including profile_image)
-          $stmt2 = db()->prepare('SELECT user_id, email, nic, name, phone, status, profile_image FROM users WHERE user_id = ? AND role = ? LIMIT 1');
-          if ($stmt2) {
-            $stmt2->bind_param('is', $user_id, $role);
-            if ($stmt2->execute()) {
-              $res2 = $stmt2->get_result();
-              $customer = $res2->fetch_assoc();
-              $res2->free();
+      }
+      if (!isset($error) || $error === '') {
+        if ($img_path !== null) {
+          $stmt = db()->prepare('UPDATE users SET email = ?, nic = ?, name = ?, phone = ?, status = ?, profile_image = ? WHERE user_id = ? AND role = ?');
+        } else {
+          $stmt = db()->prepare('UPDATE users SET email = ?, nic = ?, name = ?, phone = ?, status = ? WHERE user_id = ? AND role = ?');
+        }
+        if ($stmt) {
+          if ($img_path !== null) {
+            $stmt->bind_param('ssssssis', $email, $nic, $name, $phone, $status, $img_path, $user_id, $role);
+          } else {
+            $stmt->bind_param('sssssis', $email, $nic, $name, $phone, $status, $user_id, $role);
+          }
+          if ($stmt->execute()) {
+            $stmt->close();
+            $flash = 'Customer updated';
+            $flash_type = 'success';
+            // Reload customer (including profile_image)
+            $stmt2 = db()->prepare('SELECT user_id, email, nic, name, phone, status, profile_image FROM users WHERE user_id = ? AND role = ? LIMIT 1');
+            if ($stmt2) {
+              $stmt2->bind_param('is', $user_id, $role);
+              if ($stmt2->execute()) {
+                $res2 = $stmt2->get_result();
+                $customer = $res2->fetch_assoc();
+                $res2->free();
+              }
+              $stmt2->close();
             }
+          } else {
+            $error = 'Update failed';
+            $stmt->close();
             $stmt2->close();
           }
         } else {

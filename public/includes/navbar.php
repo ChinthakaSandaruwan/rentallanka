@@ -21,6 +21,13 @@ if ((function_exists('session_status') ? session_status() : PHP_SESSION_NONE) ==
 $isSuper = isset($_SESSION['super_admin_id']);
 $loggedIn = (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) || $isSuper;
 $role = $_SESSION['role'] ?? '';
+$who = "I'm a Visitor";
+if ($loggedIn) {
+    if ($isSuper) { $who = "I'm a Super Admin"; }
+    elseif ($role === 'admin') { $who = "I'm an Admin"; }
+    elseif ($role === 'owner') { $who = "I'm an Owner"; }
+    elseif ($role === 'customer') { $who = "I'm a Customer"; }
+}
 require_once __DIR__ . '/../../config/config.php';
 // Wishlist count for logged-in regular users
 $wlCount = 0;
@@ -54,6 +61,9 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/'||$reqPath==='/index.php')?'active':'' ?>" href="<?= $base_url ?>/index.php"><i class="bi bi-house-door me-1"></i>Home</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_properties.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_properties.php"><i class="bi bi-building me-1"></i>Properties</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_rooms.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_rooms.php"><i class="bi bi-door-open me-1"></i>Rooms</a></li>
+          <li class="nav-item">
+            <span class="nav-link disabled text-muted" tabindex="-1" aria-disabled="true"><?= htmlspecialchars($who) ?></span>
+          </li>
 
           <?php if ($loggedIn && !$isSuper && in_array($role, ['customer','owner','admin'], true)): ?>
             <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/my_rentals.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/my_rentals.php"><i class="bi bi-receipt me-1"></i>My Rentals</a></li>

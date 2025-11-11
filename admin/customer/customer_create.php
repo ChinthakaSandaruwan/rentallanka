@@ -63,19 +63,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$valid) {
       $error = 'Invalid input';
     } else {
-      $stmt = db()->prepare('INSERT INTO users (email, nic, name, phone, role, status) VALUES (?,?,?,?,?,?)');
-      if ($stmt) {
-        $stmt->bind_param('ssssss', $email, $nic, $name, $phone, $role, $status);
-        if ($stmt->execute()) {
-          $stmt->close();
-          $flash = 'Customer created';
-          $flash_type = 'success';
+      // Duplicate NIC check (if provided)
+      if ($nic !== '') {
+        $stmtDup = db()->prepare('SELECT user_id FROM users WHERE nic = ? LIMIT 1');
+        if ($stmtDup) {
+          $stmtDup->bind_param('s', $nic);
+          $stmtDup->execute();
+          $dup = $stmtDup->get_result()->fetch_assoc();
+          $stmtDup->close();
+          if ($dup) {
+            $error = 'NIC already exists for another user';
+          }
+        }
+      }
+      if (!isset($error) || $error === '') {
+        $stmt = db()->prepare('INSERT INTO users (email, nic, name, phone, role, status) VALUES (?,?,?,?,?,?)');
+        if ($stmt) {
+          $stmt->bind_param('ssssss', $email, $nic, $name, $phone, $role, $status);
+          if ($stmt->execute()) {
+            $stmt->close();
+            $flash = 'Customer created';
+            $flash_type = 'success';
+          } else {
+            $error = 'Create failed';
+            $stmt->close();
+          }
         } else {
           $error = 'Create failed';
-          $stmt->close();
         }
-      } else {
-        $error = 'Create failed';
       }
     }
   }
