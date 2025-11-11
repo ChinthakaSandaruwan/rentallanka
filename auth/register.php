@@ -149,9 +149,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             require_once __DIR__ . '/../php_mailer/mailer.php';
                             $subject = 'Welcome to Rentallanka';
                             $nameTo = (string)$name;
-                            $body = '<p>Hi ' . htmlspecialchars($nameTo ?: 'there') . ',</p>'
-                                  . '<p>Your registration is successful. You can now sign in and start using Rentallanka.</p>'
-                                  . '<p>Thank you,<br>Rentallanka</p>';
+                            $safeName = htmlspecialchars($nameTo ?: 'there', ENT_QUOTES, 'UTF-8');
+                            $year = date('Y');
+                            $body = <<<HTML
+<!doctype html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Welcome to Rentallanka</title>
+  <style>
+    body{margin:0;padding:0;background:#f6f9fc;color:#222;font-family:Arial,Helvetica,sans-serif}
+    .wrap{max-width:600px;margin:0 auto;padding:24px}
+    .card{background:#ffffff;border:1px solid #eaeaea;border-radius:12px;overflow:hidden}
+    .header{padding:24px;text-align:center;border-bottom:1px solid #f0f0f0}
+    .logo{font-size:24px;font-weight:700;color:#0d6efd;text-decoration:none}
+    .content{padding:24px}
+    h1{margin:0 0 12px 0;font-size:22px}
+    p{margin:0 0 12px 0;line-height:1.6}
+    .btn{display:inline-block;background:#0d6efd;color:#fff !important;text-decoration:none;padding:12px 18px;border-radius:6px}
+    .footer{padding:16px 24px;text-align:center;color:#8a8f98;font-size:12px;border-top:1px solid #f0f0f0}
+  </style>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td { font-family: Arial, Helvetica, sans-serif !important; }
+  </style>
+  <![endif]-->
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="header">
+          <a href="{$base_url}" class="logo">Rentallanka</a>
+        </div>
+        <div class="content">
+          <h1>Hi {$safeName},</h1>
+          <p>Your registration was successful. You can now sign in and start using Rentallanka.</p>
+          <p><a class="btn" href="{$base_url}/auth/login.php">Sign in</a></p>
+          <p>If you didn’t create this account, please ignore this email.</p>
+        </div>
+        <div class="footer">© {$year} Rentallanka. All rights reserved.</div>
+      </div>
+    </div>
+  </body>
+</html>
+HTML;
                             @mailer_send($email, $nameTo, $subject, $body);
                         }
                     } catch (Throwable $e) { /* ignore */ }

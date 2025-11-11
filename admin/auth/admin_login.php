@@ -172,6 +172,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin Login</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --rl-primary: #004E98;
+      --rl-accent: #3A6EA5;
+      --rl-orange: #FF6700;
+    }
+    body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .card { border: 1px solid #e2e8f0; border-radius: 1rem; }
+    .btn-primary { background-color: var(--rl-primary); border-color: var(--rl-primary); }
+    .btn-primary:hover { background-color: #003e79; border-color: #003e79; }
+    .form-label { font-weight: 600; color: #1f2937; }
+  </style>
 </head>
 <body class="bg-light">
   <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
