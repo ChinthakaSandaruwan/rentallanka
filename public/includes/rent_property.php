@@ -113,7 +113,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $ownerId = (int)($prop['owner_id'] ?? 0);
         if ($ownerId > 0) {
           $titleN = 'Property Rent Pending Request Came, Please Get a Action';
-          $msgN = 'A new rent request #' . (int)$rentId . ' for property ' . (string)($prop['title'] ?? ('#'.$pid)) . ' is pending your approval.';
+          $customerPhone = '';
+          try {
+            $q2 = db()->prepare('SELECT phone FROM users WHERE user_id = ? LIMIT 1');
+            $q2->bind_param('i', $uid);
+            $q2->execute();
+            $r2 = $q2->get_result();
+            $row2 = $r2 ? $r2->fetch_assoc() : null;
+            $customerPhone = (string)($row2['phone'] ?? '');
+            $q2->close();
+          } catch (Throwable $_) {}
+          $msgN = 'A new rent request #' . (int)$rentId . ' for property ' . (string)($prop['title'] ?? ('#'.$pid)) . ' is pending your approval.' . ($customerPhone !== '' ? (' Customer mobile: ' . $customerPhone . '.') : '');
           $typeN = 'system';
           $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, ?)');
           $propIdNullable = $pid; // store property_id to link notification

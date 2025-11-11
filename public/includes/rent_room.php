@@ -198,7 +198,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $titleN = 'Booking Pending Request Came, Please Get a Action';
           $ciLbl = substr($ci, 0, 10);
           $coLbl = substr($co, 0, 10);
-          $msgN = 'A new booking #' . (int)$rentId . ' for room ' . (string)($room['title'] ?? ('#'.$rid)) . ' is pending from ' . $ciLbl . ' to ' . $coLbl . '. Guests: ' . (int)$guests . '.';
+          // Look up customer's phone to include in the owner's notification
+          $customerPhone = '';
+          try {
+            $q2 = db()->prepare('SELECT phone FROM users WHERE user_id = ? LIMIT 1');
+            $q2->bind_param('i', $uid);
+            $q2->execute();
+            $r2 = $q2->get_result();
+            $row2 = $r2 ? $r2->fetch_assoc() : null;
+            $customerPhone = (string)($row2['phone'] ?? '');
+            $q2->close();
+          } catch (Throwable $_) {}
+          $msgN = 'A new booking #' . (int)$rentId . ' for room ' . (string)($room['title'] ?? ('#'.$rid)) . ' is pending from ' . $ciLbl . ' to ' . $coLbl . '. Guests: ' . (int)$guests . '.'
+                . ($customerPhone !== '' ? (' Customer mobile: ' . $customerPhone . '.') : '');
           $typeN = 'system';
           // notifications table has optional property_id, set to NULL for room events
           $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, NULL)');

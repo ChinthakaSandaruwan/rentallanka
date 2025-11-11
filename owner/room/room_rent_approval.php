@@ -70,7 +70,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             // Notify customer: booking confirmed (requested phrasing)
             try {
               $titleC = 'Congratulations Booking Confirmed';
-              $msgC = 'Your booking #' . (int)$rent_id . ' for room ' . ($roomTitle !== '' ? $roomTitle : '') . ' is confirmed from ' . $ciLbl . ' to ' . $coLbl . '.';
+              // Lookup owner's phone number to include in confirmation
+              $ownerPhone = '';
+              try {
+                $qp = db()->prepare('SELECT phone FROM users WHERE user_id = ? LIMIT 1');
+                $qp->bind_param('i', $owner_id);
+                $qp->execute();
+                $rs = $qp->get_result();
+                $rw = $rs ? $rs->fetch_assoc() : null;
+                $ownerPhone = (string)($rw['phone'] ?? '');
+                $qp->close();
+              } catch (Throwable $_) {}
+              $msgC = 'Your booking #' . (int)$rent_id . ' for room ' . ($roomTitle !== '' ? $roomTitle : '') . ' is confirmed from ' . $ciLbl . ' to ' . $coLbl . '.' . ($ownerPhone !== '' ? (' Owner mobile: ' . $ownerPhone . '.') : '');
               $typeC = 'system';
               $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, NULL)');
               $nt->bind_param('isss', $cid, $titleC, $msgC, $typeC);

@@ -70,7 +70,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             // Notify customer
             try {
               $titleC = 'Congratulations Property Rent Confirmed';
-              $msgC = 'Your rent request #' . (int)$rent_id . ' for property ' . ($ptitle !== '' ? $ptitle : '') . ' is confirmed.';
+              // Lookup owner's phone number to include in confirmation
+              $ownerPhone = '';
+              try {
+                $qp = db()->prepare('SELECT phone FROM users WHERE user_id = ? LIMIT 1');
+                $qp->bind_param('i', $owner_id);
+                $qp->execute();
+                $rs = $qp->get_result();
+                $rw = $rs ? $rs->fetch_assoc() : null;
+                $ownerPhone = (string)($rw['phone'] ?? '');
+                $qp->close();
+              } catch (Throwable $_) {}
+              $msgC = 'Your rent request #' . (int)$rent_id . ' for property ' . ($ptitle !== '' ? $ptitle : '') . ' is confirmed.' . ($ownerPhone !== '' ? (' Owner mobile: ' . $ownerPhone . '.') : '');
               $typeC = 'system';
               $nt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, property_id) VALUES (?,?,?,?, ?)');
               $propIdNullable = (int)$row['property_id'];
