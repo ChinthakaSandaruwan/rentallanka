@@ -396,10 +396,24 @@ $stmt->close();
           btn.innerHTML = '<i class="bi bi-heart"></i> Wishlist';
         }
       } else if (data.status === 'error') {
-        alert(data.message || 'Action failed');
+        const msg = String(data.message || 'Action failed');
+        if (window.Swal) {
+          if (/Please log in first/i.test(msg)) {
+            Swal.fire({ icon: 'warning', title: 'Login required', text: msg, showCancelButton: true, confirmButtonText: 'Login', cancelButtonText: 'Close' })
+              .then(r => { if (r.isConfirmed) { window.location.href = '<?php echo $base_url; ?>/auth/login.php'; } });
+          } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonText: 'OK' });
+          }
+        } else {
+          alert(msg);
+        }
       }
     } catch (e) {
-      alert('Network error');
+      if (window.Swal) {
+        Swal.fire({ icon: 'error', title: 'Network error', text: 'Please try again.', confirmButtonText: 'OK' });
+      } else {
+        alert('Network error');
+      }
     } finally {
       btn.disabled = false;
     }

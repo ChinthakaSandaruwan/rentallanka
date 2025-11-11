@@ -419,21 +419,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>Update Room</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --rl-primary:#004E98; --rl-light-bg:#EBEBEB; --rl-secondary:#C0C0C0; --rl-accent:#3A6EA5; --rl-dark:#FF6700; --rl-white:#ffffff; --rl-text:#1f2a37; --rl-text-secondary:#4a5568; --rl-text-muted:#718096; --rl-border:#e2e8f0; --rl-shadow-sm:0 2px 12px rgba(0,0,0,.06); --rl-shadow-md:0 4px 16px rgba(0,0,0,.1); --rl-radius:12px; --rl-radius-lg:16px; }
+    body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:var(--rl-text); background:linear-gradient(180deg,#fff 0%, var(--rl-light-bg) 100%); min-height:100vh; }
+    .rl-container { padding-top:clamp(1.5rem,2vw,2.5rem); padding-bottom:clamp(1.5rem,2vw,2.5rem); }
+    .rl-page-header { background:linear-gradient(135deg,var(--rl-primary) 0%,var(--rl-accent) 100%); border-radius:var(--rl-radius-lg); padding:1.5rem 2rem; margin-bottom:2rem; box-shadow:var(--rl-shadow-md); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; }
+    .rl-page-title { font-size:clamp(1.5rem,3vw,1.875rem); font-weight:800; color:var(--rl-white); margin:0; display:flex; align-items:center; gap:.5rem; }
+    .rl-btn-back { background:var(--rl-white); border:none; color:var(--rl-primary); font-weight:600; padding:.5rem 1.25rem; border-radius:8px; transition:all .2s ease; text-decoration:none; display:inline-flex; align-items:center; gap:.5rem; }
+    .rl-btn-back:hover { background:var(--rl-light-bg); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.15); color:var(--rl-primary); }
+    .rl-form-card { background:var(--rl-white); border-radius:var(--rl-radius-lg); box-shadow:var(--rl-shadow-md); border:2px solid var(--rl-border); overflow:hidden; }
+    .rl-form-header { background:linear-gradient(135deg,#f8fafc 0%, #f1f5f9 100%); padding:1.25rem 1.5rem; border-bottom:2px solid var(--rl-border); }
+    .rl-form-header-title { font-size:1.125rem; font-weight:700; color:var(--rl-text); margin:0; display:flex; align-items:center; gap:.5rem; }
+    .rl-form-body { padding:2rem 1.5rem; }
+    .form-label { font-weight:600; color:var(--rl-text); margin-bottom:.5rem; font-size:.9375rem; }
+    .form-control,.form-select { border:2px solid var(--rl-border); border-radius:10px; padding:.75rem 1rem; font-size:1rem; color:var(--rl-text); background:var(--rl-white); transition:all .2s ease; font-weight:500; }
+    .form-control::placeholder { color:#a0aec0; font-weight:400; }
+    .form-control:focus,.form-select:focus { border-color:var(--rl-primary); box-shadow:0 0 0 3px rgba(0,78,152,.1); outline:none; background:var(--rl-white); }
+    .form-control:hover:not(:focus),.form-select:hover:not(:focus) { border-color:#cbd5e0; }
+    .input-group-text { background:linear-gradient(135deg,var(--rl-primary) 0%, var(--rl-accent) 100%); border:none; color:var(--rl-white); border-radius:10px 0 0 10px; padding:.75rem 1rem; font-size:1rem; min-width:50px; display:flex; align-items:center; justify-content:center; }
+    .input-group .form-control { border-left:none; border-radius:0 10px 10px 0; }
+    .btn-primary { background:linear-gradient(135deg,var(--rl-primary) 0%, var(--rl-accent) 100%); border:none; color:var(--rl-white); font-weight:700; padding:.875rem 2.5rem; border-radius:50rem; font-size:1rem; transition:all .2s ease; box-shadow:0 4px 16px rgba(0,78,152,.25); }
+    .btn-primary:hover { background:linear-gradient(135deg,#003a75 0%, #2d5a8f 100%); transform:translateY(-2px); box-shadow:0 6px 24px rgba(0,78,152,.35); color:var(--rl-white); }
+    .invalid-feedback { color:#ef4444; font-weight:600; font-size:.875rem; margin-top:.5rem; }
+    .form-control.is-invalid,.form-select.is-invalid { border-color:#ef4444; }
+    .form-control.is-invalid:focus,.form-select.is-invalid:focus { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,.1); }
+    @media (max-width:767px){ .rl-page-header{ padding:1.25rem 1rem; flex-direction:column; align-items:flex-start;} .rl-page-title{ font-size:1.5rem;} .rl-btn-back{ width:100%; justify-content:center;} .rl-form-body{ padding:1.5rem 1rem;} .form-control,.form-select{ font-size:.9375rem; padding:.625rem .875rem;} .btn-primary{ width:100%; padding:.75rem 2rem;} }
+  </style>
 </head>
 <body>
 <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
-<div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h3 mb-0">Update Room</h1>
-    <a href="../index.php" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+<div class="container rl-container">
+  <div class="rl-page-header">
+    <h1 class="rl-page-title"><i class="bi bi-door-open"></i> Update Room</h1>
+    <a href="../index.php" class="rl-btn-back"><i class="bi bi-speedometer2"></i> Dashboard</a>
   </div>
 
   <?php /* Flash and errors are shown via SweetAlert2 (navbar); removed Bootstrap alerts */ ?>
 
   <?php if (!$room): ?>
-    <div class="card mb-3">
-      <div class="card-header">Select a Room to Update</div>
-      <div class="card-body">
+    <div class="rl-form-card mb-3">
+      <div class="rl-form-header"><h2 class="rl-form-header-title"><i class="bi bi-search"></i> Select a Room to Update</h2></div>
+      <div class="rl-form-body">
         <?php if (!empty($owner_rooms)): ?>
           <form method="get" class="row g-3">
             <div class="col-md-8">
@@ -451,7 +478,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <button type="submit" class="btn btn-primary">Load Room</button>
             </div>
           </form>
-          <div class="text-muted mt-3 small">Or open directly via URL: /owner/room/room_update.php?id=YOUR_ROOM_ID</div>
         <?php else: ?>
           <div class="text-muted mb-0">You have no rooms to update yet.</div>
         <?php endif; ?>
@@ -459,9 +485,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   <?php else: ?>
   <div id="formAlert"></div>
-  <div class="card">
-    <div class="card-header">Details</div>
-    <div class="card-body">
+  <div class="rl-form-card">
+    <div class="rl-form-header"><h2 class="rl-form-header-title"><i class="bi bi-info-circle"></i> Room Details</h2></div>
+    <div class="rl-form-body">
       <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
         <input type="hidden" name="room_id" value="<?php echo (int)$room_id; ?>">

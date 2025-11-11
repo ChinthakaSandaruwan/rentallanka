@@ -135,21 +135,380 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   <title>Buy Advertising Packages</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===========================
+       BUY PACKAGES PAGE CUSTOM STYLES
+       Brand Colors: Primary #004E98, Accent #3A6EA5, Orange #FF6700
+       =========================== */
+    
+    :root {
+      --rl-primary: #004E98;
+      --rl-light-bg: #EBEBEB;
+      --rl-secondary: #C0C0C0;
+      --rl-accent: #3A6EA5;
+      --rl-dark: #FF6700;
+      --rl-white: #ffffff;
+      --rl-text: #1f2a37;
+      --rl-text-secondary: #4a5568;
+      --rl-text-muted: #718096;
+      --rl-border: #e2e8f0;
+      --rl-shadow-sm: 0 2px 12px rgba(0,0,0,.06);
+      --rl-shadow-md: 0 4px 16px rgba(0,0,0,.1);
+      --rl-shadow-lg: 0 10px 30px rgba(0,0,0,.15);
+      --rl-radius: 12px;
+      --rl-radius-lg: 16px;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--rl-text);
+      background: linear-gradient(180deg, #fff 0%, var(--rl-light-bg) 100%);
+      min-height: 100vh;
+    }
+    
+    .rl-container {
+      padding-top: clamp(1.5rem, 2vw, 2.5rem);
+      padding-bottom: clamp(1.5rem, 2vw, 2.5rem);
+    }
+    
+    /* Page Header */
+    .rl-page-header {
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%);
+      border-radius: var(--rl-radius-lg);
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--rl-shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .rl-page-title {
+      font-size: clamp(1.5rem, 3vw, 1.875rem);
+      font-weight: 800;
+      color: var(--rl-white);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .rl-btn-back {
+      background: var(--rl-white);
+      border: none;
+      color: var(--rl-primary);
+      font-weight: 600;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .rl-btn-back:hover {
+      background: var(--rl-light-bg);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      color: var(--rl-primary);
+    }
+    
+    /* Form Cards */
+    .rl-form-card {
+      background: var(--rl-white);
+      border-radius: var(--rl-radius-lg);
+      box-shadow: var(--rl-shadow-md);
+      border: 2px solid var(--rl-border);
+      overflow: hidden;
+    }
+    
+    .rl-form-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 1.25rem 1.5rem;
+      border-bottom: 2px solid var(--rl-border);
+    }
+    
+    .rl-form-header-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--rl-text);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .rl-form-body {
+      padding: 1.5rem;
+    }
+    
+    /* Current Package Card */
+    .rl-current-package {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-color: var(--rl-accent);
+    }
+    
+    /* Form Inputs */
+    .form-label {
+      font-weight: 600;
+      color: var(--rl-text);
+      margin-bottom: 0.5rem;
+      font-size: 0.9375rem;
+    }
+    
+    .form-control,
+    .form-select {
+      border: 2px solid var(--rl-border);
+      border-radius: 10px;
+      padding: 0.625rem 0.875rem;
+      font-size: 0.9375rem;
+      color: var(--rl-text);
+      background: var(--rl-white);
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+      border-color: var(--rl-primary);
+      box-shadow: 0 0 0 3px rgba(0, 78, 152, 0.1);
+      outline: none;
+    }
+    
+    .form-control:hover:not(:focus) {
+      border-color: #cbd5e0;
+    }
+    
+    /* File Input */
+    input[type="file"].form-control {
+      padding: 0.5rem 0.875rem;
+      cursor: pointer;
+    }
+    
+    .form-text {
+      font-size: 0.8125rem;
+      color: var(--rl-text-muted);
+    }
+    
+    /* Badges */
+    .rl-badge-accent {
+      background: linear-gradient(135deg, var(--rl-accent) 0%, var(--rl-primary) 100%);
+      color: var(--rl-white);
+      padding: 0.375rem 0.875rem;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.8125rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .rl-badge-dark {
+      background: linear-gradient(135deg, var(--rl-dark) 0%, #ff8533 100%);
+      color: var(--rl-white);
+      padding: 0.375rem 0.875rem;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.8125rem;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Package Cards */
+    .pkg-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    
+    .pkg-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--rl-primary) 0%, var(--rl-dark) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .pkg-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--rl-shadow-lg);
+      border-color: var(--rl-accent) !important;
+    }
+    
+    .pkg-card:hover::before {
+      opacity: 1;
+    }
+    
+    .pkg-title {
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--rl-text);
+    }
+    
+    .pkg-type {
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    
+    .rl-price {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--rl-dark);
+      letter-spacing: -0.5px;
+    }
+    
+    /* Package Features List */
+    .pkg-card ul {
+      padding-left: 0;
+    }
+    
+    .pkg-card ul li {
+      padding: 0.375rem 0;
+      color: var(--rl-text-secondary);
+      font-weight: 500;
+    }
+    
+    .pkg-card ul li i {
+      color: var(--rl-accent);
+      font-size: 1rem;
+    }
+    
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%);
+      border: none;
+      color: var(--rl-white);
+      font-weight: 700;
+      padding: 0.875rem 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 78, 152, 0.25);
+      transition: all 0.2s ease;
+      font-size: 0.9375rem;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #003a75 0%, #2d5a8f 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 78, 152, 0.35);
+      color: var(--rl-white);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+    
+    /* Bank Table */
+    .table {
+      margin-bottom: 0;
+    }
+    
+    .table thead th {
+      background: #f8fafc;
+      border-bottom: 2px solid var(--rl-border);
+      color: var(--rl-text-secondary);
+      font-weight: 700;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0.875rem 0.75rem;
+    }
+    
+    .table tbody tr {
+      border-bottom: 1px solid var(--rl-border);
+      transition: background-color 0.2s ease;
+    }
+    
+    .table tbody tr:hover {
+      background: rgba(0, 78, 152, 0.02);
+    }
+    
+    .table tbody tr:last-child {
+      border-bottom: none;
+    }
+    
+    .table tbody td {
+      padding: 0.875rem 0.75rem;
+      vertical-align: middle;
+      font-size: 0.9375rem;
+    }
+    
+    /* Empty State */
+    .rl-empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--rl-white);
+      border-radius: var(--rl-radius-lg);
+      box-shadow: var(--rl-shadow-sm);
+      border: 2px dashed var(--rl-border);
+    }
+    
+    .rl-empty-state i {
+      font-size: 3rem;
+      color: var(--rl-secondary);
+      margin-bottom: 1rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 991px) {
+      .pkg-card {
+        margin-bottom: 1rem;
+      }
+    }
+    
+    @media (max-width: 767px) {
+      .rl-page-header {
+        padding: 1.25rem 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .rl-page-title {
+        font-size: 1.5rem;
+      }
+      
+      .rl-btn-back {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .rl-form-body {
+        padding: 1rem;
+      }
+      
+      .btn-primary {
+        width: 100%;
+        padding: 0.75rem 1.25rem;
+      }
+      
+      .table {
+        font-size: 0.875rem;
+      }
+      
+      .table thead th,
+      .table tbody td {
+        padding: 0.625rem 0.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
 <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Buy Advertising Packages</h1>
-    <a href="../index.php" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+<div class="container rl-container">
+  <div class="rl-page-header">
+    <h1 class="rl-page-title"><i class="bi bi-bag-plus"></i> Buy Advertising Packages</h1>
+    <a href="../index.php" class="rl-btn-back"><i class="bi bi-speedometer2"></i> Dashboard</a>
   </div>
 
 
   <?php /* Flash/messages handled globally via SweetAlert2 in navbar; removed Bootstrap alerts */ ?>
 
   <?php if ($current): ?>
-    <div class="card border-0 bg-light mb-3">
-      <div class="card-body py-3">
+    <div class="rl-form-card mb-3">
+      <div class="rl-form-body py-3">
         <div class="d-flex justify-content-between align-items-center">
           <div>
             <strong>Current Package:</strong> <?= htmlspecialchars((string)$current['package_name']) ?>
@@ -161,7 +520,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
             <span class="ms-2">Type: <?= $curTypeLbl ?> | Duration: <?= $curDurLbl ?></span>
             <span class="ms-2">Remaining Properties: <?= (int)$current['remaining_properties'] ?> | Remaining Rooms: <?= (int)$current['remaining_rooms'] ?></span>
           </div>
-          <span class="badge bg-secondary">Status: <?= htmlspecialchars((string)$current['payment_status']) ?></span>
+          <span class="badge rl-badge-accent">Status: <?= htmlspecialchars((string)$current['payment_status']) ?></span>
         </div>
       </div>
     </div>
@@ -183,11 +542,11 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
         $maxAdv = max($mp, $mr);
       ?>
       <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card h-100">
-          <div class="card-body d-flex flex-column">
+        <div class="rl-form-card h-100 pkg-card">
+          <div class="rl-form-body d-flex flex-column">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <h5 class="card-title mb-0"><?= htmlspecialchars((string)$pkg['package_name']) ?></h5>
-              <span class="badge text-bg-primary"><?= htmlspecialchars($durLbl) ?></span>
+              <h5 class="pkg-title mb-0"><?= htmlspecialchars((string)$pkg['package_name']) ?></h5>
+              <span class="badge rl-badge-dark pkg-type"><?= htmlspecialchars($durLbl) ?></span>
             </div>
             <p class="text-muted mb-2"><?= nl2br(htmlspecialchars((string)($pkg['description'] ?? ''))) ?></p>
             <ul class="list-unstyled small mb-3">
@@ -195,7 +554,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
               <li><i class="bi bi-clock me-1"></i> Duration: <?= htmlspecialchars($durLbl) ?></li>
               <li><i class="bi bi-megaphone me-1"></i> Max Advertising Count: <?= (int)$maxAdv ?></li>
             </ul>
-            <div class="fs-5 fw-semibold mb-3">LKR <?= number_format((float)$pkg['price'], 2) ?></div>
+            <div class="rl-price mb-3">LKR <?= number_format((float)$pkg['price'], 2) ?></div>
             <form method="post" class="mt-auto" enctype="multipart/form-data">
               <input type="hidden" name="package_id" value="<?= (int)$pkg['package_id'] ?>">
               <div class="mb-2">
@@ -211,9 +570,9 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
     <?php endforeach; ?>
   </div>
   <?php if (!empty($banks)): ?>
-  <div class="card my-4">
-    <div class="card-header">Bank Details for Payments</div>
-    <div class="card-body">
+  <div class="rl-form-card my-4">
+    <div class="rl-form-header"><h2 class="rl-form-header-title"><i class="bi bi-bank"></i> Bank Details for Payments</h2></div>
+    <div class="rl-form-body">
       <div class="table-responsive">
         <table class="table table-sm align-middle">
           <thead>

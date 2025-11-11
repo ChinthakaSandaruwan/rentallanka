@@ -575,6 +575,7 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('.btn-remove');
@@ -583,7 +584,12 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
     const typ = (btn.getAttribute('data-type') || 'property');
     if (!id) return;
     const what = typ === 'room' ? 'room' : 'property';
-    if (!confirm('Remove this ' + what + ' from your wishlist?')) return;
+    if (window.Swal) {
+      const res = await Swal.fire({ icon: 'warning', title: 'Remove from wishlist?', text: 'Remove this ' + what + ' from your wishlist?', showCancelButton: true, confirmButtonText: 'Yes, remove', cancelButtonText: 'Cancel' });
+      if (!res.isConfirmed) return;
+    } else {
+      if (!confirm('Remove this ' + what + ' from your wishlist?')) return;
+    }
     btn.disabled = true;
     try {
       const resp = await fetch('<?php echo $base_url; ?>/public/includes/wishlist_api.php', {
@@ -619,10 +625,19 @@ function money_lkr($n) { return 'LKR ' . number_format((float)$n, 2); }
           grid.appendChild(emptyState);
         }
       } else if (data.status === 'error') {
-        alert(data.message || 'Failed to remove.');
+        const msg = String(data.message || 'Failed to remove.');
+        if (window.Swal) {
+          Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonText: 'OK' });
+        } else {
+          alert(msg);
+        }
       }
     } catch (err) {
-      alert('Network error.');
+      if (window.Swal) {
+        Swal.fire({ icon: 'error', title: 'Network error', text: 'Please try again.', confirmButtonText: 'OK' });
+      } else {
+        alert('Network error.');
+      }
     } finally {
       btn.disabled = false;
     }

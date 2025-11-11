@@ -129,8 +129,393 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Profile</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ===========================
+       PROFILE PAGE CUSTOM STYLES
+       Brand Colors: Primary #004E98, Accent #3A6EA5, Orange #FF6700
+       =========================== */
+    
+    :root {
+      --rl-primary: #004E98;
+      --rl-light-bg: #EBEBEB;
+      --rl-secondary: #C0C0C0;
+      --rl-accent: #3A6EA5;
+      --rl-dark: #FF6700;
+      --rl-white: #ffffff;
+      --rl-text: #1f2a37;
+      --rl-text-secondary: #4a5568;
+      --rl-text-muted: #718096;
+      --rl-border: #e2e8f0;
+      --rl-shadow-sm: 0 2px 12px rgba(0,0,0,.06);
+      --rl-shadow-md: 0 4px 16px rgba(0,0,0,.1);
+      --rl-shadow-lg: 0 10px 30px rgba(0,0,0,.15);
+      --rl-radius: 12px;
+      --rl-radius-lg: 16px;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--rl-text);
+      background: linear-gradient(180deg, #fff 0%, var(--rl-light-bg) 100%);
+      min-height: 100vh;
+    }
+    
+    /* Profile Page Container - Scoped */
+    body > .container {
+      padding-top: clamp(1.5rem, 3vw, 3rem);
+      padding-bottom: clamp(1.5rem, 3vw, 3rem);
+    }
+    
+    /* Profile Card - Only style cards in main container */
+    body > .container .card {
+      border: 2px solid var(--rl-border);
+      border-radius: var(--rl-radius-lg);
+      box-shadow: var(--rl-shadow-md);
+      overflow: hidden;
+      background: var(--rl-white);
+    }
+    
+    body > .container .card-body {
+      padding: 2rem;
+    }
+    
+    /* Role Badge - Only in card body */
+    .card-body .badge {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.875rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .card-body .bg-primary {
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%) !important;
+    }
+    
+    .card-body .bg-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    }
+    
+    .card-body .bg-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    }
+    
+    .card-body .bg-secondary {
+      background: linear-gradient(135deg, var(--rl-secondary) 0%, #a0a0a0 100%) !important;
+    }
+    
+    /* Profile Image Container - Scoped to card */
+    .card-body .text-center.mb-3 {
+      margin-bottom: 1.5rem !important;
+    }
+    
+    .card-body .rounded-circle {
+      border: 4px solid var(--rl-border);
+      box-shadow: var(--rl-shadow-md);
+      transition: all 0.3s ease;
+    }
+    
+    .card-body .rounded-circle:hover {
+      transform: scale(1.05);
+      box-shadow: var(--rl-shadow-lg);
+      border-color: var(--rl-accent);
+    }
+    
+    /* Profile Info List */
+    .list-group {
+      border-radius: var(--rl-radius);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    
+    .list-group-item {
+      border: none;
+      border-bottom: 1px solid var(--rl-border);
+      padding: 1rem 1.25rem;
+      background: transparent;
+      transition: all 0.2s ease;
+      font-size: 0.9375rem;
+    }
+    
+    .list-group-item:first-child {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-top-left-radius: var(--rl-radius);
+      border-top-right-radius: var(--rl-radius);
+    }
+    
+    .list-group-item:last-child {
+      border-bottom: none;
+      border-bottom-left-radius: var(--rl-radius);
+      border-bottom-right-radius: var(--rl-radius);
+    }
+    
+    .list-group-item:hover {
+      background: rgba(0, 78, 152, 0.02);
+    }
+    
+    .list-group-item span:first-child {
+      font-weight: 600;
+      color: var(--rl-text-secondary);
+      text-transform: uppercase;
+      font-size: 0.8125rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .list-group-item span:last-child {
+      font-weight: 600;
+      color: var(--rl-text);
+    }
+    
+    /* Horizontal Rule - Scoped to card */
+    .card-body hr {
+      border-color: var(--rl-border);
+      opacity: 1;
+      margin: 1.5rem 0;
+    }
+    
+    /* Section Heading - Scoped to card */
+    .card-body h5 {
+      font-weight: 800;
+      color: var(--rl-text);
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .card-body h5::before {
+      content: '';
+      width: 4px;
+      height: 1.5rem;
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%);
+      border-radius: 2px;
+    }
+    
+    /* Form Inputs */
+    .form-label {
+      font-weight: 600;
+      color: var(--rl-text);
+      margin-bottom: 0.5rem;
+      font-size: 0.9375rem;
+    }
+    
+    .form-control {
+      border: 2px solid var(--rl-border);
+      border-radius: 10px;
+      padding: 0.625rem 0.875rem;
+      font-size: 0.9375rem;
+      color: var(--rl-text);
+      background: var(--rl-white);
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+    
+    .form-control:focus {
+      border-color: var(--rl-primary);
+      box-shadow: 0 0 0 3px rgba(0, 78, 152, 0.1);
+      outline: none;
+    }
+    
+    .form-control:hover:not(:focus) {
+      border-color: #cbd5e0;
+    }
+    
+    /* File Input */
+    input[type="file"].form-control {
+      padding: 0.5rem 0.875rem;
+      cursor: pointer;
+    }
+    
+    /* Validation Feedback */
+    .invalid-feedback {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      margin-top: 0.25rem;
+    }
+    
+    .was-validated .form-control:invalid {
+      border-color: #ef4444;
+    }
+    
+    .was-validated .form-control:valid {
+      border-color: #10b981;
+    }
+    
+    /* Buttons - Scoped to card body */
+    .card-body .btn {
+      font-weight: 600;
+      border-radius: 10px;
+      padding: 0.625rem 1.25rem;
+      transition: all 0.2s ease;
+      font-size: 0.9375rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      border: none;
+    }
+    
+    .card-body .btn-primary {
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%);
+      color: var(--rl-white);
+      box-shadow: 0 4px 16px rgba(0, 78, 152, 0.25);
+    }
+    
+    .card-body .btn-primary:hover {
+      background: linear-gradient(135deg, #003a75 0%, #2d5a8f 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 78, 152, 0.35);
+      color: var(--rl-white);
+    }
+    
+    .card-body .btn-primary:active {
+      transform: translateY(0);
+    }
+    
+    .card-body .btn-secondary {
+      background: var(--rl-secondary);
+      color: var(--rl-text);
+    }
+    
+    .card-body .btn-secondary:hover {
+      background: #a0a0a0;
+      transform: translateY(-1px);
+      color: var(--rl-text);
+    }
+    
+    .card-body .btn-outline-primary {
+      border: 2px solid var(--rl-primary);
+      color: var(--rl-primary);
+      background: transparent;
+    }
+    
+    .card-body .btn-outline-primary:hover {
+      background: var(--rl-primary);
+      border-color: var(--rl-primary);
+      color: var(--rl-white);
+      transform: translateY(-1px);
+    }
+    
+    .card-body .btn-outline-success {
+      border: 2px solid #10b981;
+      color: #059669;
+      background: transparent;
+    }
+    
+    .card-body .btn-outline-success:hover {
+      background: #10b981;
+      border-color: #10b981;
+      color: var(--rl-white);
+      transform: translateY(-1px);
+    }
+    
+    .card-body .btn-outline-danger {
+      border: 2px solid #ef4444;
+      color: #dc2626;
+      background: transparent;
+    }
+    
+    .card-body .btn-outline-danger:hover {
+      background: #ef4444;
+      border-color: #dc2626;
+      color: var(--rl-white);
+      transform: translateY(-1px);
+    }
+    
+    /* Button Container - Scoped to card */
+    .card-body .d-flex.flex-wrap.gap-2 {
+      margin-top: 1.5rem;
+    }
+    
+    /* No Image Placeholder - Scoped to card */
+    .card-body .bg-secondary.d-inline-flex {
+      background: linear-gradient(135deg, var(--rl-secondary) 0%, #a0a0a0 100%) !important;
+      font-size: 0.75rem;
+    }
+    
+    /* Responsive - Scoped to profile page */
+    @media (max-width: 767px) {
+      body > .container .card-body {
+        padding: 1.5rem;
+      }
+      
+      .list-group-item {
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+      }
+      
+      .list-group-item span:first-child {
+        font-size: 0.75rem;
+      }
+      
+      .card-body h5 {
+        font-size: 1.125rem;
+      }
+      
+      .card-body .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+      }
+      
+      .card-body .d-flex.flex-wrap.gap-2 {
+        flex-direction: column;
+      }
+      
+      .card-body .d-flex.flex-wrap.gap-2 .btn {
+        width: 100%;
+      }
+      
+      .card-body .ms-auto {
+        margin-left: 0 !important;
+      }
+      
+      .card-body .d-flex.gap-2 {
+        flex-direction: column;
+      }
+      
+      .card-body .d-flex.gap-2 .btn {
+        width: 100%;
+      }
+    }
+    
+    @media (max-width: 575px) {
+      body > .container .card-body {
+        padding: 1.25rem;
+      }
+      
+      .card-body .rounded-circle {
+        width: 80px !important;
+        height: 80px !important;
+      }
+      
+      .card-body .badge {
+        padding: 0.375rem 0.875rem;
+        font-size: 0.75rem;
+      }
+    }
+    
+    /* SweetAlert2 Custom Styling */
+    .swal2-popup {
+      font-family: 'Inter', sans-serif;
+      border-radius: var(--rl-radius-lg);
+    }
+    
+    .swal2-confirm {
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%) !important;
+      border-radius: 10px !important;
+      font-weight: 600 !important;
+    }
+    
+    .swal2-cancel {
+      border-radius: 10px !important;
+      font-weight: 600 !important;
+    }
+  </style>
+</head>
 <body>
 <?php require_once __DIR__ . '/navbar.php'; ?>
 <div class="container py-4">

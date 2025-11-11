@@ -35,129 +35,81 @@ require_role('customer');
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    body {
-      background-color: #f8f9fa;
-      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
+    :root { --rl-primary:#004E98; --rl-light-bg:#EBEBEB; --rl-secondary:#C0C0C0; --rl-accent:#3A6EA5; --rl-dark:#FF6700; --rl-white:#ffffff; --rl-text:#1f2a37; --rl-text-secondary:#4a5568; --rl-text-muted:#718096; --rl-border:#e2e8f0; --rl-shadow-sm:0 2px 12px rgba(0,0,0,.06); --rl-shadow-md:0 4px 16px rgba(0,0,0,.1); --rl-shadow-lg:0 10px 30px rgba(0,0,0,.15); --rl-radius:12px; --rl-radius-lg:16px; }
+    body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; color:var(--rl-text); background:linear-gradient(180deg,#fff 0%, var(--rl-light-bg) 100%); min-height:100vh; }
+    .rl-container { padding-top:clamp(1.5rem,2vw,2.5rem); padding-bottom:clamp(1.5rem,2vw,2.5rem); max-width:100%; overflow-x:hidden; }
 
-    .dashboard-header {
-      background: linear-gradient(135deg, #0d6efd, #979797ff);
-      color: white;
-      border-radius: 1rem;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
+    /* Header */
+    .rl-dashboard-header { background:linear-gradient(135deg,var(--rl-primary) 0%, var(--rl-accent) 100%); border-radius:var(--rl-radius-lg); padding:2rem; margin-bottom:2.5rem; box-shadow:var(--rl-shadow-md); position:relative; overflow:hidden; }
+    .rl-dashboard-header::before { content:''; position:absolute; top:-50%; right:-10%; width:300px; height:300px; background:rgba(255,255,255,.1); border-radius:50%; }
+    .rl-dashboard-header::after { content:''; position:absolute; bottom:-30%; left:-5%; width:200px; height:200px; background:rgba(255,103,0,.15); border-radius:50%; }
+    .rl-dashboard-title { font-size:clamp(1.5rem,3vw,2rem); font-weight:800; color:var(--rl-white); margin:0; text-align:center; text-shadow:0 2px 8px rgba(0,0,0,.2); }
+    .rl-dashboard-subtitle { text-align:center; color:rgba(255,255,255,.9); margin-top:.5rem; font-size:1rem; }
 
-    .dashboard-header h1 {
-      font-weight: 600;
-    }
+    /* Cards */
+    .rl-action-card { background:var(--rl-white); border-radius:var(--rl-radius); border:2px solid var(--rl-border); box-shadow:var(--rl-shadow-sm); transition:all .3s cubic-bezier(.4,0,.2,1); overflow:hidden; position:relative; height:100%; }
+    .rl-action-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg,var(--rl-primary) 0%, var(--rl-dark) 100%); opacity:0; transition:opacity .3s ease; }
+    .rl-action-card:hover { transform:translateY(-4px); box-shadow:var(--rl-shadow-lg); border-color:var(--rl-accent); }
+    .rl-action-card:hover::before { opacity:1; }
+    .rl-card-body { padding:1.5rem; display:flex; flex-direction:column; text-align:center; min-height:220px; height:100%; }
+    .rl-card-icon { font-size:2.25rem; margin-bottom:1rem; }
+    .rl-card-title { font-size:1.125rem; font-weight:700; color:var(--rl-text); margin-bottom:.5rem; }
+    .rl-card-text { font-size:.9rem; color:var(--rl-text-muted); line-height:1.6; margin-bottom:1.25rem; min-height:2.5rem; }
 
-    .dashboard-card {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      border: none;
-      border-radius: 1rem;
-      overflow: hidden;
-    }
+    /* Buttons */
+    .rl-btn { border-radius:8px; font-weight:600; padding:.625rem 1.5rem; transition:all .2s ease; font-size:.9375rem; border:none; display:inline-flex; align-items:center; justify-content:center; gap:.5rem; width:100%; text-decoration:none; }
+    .rl-btn-primary { background:linear-gradient(135deg,var(--rl-primary) 0%, var(--rl-accent) 100%); color:var(--rl-white); }
+    .rl-btn-primary:hover { background:linear-gradient(135deg,#003a75 0%, #2d5a8f 100%); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,78,152,.3); color:var(--rl-white); }
+    .rl-btn-secondary { background:linear-gradient(135deg,#6b7280 0%, #4b5563 100%); color:var(--rl-white); }
+    .rl-btn-secondary:hover { background:linear-gradient(135deg,#4b5563 0%, #374151 100%); transform:translateY(-1px); box-shadow:0 4px 12px rgba(107,114,128,.3); color:var(--rl-white); }
 
-    .dashboard-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
-    }
+    /* Grid */
+    .rl-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem; align-items:stretch; }
 
-    .card-icon {
-      font-size: 2rem;
-      color: #0d6efd;
-      background-color: #e7f1ff;
-      border-radius: 0.75rem;
-      padding: 0.6rem;
-      width: 3rem;
-      height: 3rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .logout-btn {
-      background: white;
-      color: #dc3545;
-      border: 1px solid #dc3545;
-      transition: all 0.2s;
-    }
-
-    .logout-btn:hover {
-      background: #dc3545;
-      color: white;
-    }
+    @media (max-width: 575px){ .rl-card-body{ padding:1.25rem; min-height:200px; } .rl-card-icon{ font-size:2rem; } }
   </style>
 </head>
 
 <body>
   <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
 
-  <div class="container-lg py-5">
-    <!-- Header -->
-    <div class="dashboard-header d-flex flex-column flex-md-row align-items-md-center justify-content-between text-center text-md-start">
-      <div>
-        <h1 class="h3 mb-2">Welcome Back, Customer!</h1>
-        <p class="mb-0 opacity-75">Manage your profile, rentals, and more from one place.</p>
-      </div>
-     
+  <div class="container rl-container">
+    <div class="rl-dashboard-header">
+      <h1 class="rl-dashboard-title"><i class="bi bi-people"></i> Customer Dashboard</h1>
+      <p class="rl-dashboard-subtitle">Manage your profile, rentals and wishlist</p>
     </div>
 
-    <!-- Cards -->
-    <div class="row g-4">
-      
-      <!-- Profile -->
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card dashboard-card h-100 shadow-sm">
-          <div class="card-body d-flex flex-column gap-3">
-            <div class="d-flex align-items-center gap-3">
-              <div class="card-icon"><i class="bi bi-person-circle"></i></div>
-              <h5 class="card-title mb-0">Profile</h5>
-            </div>
-            <p class="card-text text-muted">Update your personal details, contact info, and password securely.</p>
-            <a href="../public/includes/profile.php" class="btn btn-primary mt-auto w-100">
-              <i class="bi bi-arrow-right-circle me-1"></i> Open
-            </a>
-          </div>
+    <div class="rl-grid">
+      <div class="rl-action-card">
+        <div class="rl-card-body">
+          <i class="bi bi-person-circle rl-card-icon rl-icon-primary"></i>
+          <h5 class="rl-card-title">Profile</h5>
+          <p class="rl-card-text">Update your personal details, contact info, and password securely.</p>
+          <a href="../public/includes/profile.php" class="rl-btn rl-btn-primary"><i class="bi bi-arrow-right-circle"></i> Open</a>
         </div>
       </div>
 
-      <!-- Rentals -->
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card dashboard-card h-100 shadow-sm">
-          <div class="card-body d-flex flex-column gap-3">
-            <div class="d-flex align-items-center gap-3">
-              <div class="card-icon"><i class="bi bi-house-door"></i></div>
-              <h5 class="card-title mb-0">My Rentals</h5>
-            </div>
-            <p class="card-text text-muted">View your booked properties, payments, and rental history.</p>
-            <a href="../public/includes/my_rentals.php" class="btn btn-primary mt-auto w-100">
-              <i class="bi bi-arrow-right-circle me-1"></i> Open
-            </a>
-          </div>
+      <div class="rl-action-card">
+        <div class="rl-card-body">
+          <i class="bi bi-house-door rl-card-icon rl-icon-success"></i>
+          <h5 class="rl-card-title">My Rentals</h5>
+          <p class="rl-card-text">View your booked properties, payments, and rental history.</p>
+          <a href="../public/includes/my_rentals.php" class="rl-btn rl-btn-secondary"><i class="bi bi-arrow-right-circle"></i> Open</a>
         </div>
       </div>
 
-      <!-- Wishlist -->
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card dashboard-card h-100 shadow-sm">
-          <div class="card-body d-flex flex-column gap-3">
-            <div class="d-flex align-items-center gap-3">
-              <div class="card-icon"><i class="bi bi-heart"></i></div>
-              <h5 class="card-title mb-0">Wishlist</h5>
-            </div>
-            <p class="card-text text-muted">Keep track of your favorite properties for future bookings.</p>
-            <a href="../public/includes/wish_list.php" class="btn btn-primary mt-auto w-100">
-              <i class="bi bi-arrow-right-circle me-1"></i> Open
-            </a>
-          </div>
+      <div class="rl-action-card">
+        <div class="rl-card-body">
+          <i class="bi bi-heart rl-card-icon rl-icon-orange"></i>
+          <h5 class="rl-card-title">Wishlist</h5>
+          <p class="rl-card-text">Keep track of your favorite properties for future bookings.</p>
+          <a href="../public/includes/wish_list.php" class="rl-btn rl-btn-primary"><i class="bi bi-arrow-right-circle"></i> Open</a>
         </div>
       </div>
-
     </div>
   </div>
 

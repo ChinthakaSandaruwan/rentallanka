@@ -153,22 +153,44 @@ $st->close();
   <title>Room Rent Approvals</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --rl-primary:#004E98; --rl-light-bg:#EBEBEB; --rl-secondary:#C0C0C0; --rl-accent:#3A6EA5; --rl-dark:#FF6700; --rl-white:#ffffff; --rl-text:#1f2a37; --rl-text-secondary:#4a5568; --rl-text-muted:#718096; --rl-border:#e2e8f0; --rl-shadow-sm:0 2px 12px rgba(0,0,0,.06); --rl-shadow-md:0 4px 16px rgba(0,0,0,.1); --rl-radius:12px; --rl-radius-lg:16px; }
+    body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:var(--rl-text); background:linear-gradient(180deg,#fff 0%, var(--rl-light-bg) 100%); min-height:100vh; }
+    .rl-container { padding-top:clamp(1.5rem,2vw,2.5rem); padding-bottom:clamp(1.5rem,2vw,2.5rem); }
+    .rl-page-header { background:linear-gradient(135deg,var(--rl-primary) 0%,var(--rl-accent) 100%); border-radius:var(--rl-radius-lg); padding:1.25rem 1.75rem; margin-bottom:1.25rem; box-shadow:var(--rl-shadow-md); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; }
+    .rl-page-title { font-size:clamp(1.25rem,3vw,1.5rem); font-weight:800; color:var(--rl-white); margin:0; display:flex; align-items:center; gap:.5rem; }
+    .rl-btn-back { background:var(--rl-white); border:none; color:var(--rl-primary); font-weight:600; padding:.5rem 1.25rem; border-radius:8px; transition:all .2s ease; text-decoration:none; display:inline-flex; align-items:center; gap:.5rem; }
+    .rl-btn-back:hover { background:var(--rl-light-bg); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.15); color:var(--rl-primary); }
+
+    .rl-form-card { background:var(--rl-white); border-radius:var(--rl-radius-lg); box-shadow:var(--rl-shadow-md); border:2px solid var(--rl-border); overflow:hidden; }
+    .rl-form-header { background:linear-gradient(135deg,#f8fafc 0%, #f1f5f9 100%); padding:1rem 1.25rem; border-bottom:2px solid var(--rl-border); }
+    .rl-form-header-title { font-size:1rem; font-weight:700; color:var(--rl-text); margin:0; display:flex; align-items:center; gap:.5rem; }
+    .rl-form-body { padding:1.25rem; }
+
+    .table thead th { background:#f8fafc; border-bottom:2px solid var(--rl-border); color:var(--rl-text-secondary); font-weight:700; font-size:.875rem; text-transform:uppercase; letter-spacing:.5px; }
+    .table tbody tr { border-bottom:1px solid var(--rl-border); }
+    .table tbody tr:hover { background:rgba(0,78,152,.02); }
+
+    @media (max-width: 767px){ .rl-page-header{ padding:1rem 1rem; flex-direction:column; align-items:flex-start; } .rl-btn-back{ width:100%; justify-content:center; } .rl-form-body{ padding:1rem; } }
+  </style>
 </head>
 <body>
 <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
-<div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0"><i class="bi bi-journal-check me-2"></i>Room Rent Approvals</h1>
-    <a href="../index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+<div class="container rl-container">
+  <div class="rl-page-header">
+    <h1 class="rl-page-title"><i class="bi bi-journal-check"></i> Room Rent Approvals</h1>
+    <a href="../index.php" class="rl-btn-back"><i class="bi bi-speedometer2"></i> Dashboard</a>
   </div>
 
   <?php /* Alerts handled globally via SweetAlert2 (navbar); removed Bootstrap alerts */ ?>
 
-  <div class="card">
-    <div class="card-body p-0">
+  <div class="rl-form-card">
+    <div class="rl-form-header"><h2 class="rl-form-header-title"><i class="bi bi-list-check"></i> Pending Bookings</h2></div>
+    <div class="rl-form-body p-0">
       <div class="table-responsive">
         <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
+          <thead>
             <tr>
               <th>ID</th>
               <th>Room</th>

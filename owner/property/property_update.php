@@ -624,9 +624,9 @@ if (empty($flash)) { [$flash, $flash_type] = get_flash(); }
         </div>
       </div>
       <div class="col-12 col-lg-5">
-        <div class="card h-100">
-          <div class="card-header">Images</div>
-          <div class="card-body">
+        <div class="rl-form-card h-100">
+          <div class="rl-form-header"><h2 class="rl-form-header-title"><i class="bi bi-images"></i> Images</h2></div>
+          <div class="rl-form-body">
             <?php
               // load existing images
               $imgs = [];

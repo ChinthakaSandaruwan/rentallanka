@@ -151,22 +151,399 @@ $st->close();
   <title>Property Rent Approvals</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===========================
+       PROPERTY RENT APPROVAL PAGE CUSTOM STYLES
+       Brand Colors: Primary #004E98, Accent #3A6EA5, Orange #FF6700
+       =========================== */
+    
+    :root {
+      --rl-primary: #004E98;
+      --rl-light-bg: #EBEBEB;
+      --rl-secondary: #C0C0C0;
+      --rl-accent: #3A6EA5;
+      --rl-dark: #FF6700;
+      --rl-white: #ffffff;
+      --rl-text: #1f2a37;
+      --rl-text-secondary: #4a5568;
+      --rl-text-muted: #718096;
+      --rl-border: #e2e8f0;
+      --rl-shadow-sm: 0 2px 12px rgba(0,0,0,.06);
+      --rl-shadow-md: 0 4px 16px rgba(0,0,0,.1);
+      --rl-shadow-lg: 0 10px 30px rgba(0,0,0,.15);
+      --rl-radius: 12px;
+      --rl-radius-lg: 16px;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--rl-text);
+      background: linear-gradient(180deg, #fff 0%, var(--rl-light-bg) 100%);
+      min-height: 100vh;
+    }
+    
+    .rl-container {
+      padding-top: clamp(1.5rem, 2vw, 2.5rem);
+      padding-bottom: clamp(1.5rem, 2vw, 2.5rem);
+    }
+    
+    /* Page Header */
+    .rl-page-header {
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%);
+      border-radius: var(--rl-radius-lg);
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--rl-shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .rl-page-title {
+      font-size: clamp(1.5rem, 3vw, 1.875rem);
+      font-weight: 800;
+      color: var(--rl-white);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .rl-page-title i {
+      font-size: 1.75rem;
+    }
+    
+    .rl-btn-back {
+      background: var(--rl-white);
+      border: none;
+      color: var(--rl-primary);
+      font-weight: 600;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9375rem;
+    }
+    
+    .rl-btn-back:hover {
+      background: var(--rl-light-bg);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      color: var(--rl-primary);
+    }
+    
+    /* Form Cards */
+    .rl-form-card {
+      background: var(--rl-white);
+      border-radius: var(--rl-radius-lg);
+      box-shadow: var(--rl-shadow-md);
+      border: 2px solid var(--rl-border);
+      overflow: hidden;
+    }
+    
+    .rl-form-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 1.25rem 1.5rem;
+      border-bottom: 2px solid var(--rl-border);
+    }
+    
+    .rl-form-header-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--rl-text);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .rl-form-header-title i {
+      color: var(--rl-accent);
+    }
+    
+    .rl-form-body {
+      padding: 1.5rem;
+    }
+    
+    /* Table Styles */
+    .table-responsive {
+      border-radius: 0;
+      margin: 0;
+    }
+    
+    .table {
+      margin-bottom: 0;
+      font-size: 0.9375rem;
+      width: 100%;
+      table-layout: auto;
+    }
+    
+    .table thead th {
+      background: #f8fafc;
+      border-bottom: 2px solid var(--rl-border);
+      color: var(--rl-text-secondary);
+      font-weight: 700;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 1rem 0.75rem;
+      white-space: normal;
+      word-break: break-word;
+      /* Disable sticky header to avoid width overflow creating horizontal scrollbars */
+      position: static;
+      top: auto;
+      z-index: auto;
+    }
+    
+    .table tbody tr {
+      border-bottom: 1px solid var(--rl-border);
+      transition: all 0.2s ease;
+    }
+    
+    .table tbody tr:last-child {
+      border-bottom: none;
+    }
+    
+    .table tbody tr:hover {
+      background: rgba(0, 78, 152, 0.03);
+      /* Remove scale to prevent sub-pixel overflow that causes horizontal scrollbars */
+      transform: none;
+    }
+    
+    .table tbody td {
+      padding: 0.875rem 0.75rem;
+      vertical-align: middle;
+      font-size: 0.9375rem;
+    }
+    
+    /* Allow actions column to wrap buttons instead of forcing table to overflow */
+    td.text-end { text-align: right; white-space: normal; }
+    td.text-end { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .375rem; }
+    td.text-end form { display: inline-block; }
+    
+    /* ID Column */
+    .table tbody td:first-child {
+      font-weight: 700;
+      color: var(--rl-accent);
+    }
+    
+    /* Price Column */
+    .table tbody td:nth-child(4) {
+      font-weight: 700;
+      color: var(--rl-dark);
+    }
+    
+    /* Empty State */
+    .text-muted {
+      color: var(--rl-text-muted) !important;
+      font-weight: 500;
+    }
+    
+    .table tbody td[colspan] {
+      padding: 3rem 1.5rem !important;
+      text-align: center;
+    }
+    
+    .table tbody td[colspan]::before {
+      content: '📋';
+      display: block;
+      font-size: 3rem;
+      margin-bottom: 0.75rem;
+      opacity: 0.5;
+    }
+    
+    /* Buttons */
+    .btn {
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+    }
+    
+    .btn-sm {
+      padding: 0.375rem 0.875rem;
+      font-size: 0.8125rem;
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: none;
+      color: var(--rl-white);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    }
+    
+    .btn-success:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+      color: var(--rl-white);
+    }
+    
+    .btn-success:active {
+      transform: translateY(0);
+    }
+    
+    .btn-outline-danger {
+      border: 2px solid #ef4444;
+      color: #dc2626;
+      background: transparent;
+      font-weight: 600;
+    }
+    
+    .btn-outline-danger:hover {
+      background: #ef4444;
+      border-color: #dc2626;
+      color: var(--rl-white);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-outline-danger:active {
+      transform: translateY(0);
+    }
+    
+    .btn i {
+      font-size: 1rem;
+    }
+    
+    /* Form Actions */
+    form.d-inline {
+      display: inline-block;
+    }
+    
+    .text-end form {
+      white-space: nowrap;
+    }
+    
+    /* Responsive Table Wrapper */
+    @media (max-width: 991px) {
+      .table { font-size: 0.875rem; }
+      
+      .table thead th,
+      .table tbody td {
+        padding: 0.75rem 0.5rem;
+      }
+      
+      .btn-sm {
+        padding: 0.3rem 0.75rem;
+        font-size: 0.75rem;
+      }
+    }
+    
+    @media (max-width: 767px) {
+      .rl-page-header {
+        padding: 1.25rem 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .rl-page-title {
+        font-size: 1.5rem;
+      }
+      
+      .rl-page-title i {
+        font-size: 1.5rem;
+      }
+      
+      .rl-btn-back {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .rl-form-header {
+        padding: 1rem;
+      }
+      
+      .rl-form-header-title {
+        font-size: 1rem;
+      }
+      
+      .rl-form-body {
+        padding: 0;
+      }
+      
+      .table {
+        font-size: 0.8125rem;
+      }
+      
+      .table thead th {
+        font-size: 0.75rem;
+        padding: 0.75rem 0.5rem;
+      }
+      
+      .table tbody td {
+        padding: 0.75rem 0.5rem;
+      }
+      
+      /* Stack action buttons on very small screens */
+      .text-end {
+        text-align: left !important;
+      }
+      
+      .text-end form {
+        display: block;
+        margin-bottom: 0.25rem;
+      }
+      
+      .text-end form:last-child {
+        margin-bottom: 0;
+      }
+      
+      .text-end .btn-sm {
+        width: 100%;
+        display: flex;
+      }
+      
+      form.ms-1 {
+        margin-left: 0 !important;
+      }
+    }
+    
+    /* SweetAlert2 Custom Styling */
+    .swal2-popup {
+      font-family: 'Inter', sans-serif;
+      border-radius: var(--rl-radius-lg);
+    }
+    
+    .swal2-confirm {
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%) !important;
+      border-radius: 8px !important;
+      font-weight: 600 !important;
+    }
+    
+    .swal2-cancel {
+      border-radius: 8px !important;
+      font-weight: 600 !important;
+    }
+  </style>
 </head>
 <body>
 <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
-<div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0"><i class="bi bi-journal-check me-2"></i>Property Rent Approvals</h1>
-    <a href="../index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+<div class="container rl-container">
+  <div class="rl-page-header">
+    <h1 class="rl-page-title"><i class="bi bi-journal-check"></i> Property Rent Approvals</h1>
+    <a href="../index.php" class="rl-btn-back"><i class="bi bi-speedometer2"></i> Dashboard</a>
   </div>
 
   <?php /* Alerts handled globally via SweetAlert2 (navbar). Removed Bootstrap alerts. */ ?>
 
-  <div class="card">
-    <div class="card-body p-0">
+  <div class="rl-form-card">
+    <div class="rl-form-header"><h2 class="rl-form-header-title"><i class="bi bi-list-check"></i> Pending Requests</h2></div>
+    <div class="rl-form-body p-0">
       <div class="table-responsive">
         <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
+          <thead>
             <tr>
               <th>ID</th>
               <th>Property</th>
