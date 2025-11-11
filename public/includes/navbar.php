@@ -1,4 +1,19 @@
 <?php
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+ini_set('error_log', __DIR__ . '/error.log');
+if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
+  $f = __DIR__ . '/error.log';
+  if (is_file($f)) {
+    $lines = @array_slice(@file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], -100);
+    if (!headers_sent()) { header('Content-Type: text/plain'); }
+    echo implode("\n", $lines);
+  } else {
+    if (!headers_sent()) { header('Content-Type: text/plain'); }
+    echo 'No error.log found';
+  }
+  exit;
+}
 if ((function_exists('session_status') ? session_status() : PHP_SESSION_NONE) === PHP_SESSION_NONE) {
     session_start();
 }
@@ -44,9 +59,6 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
             <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/my_rentals.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/my_rentals.php"><i class="bi bi-receipt me-1"></i>My Rentals</a></li>
           <?php endif; ?>
 
-          <?php if ($loggedIn && $isSuper): ?>
-            <li class="nav-item"><a class="nav-link text-danger" href="<?= $base_url ?>/superAdmin/index.php"><i class="bi bi-shield-lock me-1"></i>Super Admin Dashboard</a></li>
-          <?php endif; ?>
         </ul>
 
         
