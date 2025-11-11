@@ -160,40 +160,137 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <meta name="robots" content="noindex,nofollow" />
     <meta http-equiv="Cache-Control" content="no-store" />
+
+    <!-- Optional modern font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom theme layer (keeps Bootstrap, only adds styles) -->
+    <style>
+      /* Brand palette as CSS variables for reuse */
+      :root {
+        --rl-primary: #004E98;  /* Primary */
+        --rl-bg: #EBEBEB;       /* Light background */
+        --rl-secondary: #C0C0C0;/* Secondary */
+        --rl-accent: #3A6EA5;   /* Accent */
+        --rl-warm: #FF6700;     /* Dark (brand warm) */
+
+        --rl-text: #1a1a1a;
+        --rl-muted: #6b7280;
+        --rl-white: #ffffff;
+
+        --rl-radius: 14px;
+        --rl-shadow-sm: 0 2px 10px rgba(0,0,0,.08);
+        --rl-shadow-md: 0 8px 24px rgba(0,0,0,.12);
+        --rl-focus: 0 0 0 .25rem rgb(0 78 152 / 35%);
+      }
+
+      html, body {
+        height: 100%;
+        background: var(--rl-bg);
+        color: var(--rl-text);
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", Helvetica, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+        font-size: clamp(15px, 1.05vw + .5rem, 16px);
+      }
+
+      /* Card styling */
+      .rl-auth-card {
+        border-radius: var(--rl-radius);
+        box-shadow: var(--rl-shadow-md);
+        background: var(--rl-white);
+        border: 1px solid color-mix(in srgb, var(--rl-secondary) 55%, transparent);
+      }
+
+      /* Headings & subtle text */
+      .rl-page-title { font-weight: 700; letter-spacing: -0.01em; }
+      .rl-page-subtle { color: var(--rl-muted); font-size: .95rem; }
+
+      /* Labels */
+      .rl-form-label { font-weight: 600; color: #0f172a; }
+
+      /* Inputs: scoped to .rl-input so Bootstrap defaults remain elsewhere */
+      .form-control.rl-input {
+        border-radius: 12px;
+        border: 1px solid color-mix(in srgb, var(--rl-secondary) 70%, transparent);
+        background: #fcfcfd;
+        transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+      }
+      .form-control.rl-input:focus {
+        border-color: var(--rl-primary);
+        box-shadow: var(--rl-focus);
+        background: #ffffff;
+      }
+      .form-control.rl-input::placeholder {
+        color: color-mix(in srgb, var(--rl-muted) 80%, #fff 0%);
+      }
+
+      /* Checkboxes */
+      .form-check-input.rl-check:focus { box-shadow: var(--rl-focus); border-color: var(--rl-primary); }
+      .form-check-input.rl-check:checked { background-color: var(--rl-primary); border-color: var(--rl-primary); }
+
+      /* Buttons */
+      .btn.rl-btn-primary {
+        --bs-btn-padding-y: .6rem;
+        --bs-btn-padding-x: 1rem;
+        --bs-btn-font-weight: 600;
+        border-radius: 12px;
+        border: 1px solid color-mix(in srgb, var(--rl-primary) 35%, var(--rl-accent) 65%);
+        color: #fff;
+        background: linear-gradient(135deg, var(--rl-primary), var(--rl-accent));
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--rl-primary) 28%, transparent);
+        transition: transform 120ms ease, box-shadow 180ms ease, filter 180ms ease;
+      }
+      .btn.rl-btn-primary:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 10px 22px color-mix(in srgb, var(--rl-accent) 28%, transparent); }
+      .btn.rl-btn-primary:focus-visible { box-shadow: var(--rl-focus); }
+
+      .btn.rl-btn-ghost {
+        border-radius: 12px;
+        border: 1px dashed color-mix(in srgb, var(--rl-secondary) 70%, transparent);
+        color: var(--rl-primary);
+        background: #f6f7fb;
+      }
+      .btn.rl-btn-ghost:hover { background: #eef2f9; }
+
+      /* Helpers */
+      .rl-tip {
+        background: color-mix(in srgb, var(--rl-warm) 90%, #fff 0%);
+        color: #1a1a1a;
+      }
+    </style>
 </head>
 <body>
     <div class="container min-vh-100 d-flex align-items-center justify-content-center py-4">
         <div class="row w-100 justify-content-center">
             <div class="col-12 col-md-6 col-lg-5">
-                <div class="card shadow-sm">
+                <div class="card rl-auth-card border-0 shadow-sm">
                     <div class="card-body p-4">
-                        <h3 class="mb-3 text-center">Login with OTP</h3>
+                        <h3 class="rl-page-title h3 mb-1 text-center">Login with OTP</h3>
+                        <p class="rl-page-subtle text-center mb-3">Secure, fast, and mobile-friendly.</p>
                         <?php /* Alerts handled by SweetAlert2 below; Bootstrap alerts removed */ ?>
                         <?php if ($stage === 'request'): ?>
                             <form method="post" class="vstack gap-3" id="formOtpRequest">
                                 <div>
-                                    <label class="form-label">Phone</label>
-                                    <input type="text" class="form-control" name="phone" maxlength="10" pattern="^[0]{1}[7]{1}[01245678]{1}[0-9]{7}$" title="Enter number like 07XXXXXXXX" placeholder="e.g. 07XXXXXXXX" required />
+                                    <label class="form-label rl-form-label">Phone</label>
+                                    <input type="text" class="form-control rl-input" name="phone" maxlength="10" pattern="^[0]{1}[7]{1}[01245678]{1}[0-9]{7}$" title="Enter number like 07XXXXXXXX" placeholder="e.g. 07XXXXXXXX" required />
                                 </div>
                                 <input type="hidden" name="action" value="request" />
-                                <button type="submit" class="btn btn-primary w-100">Send OTP</button>
+                                <button type="submit" class="btn rl-btn-primary w-100">Send OTP</button>
                             </form>
-                            <a href="<?php echo $base_url; ?>/auth/register.php" class="btn btn-outline-secondary w-100 mt-2">Don't have an account? Register</a>
+                            <a href="<?php echo $base_url; ?>/auth/register.php" class="btn rl-btn-ghost w-100 mt-2">Don't have an account? Register</a>
                         <?php else: ?>
                             <form method="post" class="vstack gap-3" id="formOtpVerify">
                                 <div>
-                                    <label class="form-label">Enter OTP</label>
-                                    <input type="text" class="form-control" name="otp" maxlength="6" pattern="\d{6}" placeholder="6-digit code" required />
+                                    <label class="form-label rl-form-label">Enter OTP</label>
+                                    <input type="text" class="form-control rl-input" name="otp" maxlength="6" pattern="\d{6}" placeholder="6-digit code" required />
                                 </div>
                                 <input type="hidden" name="action" value="verify" />
-                                <button type="submit" class="btn btn-primary w-100">Verify & Login</button>
+                                <button type="submit" class="btn rl-btn-primary w-100">Verify & Login</button>
                             </form>
                             <form method="post" class="mt-2">
                                 <input type="hidden" name="action" value="reset" />
-                                <button type="submit" class="btn btn-secondary w-100">Use different number</button>
+                                <button type="submit" class="btn rl-btn-ghost w-100">Use different number</button>
                             </form>
                         <?php endif; ?>
-                        <p class="text-muted small mt-3 text-center">Testing sender_id: SMSlenzDEMO. Configure real credentials in environment.</p>
                     </div>
                 </div>
             </div>

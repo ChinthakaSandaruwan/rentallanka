@@ -1,1 +1,1 @@
-a:0:{}
+a:1:{i:0;a:11:{s:7:"room_id";i:1;s:5:"title";s:20:"Near Bibile Hospital";s:9:"room_type";s:6:"studio";s:4:"beds";i:1234;s:13:"price_per_day";s:6:"234.00";s:6:"status";s:9:"available";s:10:"image_path";s:66:"http://localhost/rentallanka/uploads/rooms/room_1_1_1762842276.jpg";s:13:"province_name";s:13:"North Western";s:13:"district_name";s:8:"Puttalam";s:9:"city_name";s:8:"Alutwewa";s:11:"in_wishlist";i:0;}}

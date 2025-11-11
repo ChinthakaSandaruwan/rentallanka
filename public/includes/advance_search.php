@@ -187,35 +187,207 @@ function active($v,$c){return $v===$c?'active':'';}
   <title>Advanced Search</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Modern, readable typeface -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    .filter-card{position:sticky;top:1rem}
+    /* ==========================================================================
+       RentalLanka UI Theme (scoped to .rl-theme)
+       - Uses CSS variables for brand colors
+       - Keeps Bootstrap structure; only adds classes and styles
+       ========================================================================== */
+    :root {
+      /* Brand palette */
+      --rl-primary: #004E98;   /* Primary */
+      --rl-light: #EBEBEB;     /* Light background */
+      --rl-secondary: #C0C0C0; /* Secondary */
+      --rl-accent: #3A6EA5;    /* Accent */
+      --rl-dark: #FF6700;      /* Accent/CTA (named "Dark" in brief) */
+
+      /* Extended tokens */
+      --rl-bg: #ffffff;
+      --rl-text: #1f2a37;
+      --rl-muted: #6b7280;
+      --rl-border: #E5E7EB;
+      --rl-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+      --rl-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.06);
+      --rl-radius: 12px;
+      --rl-focus: var(--rl-dark);
+    }
+
+    /* Global scope limiter */
+    .rl-theme {
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--rl-text);
+      background: var(--rl-bg);
+    }
+
+    /* Section spacing and page background */
+    .rl-section { padding: clamp(1.25rem, 1.6vw + 0.5rem, 2.25rem) 0; }
+    .rl-page-bg { background: linear-gradient(180deg, #fff 0%, var(--rl-light) 100%); }
+
+    /* Navbar enhancements (works with your existing navbar include) */
+    .rl-theme .navbar {
+      background: #fff;
+      border-bottom: 1px solid var(--rl-border);
+    }
+    .rl-theme .navbar .navbar-brand {
+      font-weight: 700; color: var(--rl-primary);
+    }
+    .rl-theme .navbar .nav-link {
+      color: var(--rl-text);
+      font-weight: 500;
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      transition: color .2s ease, background-color .2s ease;
+    }
+    .rl-theme .navbar .nav-link:hover,
+    .rl-theme .navbar .nav-link:focus { color: var(--rl-primary); background: rgba(0, 78, 152, 0.08); }
+
+    /* Buttons (use with Bootstrap btn) */
+    .rl-btn {
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      transition: transform .08s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+    }
+    .rl-btn:active { transform: translateY(1px); }
+    .rl-btn-primary {
+      background: var(--rl-primary); color: #fff; border-color: var(--rl-primary);
+      box-shadow: var(--rl-shadow-sm);
+    }
+    .rl-btn-primary:hover { background: var(--rl-accent); border-color: var(--rl-accent); }
+    .rl-btn-cta {
+      background: var(--rl-dark); color: #111827; border-color: var(--rl-dark);
+      box-shadow: var(--rl-shadow-sm);
+    }
+    .rl-btn-cta:hover { filter: brightness(0.95); }
+    .rl-btn-outline { background: #fff; color: var(--rl-primary); border-color: var(--rl-primary); }
+    .rl-btn-outline:hover { background: rgba(0, 78, 152, 0.06); }
+
+    /* Cards and form elements */
+    .rl-card {
+      background: #fff;
+      border: 1px solid var(--rl-border);
+      border-radius: var(--rl-radius);
+      box-shadow: var(--rl-shadow);
+    }
+    .rl-card .card-header {
+      background: #fff;
+      border-bottom: 1px solid var(--rl-border);
+      border-top-left-radius: var(--rl-radius);
+      border-top-right-radius: var(--rl-radius);
+      font-weight: 700;
+    }
+    .rl-label { font-weight: 600; color: #111827; }
+    .rl-control,
+    .rl-select {
+      border-radius: 10px;
+      border-color: var(--rl-secondary);
+      padding-block: 0.625rem;
+    }
+    .rl-control::placeholder { color: var(--rl-muted); }
+    .rl-control:focus, .rl-select:focus {
+      border-color: var(--rl-focus);
+      box-shadow: 0 0 0 0.2rem rgba(255, 103, 0, 0.2);
+    }
+    .rl-range { accent-color: var(--rl-primary); }
+
+    /* Filters panel (sticky on desktop, collapsible on mobile) */
+    .rl-filters { position: sticky; top: 1rem; }
+    @media (max-width: 991.98px) { .rl-filters { position: static; } }
+
+    /* Listing cards */
+    .rl-listing-card {
+      border: 1px solid var(--rl-border);
+      border-radius: var(--rl-radius);
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--rl-shadow-sm);
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .rl-listing-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--rl-shadow);
+      border-color: rgba(0, 78, 152, 0.25);
+    }
+    .rl-listing-media { background: var(--rl-light); }
+    .rl-badge {
+      position: absolute; top: .75rem; left: .75rem;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--rl-primary); border: 1px solid var(--rl-primary);
+      border-radius: 999px; padding: .25rem .6rem; font-weight: 700; font-size: .8rem;
+      box-shadow: var(--rl-shadow-sm); text-transform: uppercase;
+    }
+    .rl-listing-body { padding: 1rem; display: flex; flex-direction: column; gap: .5rem; flex: 1; }
+    .rl-price { color: var(--rl-dark); font-weight: 800; letter-spacing: .2px; }
+    .rl-meta { color: var(--rl-muted); }
+
+    /* Pagination */
+    .rl-page-link { border-radius: 8px !important; border-color: var(--rl-secondary); color: var(--rl-text); }
+    .rl-page-item.active .rl-page-link { background-color: var(--rl-primary); border-color: var(--rl-primary); color: #fff; }
+
+    /* Accessibility helpers */
+    .rl-skip {
+      position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;
+    }
+    .rl-skip:focus {
+      position: static; width: auto; height: auto; background: #fff; padding: .5rem .75rem;
+      border-radius: 8px; box-shadow: var(--rl-shadow); z-index: 1030;
+    }
+
+    /* Container width refinement on very large screens */
+    @media (min-width: 1400px) { .container { max-width: 1200px; } }
   </style>
   </head>
-<body>
+<body class="rl-theme">
+<a href="#main" class="rl-skip">Skip to content</a>
 <?php require_once __DIR__ . '/navbar.php'; ?>
-<div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">Advanced Search</h1>
-    <div class="btn-group" role="group">
-      <a class="btn btn-outline-primary <?php echo active($type,'property'); ?>" href="?type=property&<?php echo h(http_build_query(array_diff_key($_GET,['type'=>1,'page'=>1]))); ?>">Properties</a>
-      <a class="btn btn-outline-primary <?php echo active($type,'room'); ?>" href="?type=room&<?php echo h(http_build_query(array_diff_key($_GET,['type'=>1,'page'=>1]))); ?>">Rooms</a>
-    </div>
-  </div>
 
-  <div class="row g-4">
+<!-- Page content -->
+<div id="main" class="rl-page-bg">
+  <div class="container rl-section">
+
+    <!-- Header row -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+      <h1 class="h4 mb-0">Advanced Search</h1>
+      <div class="btn-group" role="group">
+        <a class="btn rl-btn rl-btn-outline btn-outline-primary <?php echo active($type,'property'); ?>" href="?type=property&<?php echo h(http_build_query(array_diff_key($_GET,['type'=>1,'page'=>1]))); ?>">
+          <i class="bi bi-building me-1"></i> Properties
+        </a>
+        <a class="btn rl-btn rl-btn-outline btn-outline-primary <?php echo active($type,'room'); ?>" href="?type=room&<?php echo h(http_build_query(array_diff_key($_GET,['type'=>1,'page'=>1]))); ?>">
+          <i class="bi bi-door-open me-1"></i> Rooms
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile filters toggle -->
+    <div class="d-lg-none mb-3">
+      <button class="btn rl-btn rl-btn-outline w-100" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+        <i class="bi bi-sliders me-1"></i> Filters
+      </button>
+    </div>
+
+    <div class="row g-4">
     <div class="col-lg-3">
-      <div class="card filter-card">
-        <div class="card-header">Filters</div>
-        <div class="card-body">
-          <form method="get" class="vstack gap-3">
+      <div id="filtersCollapse" class="collapse d-lg-block">
+        <div class="card rl-card rl-filters">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-sliders me-2"></i>Filters</span>
+            <a href="?type=<?php echo h($type); ?>" class="small text-decoration-none">Clear</a>
+          </div>
+          <div class="card-body">
+            <form method="get" class="vstack gap-3">
             <input type="hidden" name="type" value="<?php echo h($type); ?>">
             <div>
-              <label class="form-label">Keyword</label>
-              <input type="text" class="form-control" name="q" value="<?php echo h($kw); ?>" placeholder="Title or description">
+              <label class="form-label rl-label">Keyword</label>
+              <input type="text" class="form-control rl-control" name="q" value="<?php echo h($kw); ?>" placeholder="Title or description">
             </div>
             <div>
-              <label class="form-label">Sort</label>
-              <select name="sort" class="form-select">
+              <label class="form-label rl-label">Sort</label>
+              <select name="sort" class="form-select rl-select">
                 <option value="newest" <?php echo $sort==='newest'?'selected':''; ?>>Newest</option>
                 <option value="price_asc" <?php echo $sort==='price_asc'?'selected':''; ?>>Price: Low to High</option>
                 <option value="price_desc" <?php echo $sort==='price_desc'?'selected':''; ?>>Price: High to Low</option>
@@ -225,8 +397,8 @@ function active($v,$c){return $v===$c?'active':'';}
             
             <?php if ($type==='property'): ?>
               <div>
-                <label class="form-label">Property type</label>
-                <select name="property_type" class="form-select">
+                <label class="form-label rl-label">Property type</label>
+                <select name="property_type" class="form-select rl-select">
                   <option value="">Any</option>
                   <?php foreach (['apartment','house','villa','duplex','studio','penthouse','bungalow','townhouse','farmhouse','office','shop','warehouse','land','commercial_building','industrial','hotel','guesthouse','resort','other'] as $pt): ?>
                     <option value="<?php echo h($pt); ?>" <?php echo ((string)get_param_scalar('property_type')===$pt)?'selected':''; ?>><?php echo ucwords(str_replace('_',' ',$pt)); ?></option>
@@ -235,32 +407,32 @@ function active($v,$c){return $v===$c?'active':'';}
               </div>
               <div class="row g-2">
                 <div class="col">
-                  <label class="form-label">Price min</label>
-                  <input type="number" name="price_min" class="form-control" value="<?php echo h(get_param_scalar('price_min')); ?>">
+                  <label class="form-label rl-label">Price min</label>
+                  <input type="number" name="price_min" class="form-control rl-control" value="<?php echo h(get_param_scalar('price_min')); ?>">
                 </div>
                 <div class="col">
-                  <label class="form-label">Price max</label>
-                  <input type="number" name="price_max" class="form-control" value="<?php echo h(get_param_scalar('price_max')); ?>">
-                </div>
-              </div>
-              <div class="row g-2">
-                <div class="col">
-                  <label class="form-label">Bedrooms</label>
-                  <input type="number" name="bedrooms" class="form-control" value="<?php echo h(get_param_scalar('bedrooms')); ?>">
-                </div>
-                <div class="col">
-                  <label class="form-label">Bathrooms</label>
-                  <input type="number" name="bathrooms" class="form-control" value="<?php echo h(get_param_scalar('bathrooms')); ?>">
+                  <label class="form-label rl-label">Price max</label>
+                  <input type="number" name="price_max" class="form-control rl-control" value="<?php echo h(get_param_scalar('price_max')); ?>">
                 </div>
               </div>
               <div class="row g-2">
                 <div class="col">
-                  <label class="form-label">Living rooms</label>
-                  <input type="number" name="living_rooms" class="form-control" value="<?php echo h(get_param_scalar('living_rooms')); ?>">
+                  <label class="form-label rl-label">Bedrooms</label>
+                  <input type="number" name="bedrooms" class="form-control rl-control" value="<?php echo h(get_param_scalar('bedrooms')); ?>">
                 </div>
                 <div class="col">
-                  <label class="form-label">Status</label>
-                  <select name="status" class="form-select">
+                  <label class="form-label rl-label">Bathrooms</label>
+                  <input type="number" name="bathrooms" class="form-control rl-control" value="<?php echo h(get_param_scalar('bathrooms')); ?>">
+                </div>
+              </div>
+              <div class="row g-2">
+                <div class="col">
+                  <label class="form-label rl-label">Living rooms</label>
+                  <input type="number" name="living_rooms" class="form-control rl-control" value="<?php echo h(get_param_scalar('living_rooms')); ?>">
+                </div>
+                <div class="col">
+                  <label class="form-label rl-label">Status</label>
+                  <select name="status" class="form-select rl-select">
                     <option value="">Any</option>
                     <?php foreach (['pending','available','unavailable'] as $s): ?>
                       <option value="<?php echo h($s); ?>" <?php echo ((string)get_param_scalar('status')===$s)?'selected':''; ?>><?php echo ucwords($s); ?></option>
@@ -270,19 +442,19 @@ function active($v,$c){return $v===$c?'active':'';}
               </div>
               <div class="row g-2">
                 <div class="col">
-                  <label class="form-label">Sqft min</label>
-                  <input type="number" step="0.01" name="sqft_min" class="form-control" value="<?php echo h(get_param_scalar('sqft_min')); ?>">
+                  <label class="form-label rl-label">Sqft min</label>
+                  <input type="number" step="0.01" name="sqft_min" class="form-control rl-control" value="<?php echo h(get_param_scalar('sqft_min')); ?>">
                 </div>
                 <div class="col">
-                  <label class="form-label">Sqft max</label>
-                  <input type="number" step="0.01" name="sqft_max" class="form-control" value="<?php echo h(get_param_scalar('sqft_max')); ?>">
+                  <label class="form-label rl-label">Sqft max</label>
+                  <input type="number" step="0.01" name="sqft_max" class="form-control rl-control" value="<?php echo h(get_param_scalar('sqft_max')); ?>">
                 </div>
               </div>
               <div class="row g-2">
                 <?php foreach (['garden'=>'Garden','gym'=>'Gym','pool'=>'Pool','kitchen'=>'Kitchen','parking'=>'Parking'] as $k=>$label): ?>
                   <div class="col-6">
                     <div class="form-check">
-                      <input class="form-check-input" type="checkbox" name="<?php echo h($k); ?>" id="f_<?php echo h($k); ?>" <?php echo isset($_GET[$k])?'checked':''; ?>>
+                      <input class="form-check-input rl-focusable" type="checkbox" name="<?php echo h($k); ?>" id="f_<?php echo h($k); ?>" <?php echo isset($_GET[$k])?'checked':''; ?>>
                       <label class="form-check-label" for="f_<?php echo h($k); ?>"><?php echo h($label); ?></label>
                     </div>
                   </div>
@@ -290,8 +462,8 @@ function active($v,$c){return $v===$c?'active':'';}
               </div>
             <?php else: ?>
               <div>
-                <label class="form-label">Room type</label>
-                <select name="room_type" class="form-select">
+                <label class="form-label rl-label">Room type</label>
+                <select name="room_type" class="form-select rl-select">
                   <option value="">Any</option>
                   <?php foreach (['single','double','twin','suite','deluxe','family','studio','dorm','apartment','villa','penthouse','shared','conference','meeting','other'] as $rt): ?>
                     <option value="<?php echo h($rt); ?>" <?php echo ((string)get_param_scalar('room_type')===$rt)?'selected':''; ?>><?php echo ucwords(str_replace('_',' ',$rt)); ?></option>
@@ -300,27 +472,27 @@ function active($v,$c){return $v===$c?'active':'';}
               </div>
               <div class="row g-2">
                 <div class="col">
-                  <label class="form-label">Price min</label>
-                  <input type="number" name="price_min" class="form-control" value="<?php echo h(get_param_scalar('price_min')); ?>">
+                  <label class="form-label rl-label">Price min</label>
+                  <input type="number" name="price_min" class="form-control rl-control" value="<?php echo h(get_param_scalar('price_min')); ?>">
                 </div>
                 <div class="col">
-                  <label class="form-label">Price max</label>
-                  <input type="number" name="price_max" class="form-control" value="<?php echo h(get_param_scalar('price_max')); ?>">
+                  <label class="form-label rl-label">Price max</label>
+                  <input type="number" name="price_max" class="form-control rl-control" value="<?php echo h(get_param_scalar('price_max')); ?>">
                 </div>
               </div>
               <div class="row g-2">
                 <div class="col">
-                  <label class="form-label">Beds</label>
-                  <input type="number" name="beds" class="form-control" value="<?php echo h(get_param_scalar('beds')); ?>">
+                  <label class="form-label rl-label">Beds</label>
+                  <input type="number" name="beds" class="form-control rl-control" value="<?php echo h(get_param_scalar('beds')); ?>">
                 </div>
                 <div class="col">
-                  <label class="form-label">Max guests</label>
-                  <input type="number" name="maximum_guests" class="form-control" value="<?php echo h(get_param_scalar('maximum_guests')); ?>">
+                  <label class="form-label rl-label">Max guests</label>
+                  <input type="number" name="maximum_guests" class="form-control rl-control" value="<?php echo h(get_param_scalar('maximum_guests')); ?>">
                 </div>
               </div>
               <div>
-                <label class="form-label">Status</label>
-                <select name="status" class="form-select">
+                <label class="form-label rl-label">Status</label>
+                <select name="status" class="form-select rl-select">
                   <option value="">Any</option>
                   <?php foreach (['pending','available','unavailable','rented'] as $s): ?>
                     <option value="<?php echo h($s); ?>" <?php echo ((string)get_param_scalar('status')===$s)?'selected':''; ?>><?php echo ucwords($s); ?></option>
@@ -329,13 +501,14 @@ function active($v,$c){return $v===$c?'active':'';}
               </div>
             <?php endif; ?>
             <div class="d-flex gap-2">
-              <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Search</button>
-              <a class="btn btn-outline-secondary" href="?type=<?php echo h($type); ?>">Reset</a>
+              <button class="btn rl-btn rl-btn-primary" type="submit"><i class="bi bi-search me-1"></i>Search</button>
+              <a class="btn rl-btn rl-btn-outline btn-outline-secondary" href="?type=<?php echo h($type); ?>">Reset</a>
             </div>
-          </form>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
     <div class="col-lg-9">
       <div class="mb-3">
         
@@ -356,7 +529,7 @@ function active($v,$c){return $v===$c?'active':'';}
                 }
               ?>
               <label class="form-label m-0 text-nowrap me-2">Per&nbsp;page</label>
-              <select name="per_page" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+              <select name="per_page" class="form-select form-select-sm w-auto rl-select" onchange="this.form.submit()">
                 <?php foreach ([6,12,18,24] as $pp): ?>
                   <option value="<?php echo $pp; ?>" <?php echo (!$per_page_all && $per_page===$pp)?'selected':''; ?>><?php echo $pp; ?></option>
                 <?php endforeach; ?>
@@ -368,38 +541,38 @@ function active($v,$c){return $v===$c?'active':'';}
       </div>
 
       <?php if ($type==='property'): ?>
-        <div class="row g-3">
+        <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-xl-3">
           <?php foreach ($rows as $it): ?>
-            <div class="col-md-6 col-xl-4">
-              <div class="card h-100 border shadow-sm position-relative overflow-hidden">
+            <div class="col">
+              <div class="card rl-listing-card h-100 border shadow-sm position-relative overflow-hidden">
                 <?php if (!empty($it['status'])): ?>
-                  <span class="badge bg-success position-absolute top-0 start-0 m-2 text-uppercase small"><?php echo h($it['status']); ?></span>
+                  <span class="rl-badge"><?php echo h($it['status']); ?></span>
                 <?php endif; ?>
                 <?php
                   $img = (string)($it['image'] ?? '');
                   if ($img !== '' && !preg_match('#^https?://#i', $img) && $img[0] !== '/') { $img = '/' . ltrim($img, '/'); }
                   if ($img === '') { $img = 'https://via.placeholder.com/800x450?text=No+Image'; }
                 ?>
-                <div class="ratio ratio-16x9">
+                <div class="ratio ratio-16x9 rl-listing-media">
                   <img src="<?php echo h($img); ?>" class="w-100 h-100 object-fit-cover" alt="<?php echo h($it['title']); ?>" loading="lazy" decoding="async">
                 </div>
-                <div class="card-body d-flex flex-column">
+                <div class="card-body rl-listing-body">
                   <h5 class="card-title mb-1"><?php echo h($it['title']); ?></h5>
-                  <div class="text-muted small mb-2"><?php echo h(ucwords(str_replace('_',' ',$it['property_type']))); ?></div>
+                  <div class="rl-meta small mb-2"><?php echo h(ucwords(str_replace('_',' ',$it['property_type']))); ?></div>
                   <div class="mt-auto">
-                    <span class="fw-semibold">LKR <?php echo number_format((float)$it['price_per_month'], 2); ?>/month</span>
+                    <span class="rl-price">LKR <?php echo number_format((float)$it['price_per_month'], 2); ?>/month</span>
                   </div>
                 </div>
                 <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
                   <div class="row g-2">
                     <div class="col-6">
-                      <a class="btn btn-sm btn-outline-secondary w-100" href="<?php echo $base_url; ?>/public/includes/view_property.php?id=<?php echo (int)$it['property_id']; ?>">
+                      <a class="btn rl-btn rl-btn-outline btn-sm btn-outline-secondary w-100" href="<?php echo $base_url; ?>/public/includes/view_property.php?id=<?php echo (int)$it['property_id']; ?>">
                         <i class="bi bi-eye me-1"></i>View
                       </a>
                     </div>
                     <div class="col-6">
                       <?php $in = (int)($it['in_wishlist'] ?? 0) === 1; ?>
-                      <button class="btn btn-sm w-100 btn-wish <?php echo $in ? 'btn-outline-danger' : 'btn-outline-primary'; ?>" data-id="<?php echo (int)$it['property_id']; ?>">
+                      <button class="btn rl-btn btn-sm w-100 btn-wish <?php echo $in ? 'btn-outline-danger' : 'btn-outline-primary'; ?>" data-id="<?php echo (int)$it['property_id']; ?>">
                         <?php if ($in): ?>
                           <i class="bi bi-heart-fill"></i> Added
                         <?php else: ?>
@@ -417,26 +590,26 @@ function active($v,$c){return $v===$c?'active':'';}
           <?php endif; ?>
         </div>
       <?php else: ?>
-        <div class="row g-3">
+        <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-xl-3">
           <?php foreach ($rows as $it): ?>
-            <div class="col-md-6 col-xl-4">
-              <div class="card h-100 border shadow-sm position-relative overflow-hidden">
+            <div class="col">
+              <div class="card rl-listing-card h-100 border shadow-sm position-relative overflow-hidden">
                 <?php if (!empty($it['status'])): ?>
-                  <span class="badge bg-success position-absolute top-0 start-0 m-2 text-uppercase small"><?php echo h($it['status']); ?></span>
+                  <span class="rl-badge"><?php echo h($it['status']); ?></span>
                 <?php endif; ?>
                 <?php
                   $img = (string)($it['image_path'] ?? '');
                   if ($img !== '' && !preg_match('#^https?://#i', $img) && $img[0] !== '/') { $img = '/' . ltrim($img, '/'); }
                   if ($img === '') { $img = 'https://via.placeholder.com/800x450?text=No+Image'; }
                 ?>
-                <div class="ratio ratio-16x9">
+                <div class="ratio ratio-16x9 rl-listing-media">
                   <img src="<?php echo h($img); ?>" class="w-100 h-100 object-fit-cover" alt="<?php echo h($it['title']); ?>" loading="lazy" decoding="async">
                 </div>
-                <div class="card-body d-flex flex-column">
+                <div class="card-body rl-listing-body">
                   <h5 class="card-title mb-1"><?php echo h($it['title']); ?></h5>
                   <?php $rt = (string)($it['room_type'] ?? ''); ?>
-                  <div class="text-muted small mb-2"><?php echo h(ucwords(str_replace('_',' ',$rt))); ?></div>
-                  <div class="fw-semibold">LKR <?php echo number_format((float)($it['price_per_day'] ?? 0), 2); ?>/day</div>
+                  <div class="rl-meta small mb-2"><?php echo h(ucwords(str_replace('_',' ',$rt))); ?></div>
+                  <div class="rl-price">LKR <?php echo number_format((float)($it['price_per_day'] ?? 0), 2); ?>/day</div>
                   <div class="small text-muted mt-1">
                     <i class="bi bi-bed me-1"></i><?php echo (int)($it['beds'] ?? 0); ?>
                     <span class="ms-2"><i class="bi bi-people me-1"></i><?php echo (int)($it['maximum_guests'] ?? 0); ?></span>
@@ -446,13 +619,13 @@ function active($v,$c){return $v===$c?'active':'';}
                   <?php $rid = (int)($it['room_id'] ?? 0); ?>
                   <div class="row g-2">
                     <div class="col-6">
-                      <a class="btn btn-sm btn-outline-secondary w-100 <?php echo $rid? '' : 'disabled'; ?>" href="<?php echo $rid ? ($base_url . '/public/includes/view_room.php?id=' . $rid) : '#'; ?>">
+                      <a class="btn rl-btn rl-btn-outline btn-sm btn-outline-secondary w-100 <?php echo $rid? '' : 'disabled'; ?>" href="<?php echo $rid ? ($base_url . '/public/includes/view_room.php?id=' . $rid) : '#'; ?>">
                         <i class="bi bi-eye me-1"></i>View
                       </a>
                     </div>
                     <div class="col-6">
                       <?php $rin = (int)($it['in_wishlist'] ?? 0) === 1; ?>
-                      <button class="btn btn-sm w-100 btn-room-wish <?php echo $rin ? 'btn-outline-danger' : 'btn-outline-primary'; ?>" data-id="<?php echo $rid; ?>" <?php echo $rid? '' : 'disabled'; ?>>
+                      <button class="btn rl-btn btn-sm w-100 btn-room-wish <?php echo $rin ? 'btn-outline-danger' : 'btn-outline-primary'; ?>" data-id="<?php echo $rid; ?>" <?php echo $rid? '' : 'disabled'; ?>>
                         <?php if ($rin): ?>
                           <i class="bi bi-heart-fill"></i> Added
                         <?php else: ?>
@@ -478,22 +651,23 @@ function active($v,$c){return $v===$c?'active':'';}
             $base = '?' . http_build_query($qs);
             $prev = max(1, $page-1); $next = min($total_pages, $page+1);
           ?>
-          <li class="page-item <?php echo $page<=1?'disabled':''; ?>">
-            <a class="page-link" href="<?php echo h($base . '&page=' . $prev); ?>">Previous</a>
+          <li class="page-item rl-page-item <?php echo $page<=1?'disabled':''; ?>">
+            <a class="page-link rl-page-link" href="<?php echo h($base . '&page=' . $prev); ?>">Previous</a>
           </li>
           <?php for ($p=max(1,$page-2); $p<=min($total_pages,$page+2); $p++): ?>
-            <li class="page-item <?php echo $p===$page?'active':''; ?>">
-              <a class="page-link" href="<?php echo h($base . '&page=' . $p); ?>"><?php echo $p; ?></a>
+            <li class="page-item rl-page-item <?php echo $p===$page?'active':''; ?>">
+              <a class="page-link rl-page-link" href="<?php echo h($base . '&page=' . $p); ?>"><?php echo $p; ?></a>
             </li>
           <?php endfor; ?>
-          <li class="page-item <?php echo $page>=$total_pages?'disabled':''; ?>">
-            <a class="page-link" href="<?php echo h($base . '&page=' . $next); ?>">Next</a>
+          <li class="page-item rl-page-item <?php echo $page>=$total_pages?'disabled':''; ?>">
+            <a class="page-link rl-page-link" href="<?php echo h($base . '&page=' . $next); ?>">Next</a>
           </li>
         </ul>
       </nav>
       
     </div>
   </div>
+</div>
 </div>
 <script>
   async function wishToggle(btn, id) {

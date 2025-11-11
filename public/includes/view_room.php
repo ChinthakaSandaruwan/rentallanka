@@ -124,57 +124,454 @@ function norm_url($p) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?php echo htmlspecialchars($room['title']); ?> - Room</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===========================
+       VIEW ROOM PAGE CUSTOM STYLES
+       Brand Colors: Primary #004E98, Accent #3A6EA5, Orange #FF6700
+       =========================== */
+    
+    :root {
+      --rl-primary: #004E98;
+      --rl-light-bg: #EBEBEB;
+      --rl-secondary: #C0C0C0;
+      --rl-accent: #3A6EA5;
+      --rl-dark: #FF6700;
+      --rl-white: #ffffff;
+      --rl-text: #1f2a37;
+      --rl-text-secondary: #4a5568;
+      --rl-text-muted: #718096;
+      --rl-border: #e2e8f0;
+      --rl-shadow-sm: 0 2px 12px rgba(0,0,0,.06);
+      --rl-shadow-md: 0 4px 16px rgba(0,0,0,.1);
+      --rl-shadow-lg: 0 10px 40px rgba(0,0,0,.15);
+      --rl-radius: 12px;
+      --rl-radius-lg: 16px;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--rl-text);
+      background: linear-gradient(180deg, #fff 0%, var(--rl-light-bg) 100%);
+      min-height: 100vh;
+    }
+    
+    /* Container */
+    .rl-container {
+      padding-top: clamp(1.5rem, 2vw, 2.5rem);
+      padding-bottom: clamp(1.5rem, 2vw, 2.5rem);
+    }
+    
+    /* Cards */
+    .rl-card {
+      border: 1px solid var(--rl-border);
+      border-radius: var(--rl-radius-lg);
+      background: var(--rl-white);
+      box-shadow: var(--rl-shadow-sm);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .rl-card:hover {
+      box-shadow: var(--rl-shadow-md);
+    }
+    
+    .rl-card-header {
+      background: linear-gradient(135deg, #f8fafc 0%, var(--rl-white) 100%);
+      border-bottom: 2px solid var(--rl-border);
+      padding: 1.25rem 1.5rem;
+      font-weight: 700;
+      font-size: 1.125rem;
+      color: var(--rl-text);
+    }
+    
+    .rl-card-body {
+      padding: 1.5rem;
+    }
+    
+    /* Title */
+    .rl-page-title {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 800;
+      color: var(--rl-text);
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+    }
+    
+    /* Description List */
+    .rl-dl {
+      margin-bottom: 0;
+    }
+    
+    .rl-dl dt {
+      font-weight: 600;
+      color: var(--rl-text-secondary);
+      font-size: 0.9375rem;
+    }
+    
+    .rl-dl dd {
+      color: var(--rl-text);
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+    
+    .rl-dl dd:last-child {
+      margin-bottom: 0;
+    }
+    
+    /* Section Headings */
+    .rl-section-heading {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--rl-text);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .rl-section-heading::before {
+      content: '';
+      width: 4px;
+      height: 1.25rem;
+      background: linear-gradient(180deg, var(--rl-dark), var(--rl-accent));
+      border-radius: 2px;
+    }
+    
+    /* Price Highlight */
+    .rl-price-highlight {
+      color: var(--rl-dark);
+      font-weight: 800;
+      font-size: 1.25rem;
+    }
+    
+    /* Buttons */
+    .rl-btn {
+      border-radius: 10px;
+      font-weight: 700;
+      padding: 0.75rem 1.75rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: none;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+    }
+    
+    .rl-btn-primary {
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%);
+      color: var(--rl-white);
+      box-shadow: 0 4px 16px rgba(0, 78, 152, 0.25);
+    }
+    
+    .rl-btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #003a75 0%, #2d5a8f 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 78, 152, 0.35);
+      color: var(--rl-white);
+    }
+    
+    .rl-btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    
+    .rl-btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .rl-btn-outline {
+      background: var(--rl-white);
+      border: 2px solid var(--rl-primary);
+      color: var(--rl-primary);
+      padding: 0.5rem 1rem;
+      font-size: 0.9375rem;
+    }
+    
+    .rl-btn-outline:hover {
+      background: var(--rl-primary);
+      color: var(--rl-white);
+      transform: translateY(-1px);
+    }
+    
+    /* Badges */
+    .rl-badge {
+      border-radius: 8px;
+      padding: 0.5rem 0.875rem;
+      font-weight: 700;
+      font-size: 0.875rem;
+      display: inline-block;
+    }
+    
+    .rl-badge-success {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+    
+    .rl-badge-danger {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+      border: 1px solid #f87171;
+    }
+    
+    /* Alerts */
+    .rl-alert {
+      border-radius: var(--rl-radius);
+      padding: 1rem 1.25rem;
+      border-left: 4px solid;
+      margin-top: 1rem;
+    }
+    
+    .rl-alert-info {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border-left-color: var(--rl-primary);
+      color: #1e3a8a;
+    }
+    
+    .rl-alert-warning {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-left-color: #f59e0b;
+      color: #92400e;
+    }
+    
+    /* Images */
+    .rl-image-primary {
+      border-radius: var(--rl-radius);
+      overflow: hidden;
+      box-shadow: var(--rl-shadow-md);
+      transition: all 0.3s ease;
+      display: block;
+      margin-bottom: 1.5rem;
+    }
+    
+    .rl-image-primary:hover {
+      box-shadow: var(--rl-shadow-lg);
+      transform: translateY(-2px);
+    }
+    
+    .rl-image-primary img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: var(--rl-radius);
+    }
+    
+    .rl-image-thumb {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--rl-shadow-sm);
+      transition: all 0.2s ease;
+      display: block;
+    }
+    
+    .rl-image-thumb:hover {
+      box-shadow: var(--rl-shadow-md);
+      transform: scale(1.02);
+    }
+    
+    .rl-image-thumb img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+    
+    /* List Styling */
+    .rl-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    
+    .rl-list li {
+      padding-left: 1.5rem;
+      position: relative;
+      margin-bottom: 0.5rem;
+      color: var(--rl-text-secondary);
+    }
+    
+    .rl-list li::before {
+      content: '•';
+      position: absolute;
+      left: 0.5rem;
+      color: var(--rl-dark);
+      font-weight: 900;
+      font-size: 1.25rem;
+    }
+    
+    /* Pricing Section */
+    .rl-pricing-item {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--rl-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .rl-pricing-item:last-child {
+      border-bottom: none;
+    }
+    
+    .rl-pricing-label {
+      color: var(--rl-text-secondary);
+      font-weight: 500;
+    }
+    
+    .rl-pricing-value {
+      color: var(--rl-dark);
+      font-weight: 700;
+      font-size: 1.125rem;
+    }
+    
+    /* Modal Enhancements */
+    .modal-content {
+      border-radius: var(--rl-radius-lg);
+      border: none;
+      box-shadow: var(--rl-shadow-lg);
+    }
+    
+    .modal-header {
+      background: linear-gradient(135deg, #f8fafc 0%, var(--rl-white) 100%);
+      border-bottom: 2px solid var(--rl-border);
+      padding: 1.5rem;
+    }
+    
+    .modal-title {
+      font-weight: 800;
+      color: var(--rl-text);
+      font-size: 1.375rem;
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+    }
+    
+    /* Text Utilities */
+    .rl-text-muted {
+      color: var(--rl-text-muted);
+    }
+    
+    .rl-text-secondary {
+      color: var(--rl-text-secondary);
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 991px) {
+      .rl-card-body {
+        padding: 1.25rem;
+      }
+      
+      .rl-page-title {
+        font-size: 1.5rem;
+      }
+      
+      .rl-btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .rl-btn-outline {
+        width: auto;
+      }
+    }
+    
+    @media (max-width: 767px) {
+      .rl-container {
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+      }
+      
+      .rl-card-header {
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+      }
+      
+      .rl-card-body {
+        padding: 1rem;
+      }
+      
+      .rl-page-title {
+        font-size: 1.375rem;
+      }
+      
+      .rl-btn {
+        font-size: 0.9375rem;
+        padding: 0.625rem 1.5rem;
+      }
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .rl-card {
+      animation: fadeInUp 0.5s ease-out;
+    }
+    
+    .rl-card:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+  </style>
 </head>
 <body>
 <?php require_once __DIR__ . '/navbar.php'; ?>
-<div class="container py-4">
+<div class="container rl-container">
   <div class="row g-4">
     <div class="col-12 col-lg-7">
-      <div class="card">
-        <div class="card-header">Overview</div>
-        <div class="card-body">
-          <h1 class="h4 mb-3"><?php echo htmlspecialchars($room['title']); ?></h1>
-          <dl class="row mb-0">
+      <div class="card rl-card">
+        <div class="card-header rl-card-header">Overview</div>
+        <div class="card-body rl-card-body">
+          <h1 class="rl-page-title"><?php echo htmlspecialchars($room['title']); ?></h1>
+          <dl class="row rl-dl">
             <dt class="col-sm-4">Owner</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['owner_name'] ?? ''); ?></dd>
             <dt class="col-sm-4">Type</dt><dd class="col-sm-8"><?php echo htmlspecialchars($room['room_type'] ?? ''); ?></dd>
             <dt class="col-sm-4">Beds</dt><dd class="col-sm-8"><?php echo (int)$room['beds']; ?></dd>
             <dt class="col-sm-4">Max Guests</dt><dd class="col-sm-8"><?php echo (int)($room['maximum_guests'] ?? 0); ?></dd>
-            <dt class="col-sm-4">Price Per Night</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$room['price_per_day'], 2); ?></dd>
+            <dt class="col-sm-4">Price Per Night</dt><dd class="col-sm-8 rl-price-highlight">LKR <?php echo number_format((float)$room['price_per_day'], 2); ?></dd>
           </dl>
-          <div class="mt-3">
-            <div class="fw-semibold mb-1">Description</div>
-            <div class="text-body-secondary"><?php echo nl2br(htmlspecialchars($room['description'] ?? '')); ?></div>
+          <div class="mt-4">
+            <div class="rl-section-heading">Description</div>
+            <div class="rl-text-secondary"><?php echo nl2br(htmlspecialchars($room['description'] ?? '')); ?></div>
           </div>
           <?php if ($isOwnerViewing): ?>
-            <div class="alert alert-info mt-3" role="alert">
-              You are the owner of this room. Renting your own room is disabled.
+            <div class="alert rl-alert rl-alert-info" role="alert">
+              <strong>Owner View:</strong> You are the owner of this room. Renting your own room is disabled.
             </div>
           <?php elseif (strtolower((string)($room['status'] ?? '')) !== 'available'): ?>
-            <div class="alert alert-warning mt-3" role="alert">
-              This room is not available for rent.
+            <div class="alert rl-alert rl-alert-warning" role="alert">
+              <strong>Not Available:</strong> This room is not available for rent at the moment.
             </div>
           <?php endif; ?>
           <div class="mt-4">
             <?php if (!$isOwnerViewing && strtolower((string)($room['status'] ?? '')) === 'available'): ?>
-              <button type="button" class="btn btn-primary" id="btnRentNow" data-room-id="<?php echo (int)$rid; ?>">
-                <i class="bi bi-bag-check me-1"></i>Rent Now
+              <button type="button" class="btn rl-btn rl-btn-primary" id="btnRentNow" data-room-id="<?php echo (int)$rid; ?>">
+                <i class="bi bi-bag-check"></i>Rent Now
               </button>
             <?php else: ?>
-              <button type="button" class="btn btn-primary" disabled>
-                <i class="bi bi-bag-check me-1"></i>Rent Now
+              <button type="button" class="btn rl-btn rl-btn-primary" disabled>
+                <i class="bi bi-bag-check"></i>Rent Now
               </button>
             <?php endif; ?>
           </div>
           <div class="mt-4">
-            <div class="fw-semibold mb-1">Location</div>
+            <div class="rl-section-heading">Location</div>
             <?php $locLine = trim(implode(', ', array_filter([$loc['address'], $loc['city'], $loc['district'], $loc['province']]))); ?>
-            <div class="text-body-secondary"><?php echo htmlspecialchars($locLine !== '' ? $locLine : 'Not provided'); ?><?php echo $loc['postal_code'] !== '' ? ' • ' . htmlspecialchars($loc['postal_code']) : ''; ?></div>
+            <div class="rl-text-secondary"><?php echo htmlspecialchars($locLine !== '' ? $locLine : 'Not provided'); ?><?php echo $loc['postal_code'] !== '' ? ' • ' . htmlspecialchars($loc['postal_code']) : ''; ?></div>
             <?php if (!empty($loc['google_map_link'])): ?>
               <div class="mt-2">
-                <a href="<?php echo htmlspecialchars($loc['google_map_link']); ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
-                  <i class="bi bi-geo"></i> View on map
+                <a href="<?php echo htmlspecialchars($loc['google_map_link']); ?>" target="_blank" rel="noopener" class="btn btn-sm rl-btn-outline">
+                  <i class="bi bi-geo-alt"></i> View on Map
                 </a>
               </div>
             <?php endif; ?>
@@ -182,67 +579,67 @@ function norm_url($p) {
 
           <?php if (!empty($meals)): ?>
           <div class="mt-4">
-            <div class="fw-semibold mb-1">Meal Options</div>
-            <ul class="list-unstyled mb-0">
+            <div class="rl-section-heading">Meal Options</div>
+            <ul class="rl-list mb-0">
               <?php foreach ($meals as $m): ?>
-                <li>• <?php echo htmlspecialchars(ucwords(str_replace('_',' ', $m['name']))); ?> — LKR <?php echo number_format((float)$m['price'], 2); ?>/day per guest</li>
+                <li><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $m['name']))); ?> — <span class="fw-bold" style="color: var(--rl-dark);">LKR <?php echo number_format((float)$m['price'], 2); ?></span>/day per guest</li>
               <?php endforeach; ?>
             </ul>
           </div>
           <?php endif; ?>
 
           <div class="mt-4">
-            <div class="fw-semibold mb-1">Availability</div>
+            <div class="rl-section-heading">Availability</div>
             <div class="d-flex flex-wrap gap-2">
               <?php if (!empty($unavailable)): ?>
                 <?php foreach ($unavailable as $rng): ?>
                   <?php $ciLbl = htmlspecialchars(date('Y-m-d', strtotime($rng[0]))); $coLbl = htmlspecialchars(date('Y-m-d', strtotime($rng[1]))); ?>
-                  <span class="badge bg-danger"><?php echo $ciLbl; ?> to <?php echo $coLbl; ?></span>
+                  <span class="badge rl-badge rl-badge-danger"><?php echo $ciLbl; ?> to <?php echo $coLbl; ?></span>
                 <?php endforeach; ?>
               <?php else: ?>
-                <span class="badge bg-success">No current blocks</span>
+                <span class="badge rl-badge rl-badge-success">No Current Blocks</span>
               <?php endif; ?>
             </div>
           </div>
 
           <div class="mt-4">
-            <div class="fw-semibold mb-1">Pricing Examples</div>
+            <div class="rl-section-heading">Pricing Examples</div>
             <?php $ppd = (float)($room['price_per_day'] ?? 0); ?>
-            <div class="text-body-secondary small">Prices exclude optional meal costs.</div>
-            <ul class="mb-0">
-              <li>1 night: LKR <?php echo number_format($ppd * 1, 2); ?></li>
-              <li>3 nights: LKR <?php echo number_format($ppd * 3, 2); ?></li>
-              <li>7 nights: LKR <?php echo number_format($ppd * 7, 2); ?></li>
-            </ul>
+            <div class="rl-text-muted small mb-2">Prices exclude optional meal costs.</div>
+            <div>
+              <div class="rl-pricing-item"><span class="rl-pricing-label">1 night</span><span class="rl-pricing-value">LKR <?php echo number_format($ppd * 1, 2); ?></span></div>
+              <div class="rl-pricing-item"><span class="rl-pricing-label">3 nights</span><span class="rl-pricing-value">LKR <?php echo number_format($ppd * 3, 2); ?></span></div>
+              <div class="rl-pricing-item"><span class="rl-pricing-label">7 nights</span><span class="rl-pricing-value">LKR <?php echo number_format($ppd * 7, 2); ?></span></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
     <div class="col-12 col-lg-5">
-      <div class="card mb-3">
-        <div class="card-header">Images</div>
-        <div class="card-body">
+      <div class="card rl-card mb-3">
+        <div class="card-header rl-card-header">Images</div>
+        <div class="card-body rl-card-body">
           <?php if ($images): ?>
             <?php $primaryUrl = norm_url($images[0]['image_path'] ?? ''); ?>
             <?php if ($primaryUrl): ?>
-              <a href="<?php echo htmlspecialchars($primaryUrl); ?>" target="_blank" download>
-                <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid rounded mb-3" alt="" loading="eager" decoding="async" fetchpriority="high">
+              <a href="<?php echo htmlspecialchars($primaryUrl); ?>" target="_blank" class="rl-image-primary">
+                <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid" alt="Room Image" loading="eager" decoding="async" fetchpriority="high">
               </a>
             <?php endif; ?>
             <?php if (count($images) > 1): ?>
-              <div class="row g-2">
+              <div class="row g-3">
                 <?php foreach (array_slice($images, 1) as $img): ?>
                   <?php $p = norm_url($img['image_path'] ?? ''); ?>
                   <div class="col-6 col-md-4">
-                    <a href="<?php echo htmlspecialchars($p); ?>" target="_blank" download>
-                      <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid rounded" alt="" loading="lazy" decoding="async">
+                    <a href="<?php echo htmlspecialchars($p); ?>" target="_blank" class="rl-image-thumb">
+                      <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid" alt="Room Image" loading="lazy" decoding="async">
                     </a>
                   </div>
                 <?php endforeach; ?>
               </div>
             <?php endif; ?>
           <?php else: ?>
-            <div class="text-muted">No images uploaded.</div>
+            <div class="rl-text-muted">No images uploaded.</div>
           <?php endif; ?>
         </div>
       </div>

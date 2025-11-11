@@ -43,7 +43,7 @@ require_role('customer');
     }
 
     .dashboard-header {
-      background: linear-gradient(135deg, #0d6efd, #6610f2);
+      background: linear-gradient(135deg, #0d6efd, #979797ff);
       color: white;
       border-radius: 1rem;
       padding: 2rem;

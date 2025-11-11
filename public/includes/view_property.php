@@ -89,51 +89,368 @@ function norm_url($p) {
     ];
     require_once __DIR__ . '/seo_meta.php';
   ?>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===========================
+       VIEW PROPERTY PAGE CUSTOM STYLES
+       Brand Colors: Primary #004E98, Accent #3A6EA5, Orange #FF6700
+       =========================== */
+    
+    :root {
+      --rl-primary: #004E98;
+      --rl-light-bg: #EBEBEB;
+      --rl-secondary: #C0C0C0;
+      --rl-accent: #3A6EA5;
+      --rl-dark: #FF6700;
+      --rl-white: #ffffff;
+      --rl-text: #1f2a37;
+      --rl-text-secondary: #4a5568;
+      --rl-text-muted: #718096;
+      --rl-border: #e2e8f0;
+      --rl-shadow-sm: 0 2px 12px rgba(0,0,0,.06);
+      --rl-shadow-md: 0 4px 16px rgba(0,0,0,.1);
+      --rl-shadow-lg: 0 10px 40px rgba(0,0,0,.15);
+      --rl-radius: 12px;
+      --rl-radius-lg: 16px;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--rl-text);
+      background: linear-gradient(180deg, #fff 0%, var(--rl-light-bg) 100%);
+      min-height: 100vh;
+    }
+    
+    .rl-container {
+      padding-top: clamp(1.5rem, 2vw, 2.5rem);
+      padding-bottom: clamp(1.5rem, 2vw, 2.5rem);
+    }
+    
+    /* Cards */
+    .rl-card {
+      border: 1px solid var(--rl-border);
+      border-radius: var(--rl-radius-lg);
+      background: var(--rl-white);
+      box-shadow: var(--rl-shadow-sm);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .rl-card:hover {
+      box-shadow: var(--rl-shadow-md);
+    }
+    
+    .rl-card-header {
+      background: linear-gradient(135deg, #f8fafc 0%, var(--rl-white) 100%);
+      border-bottom: 2px solid var(--rl-border);
+      padding: 1.25rem 1.5rem;
+      font-weight: 700;
+      font-size: 1.125rem;
+      color: var(--rl-text);
+    }
+    
+    .rl-card-body {
+      padding: 1.5rem;
+    }
+    
+    /* Title */
+    .rl-page-title {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 800;
+      color: var(--rl-text);
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+    }
+    
+    /* Description List */
+    .rl-dl dt {
+      font-weight: 600;
+      color: var(--rl-text-secondary);
+      font-size: 0.9375rem;
+    }
+    
+    .rl-dl dd {
+      color: var(--rl-text);
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+    
+    /* Section Headings */
+    .rl-section-heading {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--rl-text);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .rl-section-heading::before {
+      content: '';
+      width: 4px;
+      height: 1.25rem;
+      background: linear-gradient(180deg, var(--rl-dark), var(--rl-accent));
+      border-radius: 2px;
+    }
+    
+    /* Price Highlight */
+    .rl-price-highlight {
+      color: var(--rl-dark);
+      font-weight: 800;
+      font-size: 1.25rem;
+    }
+    
+    /* Buttons */
+    .rl-btn {
+      border-radius: 10px;
+      font-weight: 700;
+      padding: 0.75rem 1.75rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: none;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+    }
+    
+    .rl-btn-primary {
+      background: linear-gradient(135deg, var(--rl-primary) 0%, var(--rl-accent) 100%);
+      color: var(--rl-white);
+      box-shadow: 0 4px 16px rgba(0, 78, 152, 0.25);
+    }
+    
+    .rl-btn-primary:hover {
+      background: linear-gradient(135deg, #003a75 0%, #2d5a8f 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 78, 152, 0.35);
+      color: var(--rl-white);
+    }
+    
+    .rl-btn-primary:active {
+      transform: translateY(0);
+    }
+    
+    /* Feature Badges */
+    .rl-feature-badge {
+      background: linear-gradient(135deg, var(--rl-light-bg) 0%, #f1f1f1 100%);
+      border: 1px solid var(--rl-border);
+      border-radius: 8px;
+      padding: 0.5rem 0.875rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--rl-text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      transition: all 0.2s ease;
+    }
+    
+    .rl-feature-badge:hover {
+      background: var(--rl-white);
+      border-color: var(--rl-accent);
+      color: var(--rl-accent);
+      transform: translateY(-1px);
+      box-shadow: var(--rl-shadow-sm);
+    }
+    
+    .rl-feature-badge::before {
+      content: '✓';
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background: var(--rl-accent);
+      color: var(--rl-white);
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 900;
+      text-align: center;
+      line-height: 16px;
+    }
+    
+    /* Images */
+    .rl-image-primary {
+      border-radius: var(--rl-radius);
+      overflow: hidden;
+      box-shadow: var(--rl-shadow-md);
+      transition: all 0.3s ease;
+      display: block;
+      margin-bottom: 1.5rem;
+    }
+    
+    .rl-image-primary:hover {
+      box-shadow: var(--rl-shadow-lg);
+      transform: translateY(-2px);
+    }
+    
+    .rl-image-primary img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: var(--rl-radius);
+    }
+    
+    .rl-image-thumb {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--rl-shadow-sm);
+      transition: all 0.2s ease;
+      display: block;
+    }
+    
+    .rl-image-thumb:hover {
+      box-shadow: var(--rl-shadow-md);
+      transform: scale(1.02);
+    }
+    
+    .rl-image-thumb img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+    
+    /* Text Utilities */
+    .rl-text-muted {
+      color: var(--rl-text-muted);
+    }
+    
+    .rl-text-secondary {
+      color: var(--rl-text-secondary);
+    }
+    
+    /* Modal */
+    .modal-content {
+      border-radius: var(--rl-radius-lg);
+      border: none;
+      box-shadow: var(--rl-shadow-lg);
+    }
+    
+    .modal-header {
+      background: linear-gradient(135deg, #f8fafc 0%, var(--rl-white) 100%);
+      border-bottom: 2px solid var(--rl-border);
+      padding: 1.5rem;
+    }
+    
+    .modal-title {
+      font-weight: 800;
+      color: var(--rl-text);
+      font-size: 1.375rem;
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 991px) {
+      .rl-card-body {
+        padding: 1.25rem;
+      }
+      
+      .rl-page-title {
+        font-size: 1.5rem;
+      }
+      
+      .rl-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+    
+    @media (max-width: 767px) {
+      .rl-container {
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+      }
+      
+      .rl-card-header {
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+      }
+      
+      .rl-card-body {
+        padding: 1rem;
+      }
+      
+      .rl-page-title {
+        font-size: 1.375rem;
+      }
+      
+      .rl-btn {
+        font-size: 0.9375rem;
+        padding: 0.625rem 1.5rem;
+      }
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .rl-card {
+      animation: fadeInUp 0.5s ease-out;
+    }
+    
+    .rl-card:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+  </style>
 </head>
 <body>
 <?php require_once __DIR__ . '/navbar.php'; ?>
-<div class="container py-4">
+<div class="container rl-container">
   <div class="row g-4">
     <div class="col-12 col-lg-7">
-      <div class="card mb-3">
-        <div class="card-header">Images</div>
-        <div class="card-body">
+      <div class="card rl-card mb-3">
+        <div class="card-header rl-card-header">Images</div>
+        <div class="card-body rl-card-body">
           <?php $primaryUrl = norm_url($prop['image'] ?? ''); ?>
           <?php if ($primaryUrl): ?>
-            <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid rounded mb-3" alt="<?php echo htmlspecialchars($prop['title']); ?>" loading="eager" decoding="async" fetchpriority="high">
+            <div class="rl-image-primary">
+              <img src="<?php echo htmlspecialchars($primaryUrl); ?>" class="img-fluid" alt="<?php echo htmlspecialchars($prop['title']); ?>" loading="eager" decoding="async" fetchpriority="high">
+            </div>
           <?php endif; ?>
           <?php if ($gallery): ?>
-            <div class="row g-2">
+            <div class="row g-3">
               <?php foreach ($gallery as $img): ?>
                 <?php $p = norm_url($img['image_path'] ?? ''); ?>
                 <div class="col-6 col-md-4">
-                  <a href="<?php echo htmlspecialchars($p); ?>" target="_blank">
-                    <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid rounded" alt="<?php echo htmlspecialchars($prop['title']); ?>" loading="lazy" decoding="async">
+                  <a href="<?php echo htmlspecialchars($p); ?>" target="_blank" class="rl-image-thumb">
+                    <img src="<?php echo htmlspecialchars($p); ?>" class="img-fluid" alt="<?php echo htmlspecialchars($prop['title']); ?>" loading="lazy" decoding="async">
                   </a>
                 </div>
               <?php endforeach; ?>
             </div>
           <?php elseif (!$primaryUrl): ?>
-            <div class="text-muted">No images uploaded.</div>
+            <div class="rl-text-muted">No images uploaded.</div>
           <?php endif; ?>
         </div>
       </div>
      
     </div>
     <div class="col-12 col-lg-5">
-      <div class="card">
-        <div class="card-header">Overview</div>
-        <div class="card-body">
-          <h1 class="h4 mb-3"><?php echo htmlspecialchars($prop['title']); ?></h1>
-          <dl class="row mb-0">
+      <div class="card rl-card">
+        <div class="card-header rl-card-header">Overview</div>
+        <div class="card-body rl-card-body">
+          <h1 class="rl-page-title"><?php echo htmlspecialchars($prop['title']); ?></h1>
+          <dl class="row rl-dl mb-0">
             <?php if (!empty($prop['property_code'])): ?>
               <dt class="col-sm-4">Code</dt><dd class="col-sm-8"><?php echo htmlspecialchars($prop['property_code']); ?></dd>
             <?php endif; ?>
             <dt class="col-sm-4">Owner</dt><dd class="col-sm-8"><?php echo htmlspecialchars($prop['owner_name'] ?? ''); ?></dd>
             <dt class="col-sm-4">Type</dt><dd class="col-sm-8"><?php echo htmlspecialchars(ucfirst($prop['property_type'] ?? '')); ?></dd>
-            <dt class="col-sm-4">Price / month</dt><dd class="col-sm-8">LKR <?php echo number_format((float)$prop['price_per_month'], 2); ?></dd>
+            <dt class="col-sm-4">Price / month</dt><dd class="col-sm-8 rl-price-highlight">LKR <?php echo number_format((float)$prop['price_per_month'], 2); ?></dd>
             <?php if (isset($prop['sqft']) && $prop['sqft'] !== null && $prop['sqft'] !== ''): ?>
               <dt class="col-sm-4">Area</dt><dd class="col-sm-8"><?php echo number_format((float)$prop['sqft'], 2); ?> sqft</dd>
             <?php endif; ?>
@@ -144,24 +461,24 @@ function norm_url($p) {
               <dt class="col-sm-4">Location</dt><dd class="col-sm-8"><?php echo htmlspecialchars($loc); ?></dd>
             <?php endif; ?>
           </dl>
-          <div class="mt-3">
-            <div class="fw-semibold mb-2">Features</div>
+          <div class="mt-4">
+            <div class="rl-section-heading">Features</div>
             <div class="d-flex flex-wrap gap-2">
-              <?php if (!empty($prop['has_kitchen'])): ?><span class="badge text-bg-secondary">Kitchen</span><?php endif; ?>
-              <?php if (!empty($prop['has_parking'])): ?><span class="badge text-bg-secondary">Parking</span><?php endif; ?>
-              <?php if (!empty($prop['has_water_supply'])): ?><span class="badge text-bg-secondary">Water</span><?php endif; ?>
-              <?php if (!empty($prop['has_electricity_supply'])): ?><span class="badge text-bg-secondary">Electricity</span><?php endif; ?>
-              <?php if (!empty($prop['garden'])): ?><span class="badge text-bg-secondary">Garden</span><?php endif; ?>
-              <?php if (!empty($prop['gym'])): ?><span class="badge text-bg-secondary">Gym</span><?php endif; ?>
-              <?php if (!empty($prop['pool'])): ?><span class="badge text-bg-secondary">Pool</span><?php endif; ?>
+              <?php if (!empty($prop['has_kitchen'])): ?><span class="rl-feature-badge">Kitchen</span><?php endif; ?>
+              <?php if (!empty($prop['has_parking'])): ?><span class="rl-feature-badge">Parking</span><?php endif; ?>
+              <?php if (!empty($prop['has_water_supply'])): ?><span class="rl-feature-badge">Water</span><?php endif; ?>
+              <?php if (!empty($prop['has_electricity_supply'])): ?><span class="rl-feature-badge">Electricity</span><?php endif; ?>
+              <?php if (!empty($prop['garden'])): ?><span class="rl-feature-badge">Garden</span><?php endif; ?>
+              <?php if (!empty($prop['gym'])): ?><span class="rl-feature-badge">Gym</span><?php endif; ?>
+              <?php if (!empty($prop['pool'])): ?><span class="rl-feature-badge">Pool</span><?php endif; ?>
               <?php if (empty($prop['has_kitchen']) && empty($prop['has_parking']) && empty($prop['has_water_supply']) && empty($prop['has_electricity_supply']) && empty($prop['garden']) && empty($prop['gym']) && empty($prop['pool'])): ?>
-                <span class="text-muted">No extra features listed.</span>
+                <span class="rl-text-muted">No extra features listed.</span>
               <?php endif; ?>
             </div>
           </div>
-          <div class="mt-3">
-            <div class="fw-semibold mb-1">Description</div>
-            <div class="text-body-secondary"><?php echo nl2br(htmlspecialchars($prop['description'] ?? '')); ?></div>
+          <div class="mt-4">
+            <div class="rl-section-heading">Description</div>
+            <div class="rl-text-secondary"><?php echo nl2br(htmlspecialchars($prop['description'] ?? '')); ?></div>
           </div>
         </div>
       </div>
@@ -208,7 +525,7 @@ function norm_url($p) {
         if (target) {
           var wrap = document.createElement('div');
           wrap.className = 'mt-3';
-          wrap.innerHTML = '<button type="button" class="btn btn-primary" id="btnRentProperty"><i class="bi bi-bag-check me-1"></i>Rent Now</button>';
+          wrap.innerHTML = '<button type="button" class="btn rl-btn rl-btn-primary" id="btnRentProperty"><i class="bi bi-bag-check"></i>Rent Now</button>';
           target.appendChild(wrap);
           document.getElementById('btnRentProperty').addEventListener('click', function(){ openRentModal(<?php echo (int)$prop['property_id']; ?>); });
         }

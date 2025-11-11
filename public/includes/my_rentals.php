@@ -238,117 +238,469 @@ try {
   <title>My Rentals</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===========================
+       MY RENTALS PAGE CUSTOM STYLES
+       Brand Colors: Primary #004E98, Accent #3A6EA5, Orange #FF6700
+       =========================== */
+    
+    :root {
+      --rl-primary: #004E98;
+      --rl-light-bg: #EBEBEB;
+      --rl-secondary: #C0C0C0;
+      --rl-accent: #3A6EA5;
+      --rl-dark: #FF6700;
+      --rl-white: #ffffff;
+      --rl-text: #1f2a37;
+      --rl-text-secondary: #4a5568;
+      --rl-text-muted: #718096;
+      --rl-border: #e2e8f0;
+      --rl-shadow-sm: 0 2px 12px rgba(0,0,0,.06);
+      --rl-shadow-md: 0 4px 16px rgba(0,0,0,.1);
+      --rl-radius: 12px;
+      --rl-radius-lg: 16px;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--rl-text);
+      background: linear-gradient(180deg, #fff 0%, var(--rl-light-bg) 100%);
+      min-height: 100vh;
+    }
+    
+    .rl-container {
+      padding-top: clamp(1.5rem, 2vw, 2.5rem);
+      padding-bottom: clamp(1.5rem, 2vw, 2.5rem);
+    }
+    
+    /* Page Header */
+    .rl-page-header {
+      background: var(--rl-white);
+      border-radius: var(--rl-radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--rl-shadow-sm);
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .rl-page-title {
+      font-size: clamp(1.5rem, 3vw, 1.875rem);
+      font-weight: 800;
+      color: var(--rl-text);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .rl-page-title i {
+      color: var(--rl-accent);
+      font-size: 1.5rem;
+    }
+    
+    /* Section Headers */
+    .rl-section-header {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--rl-text);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .rl-section-header i {
+      color: var(--rl-dark);
+    }
+    
+    /* Table Container */
+    .rl-table-container {
+      background: var(--rl-white);
+      border-radius: var(--rl-radius-lg);
+      box-shadow: var(--rl-shadow-sm);
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    
+    /* Table Styling */
+    .rl-table {
+      margin-bottom: 0;
+    }
+    
+    .rl-table thead th {
+      background: linear-gradient(135deg, #f8fafc 0%, var(--rl-white) 100%);
+      border-bottom: 2px solid var(--rl-border);
+      color: var(--rl-text-secondary);
+      font-weight: 700;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 1rem 0.75rem;
+      white-space: nowrap;
+    }
+    
+    .rl-table tbody tr {
+      border-bottom: 1px solid var(--rl-border);
+      transition: background-color 0.2s ease;
+    }
+    
+    .rl-table tbody tr:hover {
+      background: rgba(0, 78, 152, 0.02);
+    }
+    
+    .rl-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    
+    .rl-table tbody td {
+      padding: 1rem 0.75rem;
+      vertical-align: middle;
+      font-size: 0.9375rem;
+    }
+    
+    .rl-table td:first-child {
+      font-weight: 600;
+      color: var(--rl-accent);
+    }
+    
+    /* Price Styling */
+    .rl-price {
+      font-weight: 700;
+      color: var(--rl-dark);
+    }
+    
+    /* Status Badges */
+    .rl-badge {
+      border-radius: 8px;
+      padding: 0.375rem 0.75rem;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    
+    .rl-badge-pending {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #92400e;
+      border: 1px solid #fbbf24;
+    }
+    
+    .rl-badge-booked,
+    .rl-badge-primary {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      color: #1e3a8a;
+      border: 1px solid #93c5fd;
+    }
+    
+    .rl-badge-checked-in,
+    .rl-badge-success {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+    
+    .rl-badge-cancelled,
+    .rl-badge-danger {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+      border: 1px solid #f87171;
+    }
+    
+    .rl-badge-checked-out,
+    .rl-badge-secondary {
+      background: linear-gradient(135deg, var(--rl-light-bg) 0%, #d1d1d1 100%);
+      color: var(--rl-text-secondary);
+      border: 1px solid var(--rl-secondary);
+    }
+    
+    /* Buttons */
+    .rl-btn {
+      border-radius: 8px;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+    
+    .rl-btn-outline {
+      background: var(--rl-white);
+      border: 2px solid var(--rl-border);
+      color: var(--rl-text-secondary);
+    }
+    
+    .rl-btn-outline:hover {
+      background: rgba(0, 78, 152, 0.05);
+      border-color: var(--rl-accent);
+      color: var(--rl-accent);
+      transform: translateY(-1px);
+    }
+    
+    .rl-btn-danger {
+      background: var(--rl-white);
+      border: 2px solid #ef4444;
+      color: #ef4444;
+    }
+    
+    .rl-btn-danger:hover {
+      background: #ef4444;
+      color: var(--rl-white);
+      transform: translateY(-1px);
+    }
+    
+    .rl-btn-home {
+      background: var(--rl-white);
+      border: 2px solid var(--rl-border);
+      color: var(--rl-text-secondary);
+    }
+    
+    .rl-btn-home:hover {
+      background: var(--rl-primary);
+      border-color: var(--rl-primary);
+      color: var(--rl-white);
+      transform: translateY(-1px);
+    }
+    
+    /* Empty State */
+    .rl-empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: var(--rl-white);
+      border-radius: var(--rl-radius-lg);
+      box-shadow: var(--rl-shadow-sm);
+      color: var(--rl-text-muted);
+      font-weight: 500;
+    }
+    
+    .rl-empty-state i {
+      font-size: 3rem;
+      color: var(--rl-secondary);
+      margin-bottom: 1rem;
+    }
+    
+    /* Divider */
+    .rl-divider {
+      border: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, var(--rl-border) 50%, transparent 100%);
+      margin: 3rem 0;
+    }
+    
+    /* Responsive Table */
+    @media (max-width: 991px) {
+      .rl-table-container {
+        overflow-x: auto;
+      }
+      
+      .rl-table {
+        min-width: 800px;
+      }
+    }
+    
+    @media (max-width: 767px) {
+      .rl-container {
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+      }
+      
+      .rl-page-header {
+        padding: 1.25rem;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .rl-page-title {
+        font-size: 1.5rem;
+      }
+      
+      .rl-btn-home {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .rl-table thead th,
+      .rl-table tbody td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8125rem;
+      }
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .rl-page-header,
+    .rl-table-container,
+    .rl-empty-state {
+      animation: fadeInUp 0.5s ease-out;
+    }
+    
+    .rl-table-container:nth-of-type(2) {
+      animation-delay: 0.1s;
+    }
+  </style>
 </head>
 <body>
 <?php require_once __DIR__ . '/navbar.php'; ?>
-<div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0"><i class="bi bi-receipt me-2"></i>My Rentals</h1>
-    <a href="<?php echo $base_url; ?>/" class="btn btn-outline-secondary btn-sm">Home</a>
+<div class="container rl-container">
+  <!-- Page Header -->
+  <div class="rl-page-header">
+    <h1 class="rl-page-title">
+      <i class="bi bi-building"></i>
+      My Rentals
+    </h1>
+    <a href="<?php echo $base_url; ?>/" class="rl-btn rl-btn-home">
+      <i class="bi bi-house"></i>
+      Back to Home
+    </a>
   </div>
 
+  <!-- Room Rentals Section -->
   <?php if (!$items): ?>
-    <p class="text-muted">You have no rentals yet.</p>
+    <div class="rl-empty-state">
+      <i class="bi bi-inbox"></i>
+      <p class="mb-0">You have no rentals yet.</p>
+    </div>
   <?php else: ?>
-    <div class="table-responsive">
-      <table class="table table-sm align-middle">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Room</th>
-            <th>Check-in</th>
-            <th>Check-out</th>
-            <th>Guests</th>
-            <th>Meal</th>
-            <th>Price/Night</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($items as $it): ?>
+    <h3 class="rl-section-header">
+      <i class="bi bi-door-open"></i>
+      Room Rentals
+    </h3>
+    <div class="rl-table-container">
+      <div class="table-responsive">
+        <table class="table rl-table">
+          <thead>
             <tr>
-              <td>#<?php echo (int)$it['rent_id']; ?></td>
-              <td><?php echo htmlspecialchars($it['room_title'] ?? ('Room #' . (int)$it['room_id'])); ?></td>
-              <td><?php echo htmlspecialchars(fmt_date($it['checkin_date'])); ?></td>
-              <td><?php echo htmlspecialchars(fmt_date($it['checkout_date'])); ?></td>
-              <td><?php echo (int)$it['guests']; ?></td>
-              <td><?php echo htmlspecialchars($it['meal_name'] ? ucwords(str_replace('_',' ', $it['meal_name'])) : 'No meals'); ?></td>
-              <td>LKR <?php echo number_format((float)$it['price_per_night'], 2); ?></td>
-              <td class="fw-semibold">LKR <?php echo number_format((float)$it['total_amount'], 2); ?></td>
-              <td>
-                <?php $st = (string)($it['status'] ?? ''); $cls = ['pending'=>'warning','booked'=>'primary','checked_in'=>'success','checked_out'=>'secondary','cancelled'=>'danger'][$st] ?? 'secondary'; ?>
-                <span class="badge bg-<?php echo $cls; ?>"><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $st ?: 'booked'))); ?></span>
-              </td>
-              <td>
-                <div class="d-flex gap-2 flex-wrap">
-                  <a href="<?php echo $base_url; ?>/public/includes/view_room.php?id=<?php echo (int)$it['room_id']; ?>" class="btn btn-outline-secondary btn-sm">View</a>
-                  <?php $nowTs = time(); $ciTs = strtotime((string)$it['checkin_date']); $coTs = strtotime((string)$it['checkout_date']); $st = (string)$it['status']; ?>
-                  <?php if (in_array($st, ['pending','booked'], true)): ?>
-                    <form method="post" class="d-inline rent-cancel-form">
-                      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
-                      <input type="hidden" name="rent_id" value="<?php echo (int)$it['rent_id']; ?>">
-                      <input type="hidden" name="action" value="cancel">
-                      <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
-                    </form>
-                  <?php endif; ?>
-                </div>
-              </td>
+              <th>ID</th>
+              <th>Room</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Guests</th>
+              <th>Meal</th>
+              <th>Price/Night</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <?php foreach ($items as $it): ?>
+              <tr>
+                <td>#<?php echo (int)$it['rent_id']; ?></td>
+                <td><?php echo htmlspecialchars($it['room_title'] ?? ('Room #' . (int)$it['room_id'])); ?></td>
+                <td><?php echo htmlspecialchars(fmt_date($it['checkin_date'])); ?></td>
+                <td><?php echo htmlspecialchars(fmt_date($it['checkout_date'])); ?></td>
+                <td><?php echo (int)$it['guests']; ?></td>
+                <td><?php echo htmlspecialchars($it['meal_name'] ? ucwords(str_replace('_',' ', $it['meal_name'])) : 'No meals'); ?></td>
+                <td class="rl-price">LKR <?php echo number_format((float)$it['price_per_night'], 2); ?></td>
+                <td class="rl-price">LKR <?php echo number_format((float)$it['total_amount'], 2); ?></td>
+                <td>
+                  <?php $st = (string)($it['status'] ?? ''); $cls = ['pending'=>'pending','booked'=>'booked','checked_in'=>'checked-in','checked_out'=>'checked-out','cancelled'=>'cancelled'][$st] ?? 'secondary'; ?>
+                  <span class="rl-badge rl-badge-<?php echo $cls; ?>"><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $st ?: 'booked'))); ?></span>
+                </td>
+                <td>
+                  <div class="d-flex gap-2 flex-wrap">
+                    <a href="<?php echo $base_url; ?>/public/includes/view_room.php?id=<?php echo (int)$it['room_id']; ?>" class="rl-btn rl-btn-outline">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    <?php $nowTs = time(); $ciTs = strtotime((string)$it['checkin_date']); $coTs = strtotime((string)$it['checkout_date']); $st = (string)$it['status']; ?>
+                    <?php if (in_array($st, ['pending','booked'], true)): ?>
+                      <form method="post" class="d-inline rent-cancel-form">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
+                        <input type="hidden" name="rent_id" value="<?php echo (int)$it['rent_id']; ?>">
+                        <input type="hidden" name="action" value="cancel">
+                        <button type="submit" class="rl-btn rl-btn-danger">
+                          <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                      </form>
+                    <?php endif; ?>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
     </div>
   <?php endif; ?>
-  <hr class="my-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="h5 mb-0"><i class="bi bi-house-door me-2"></i>My Property Rent Requests</h2>
-  </div>
+  
+  <!-- Section Divider -->
+  <hr class="rl-divider">
+  
+  <!-- Property Rent Requests Section -->
   <?php if (!$props): ?>
-    <p class="text-muted">You have no property rent requests yet.</p>
+    <div class="rl-empty-state">
+      <i class="bi bi-inbox"></i>
+      <p class="mb-0">You have no property rent requests yet.</p>
+    </div>
   <?php else: ?>
-    <div class="table-responsive">
-      <table class="table table-sm align-middle">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Property</th>
-            <th>Price/Month</th>
-            <th>Status</th>
-            <th>Requested At</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($props as $p): ?>
+    <h3 class="rl-section-header">
+      <i class="bi bi-house-door"></i>
+      My Property Rent Requests
+    </h3>
+    <div class="rl-table-container">
+      <div class="table-responsive">
+        <table class="table rl-table">
+          <thead>
             <tr>
-              <td>#<?php echo (int)$p['rent_id']; ?></td>
-              <td><?php echo htmlspecialchars($p['property_title'] ?? ('Property #' . (int)$p['property_id'])); ?></td>
-              <td>LKR <?php echo number_format((float)($p['price_per_month'] ?? 0), 2); ?></td>
-              <td>
-                <?php $stp = (string)($p['status'] ?? ''); $cls = ['pending'=>'warning','booked'=>'primary','cancelled'=>'secondary'][$stp] ?? 'secondary'; ?>
-                <span class="badge bg-<?php echo $cls; ?>"><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $stp ?: 'pending'))); ?></span>
-              </td>
-              <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime((string)($p['created_at'] ?? '')))); ?></td>
-              <td>
-                <div class="d-flex gap-2 flex-wrap">
-                  <a href="<?php echo $base_url; ?>/public/includes/view_property.php?id=<?php echo (int)$p['property_id']; ?>" class="btn btn-outline-secondary btn-sm">View</a>
-                  <?php if (in_array(strtolower((string)$p['status']), ['pending','booked'], true)): ?>
-                  <form method="post" class="d-inline prop-cancel-form">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
-                    <input type="hidden" name="rent_id" value="<?php echo (int)$p['rent_id']; ?>">
-                    <input type="hidden" name="action" value="cancel">
-                    <input type="hidden" name="scope" value="property">
-                    <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
-                  </form>
-                  <?php endif; ?>
-                </div>
-              </td>
+              <th>ID</th>
+              <th>Property</th>
+              <th>Price/Month</th>
+              <th>Status</th>
+              <th>Requested At</th>
+              <th>Actions</th>
             </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <?php foreach ($props as $p): ?>
+              <tr>
+                <td>#<?php echo (int)$p['rent_id']; ?></td>
+                <td><?php echo htmlspecialchars($p['property_title'] ?? ('Property #' . (int)$p['property_id'])); ?></td>
+                <td class="rl-price">LKR <?php echo number_format((float)($p['price_per_month'] ?? 0), 2); ?></td>
+                <td>
+                  <?php $stp = (string)($p['status'] ?? ''); $cls = ['pending'=>'pending','booked'=>'booked','cancelled'=>'cancelled'][$stp] ?? 'secondary'; ?>
+                  <span class="rl-badge rl-badge-<?php echo $cls; ?>"><?php echo htmlspecialchars(ucwords(str_replace('_',' ', $stp ?: 'pending'))); ?></span>
+                </td>
+                <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime((string)($p['created_at'] ?? '')))); ?></td>
+                <td>
+                  <div class="d-flex gap-2 flex-wrap">
+                    <a href="<?php echo $base_url; ?>/public/includes/view_property.php?id=<?php echo (int)$p['property_id']; ?>" class="rl-btn rl-btn-outline">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    <?php if (in_array(strtolower((string)$p['status']), ['pending','booked'], true)): ?>
+                    <form method="post" class="d-inline prop-cancel-form">
+                      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
+                      <input type="hidden" name="rent_id" value="<?php echo (int)$p['rent_id']; ?>">
+                      <input type="hidden" name="action" value="cancel">
+                      <input type="hidden" name="scope" value="property">
+                      <button type="submit" class="rl-btn rl-btn-danger">
+                        <i class="bi bi-x-circle"></i> Cancel
+                      </button>
+                    </form>
+                    <?php endif; ?>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
     </div>
   <?php endif; ?>
 </div>
