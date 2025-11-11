@@ -4,30 +4,50 @@ ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = __DIR__ . '/../error/error.log';
-  if (is_readable($f)) {
-    $lines = 100; $data = '';
-    $fp = fopen($f, 'r');
-    if ($fp) {
-      fseek($fp, 0, SEEK_END); $pos = ftell($fp); $chunk = ''; $ln = 0;
-      while ($pos > 0 && $ln <= $lines) {
-        $step = max(0, $pos - 4096); $read = $pos - $step;
-        fseek($fp, $step); $chunk = fread($fp, $read) . $chunk; $pos = $step;
-        $ln = substr_count($chunk, "\n");
-      }
-      fclose($fp);
-      $parts = explode("\n", $chunk); $slice = array_slice($parts, -$lines); $data = implode("\n", $slice);
+    $f = __DIR__ . '/../error/error.log';
+    if (is_readable($f)) {
+        $lines = 100; $data = '';
+        $fp = fopen($f, 'r');
+        if ($fp) {
+            fseek($fp, 0, SEEK_END); $pos = ftell($fp); $chunk = ''; $ln = 0;
+            while ($pos > 0 && $ln <= $lines) {
+                $step = max(0, $pos - 4096); $read = $pos - $step;
+                fseek($fp, $step); $chunk = fread($fp, $read) . $chunk; $pos = $step;
+                $ln = substr_count($chunk, "\n");
+            }
+            fclose($fp);
+            $parts = explode("\n", $chunk); $slice = array_slice($parts, -$lines); $data = implode("\n", $slice);
+        }
+        header('Content-Type: text/plain; charset=utf-8'); echo $data; exit;
     }
-    header('Content-Type: text/plain; charset=utf-8'); echo $data; exit;
-  }
 }
 
 require_once __DIR__ . '/security_bootstrap.php';
-// Base URL (production)
+// Base URL
+
 $base_url = 'https://rentallanka.com';
 
-// Database connection for hosting (cPanel)
-// Typically DB host is 'localhost' on cPanel
+// Centralize error logging to project log file
+try {
+    $logFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'error' . DIRECTORY_SEPARATOR . 'error.log';
+    $logDir = dirname($logFile);
+    if (!is_dir($logDir)) { @mkdir($logDir, 0775, true); }
+    if (function_exists('ini_set')) {
+        @ini_set('log_errors', '1');
+        @ini_set('error_log', $logFile);
+        // Optional: keep output clean in production; in dev you may set to '1'
+        @ini_set('display_errors', '0');
+    }
+} catch (Throwable $e) {
+    // swallow any logging setup issues
+}
+
+if (!function_exists('app_log')) {
+    function app_log(string $msg): void { error_log($msg); }
+}
+
+// Database connection for XAMPP default setup
+// Adjust credentials as needed for your environment
 define('DB_HOST', 'localhost');
 define('DB_USER', 'rentalla_rentallanka');
 define('DB_PASS', 'SUMBN2003cs#10020');
@@ -38,10 +58,37 @@ $smslenz_api_key = getenv('SMSLENZ_API_KEY') ?: '';
 $smslenz_sender_id = getenv('SMSLENZ_SENDER_ID') ?: 'SMSlenzDEMO';
 $smslenz_base = 'https://smslenz.lk/api';
 
+// Optional: Redis-backed sessions (set SESSION_REDIS like "tcp://127.0.0.1:6379?database=1")
+try {
+    $sessRedis = getenv('SESSION_REDIS') ?: '';
+    if ($sessRedis !== '' && function_exists('ini_set')) {
+        @ini_set('session.save_handler', 'redis');
+        @ini_set('session.save_path', $sessRedis);
+        if (!ini_get('session.gc_maxlifetime')) { @ini_set('session.gc_maxlifetime', '86400'); }
+
+    }
+} catch (Throwable $e) { /* ignore */ }
+
 $__session_status = function_exists('session_status') ? session_status() : PHP_SESSION_NONE;
 if ($__session_status === PHP_SESSION_NONE) {
     session_start();
 }
+
+// Global maintenance mode enforcement
+try {
+    $flagFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'maintain.flag';
+    if (is_file($flagFile)) {
+        $isSuper = isset($_SESSION['super_admin_id']) && (int)$_SESSION['super_admin_id'] > 0;
+        $path = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
+        $onMaintenancePage = (strpos($path, '/maintenance.php') !== false);
+        if (!$isSuper && !$onMaintenancePage) {
+            if (!headers_sent()) {
+                header('Location: ' . rtrim($base_url, '/') . '/maintenance.php');
+            }
+            exit;
+        }
+    }
+} catch (Throwable $e) { /* ignore */ }
 
 // Fallback alert function used by global handlers. If an app-level
 // implementation exists elsewhere, that will override this.
@@ -88,7 +135,9 @@ function install_system_alert_handlers(): void {
 // Ensure handlers are active for all requests including CLI scripts that include config.php
 install_system_alert_handlers();
 
-$mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$__use_persistent = (getenv('DB_PERSISTENT') === '1');
+$__db_host = $__use_persistent ? ('p:' . DB_HOST) : DB_HOST;
+$mysqli = new mysqli($__db_host, DB_USER, DB_PASS, DB_NAME);
 if ($mysqli->connect_errno) {
     http_response_code(500);
     echo 'Database connection failed';
@@ -195,6 +244,73 @@ function smslenz_send_sms(string $to, string $message): array {
     return ['ok' => $ok, 'http' => $http, 'errno' => $errno, 'error' => $error, 'body' => $response];
 }
 
+// Image helper: constrain image dimensions in-place (maintain aspect ratio)
+if (!function_exists('resize_image_constrain')) {
+    function resize_image_constrain(string $path, int $max_w, int $max_h): bool {
+        try {
+            if (!extension_loaded('gd')) { return false; }
+            if (!is_file($path)) { return false; }
+            $info = @getimagesize($path);
+            if ($info === false) { return false; }
+            $w = (int)($info[0] ?? 0); $h = (int)($info[1] ?? 0);
+            if ($w <= 0 || $h <= 0) { return false; }
+            if ($w <= $max_w && $h <= $max_h) { return true; } // already within bounds
+
+            $ratio = min($max_w / $w, $max_h / $h);
+            $nw = (int)max(1, floor($w * $ratio));
+            $nh = (int)max(1, floor($h * $ratio));
+
+            $mime = (string)($info['mime'] ?? '');
+            $src = null;
+            if (strpos($mime, 'jpeg') !== false || strpos($mime, 'jpg') !== false) {
+                $src = @imagecreatefromjpeg($path);
+            } elseif (strpos($mime, 'png') !== false) {
+                $src = @imagecreatefrompng($path);
+            } elseif (strpos($mime, 'gif') !== false) {
+                $src = @imagecreatefromgif($path);
+            } elseif (strpos($mime, 'webp') !== false && function_exists('imagecreatefromwebp')) {
+                $src = @imagecreatefromwebp($path);
+            } else {
+                $raw = @file_get_contents($path);
+                if ($raw !== false) { $src = @imagecreatefromstring($raw); }
+            }
+            if (!$src) { return false; }
+
+            $dst = @imagecreatetruecolor($nw, $nh);
+            if (!$dst) { @imagedestroy($src); return false; }
+
+            // Preserve transparency for PNG/GIF
+            if (strpos($mime, 'png') !== false || strpos($mime, 'gif') !== false) {
+                @imagealphablending($dst, false);
+                @imagesavealpha($dst, true);
+                $trans = @imagecolorallocatealpha($dst, 0, 0, 0, 127);
+                if ($trans !== false) { @imagefilledrectangle($dst, 0, 0, $nw, $nh, $trans); }
+            }
+
+            @imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+
+            $ok = false;
+            if (strpos($mime, 'jpeg') !== false || strpos($mime, 'jpg') !== false) {
+                $ok = @imagejpeg($dst, $path, 85);
+            } elseif (strpos($mime, 'png') !== false) {
+                $ok = @imagepng($dst, $path, 6);
+            } elseif (strpos($mime, 'gif') !== false) {
+                $ok = @imagegif($dst, $path);
+            } elseif (strpos($mime, 'webp') !== false && function_exists('imagewebp')) {
+                $ok = @imagewebp($dst, $path, 80);
+            } else {
+                // Default to JPEG
+                $ok = @imagejpeg($dst, $path, 85);
+            }
+
+            @imagedestroy($dst);
+            @imagedestroy($src);
+            return (bool)$ok;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+}
 
 if (!headers_sent()) {
     $__li = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
@@ -222,5 +338,3 @@ if (!headers_sent()) {
         } catch (Throwable $__e) {}
     }
 }
-
-

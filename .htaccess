@@ -4,6 +4,10 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # Canonical host: prefer non-www on production
+  RewriteCond %{HTTP_HOST} ^www\.rentallanka\.com$ [NC]
+  RewriteRule ^ https://rentallanka.com%{REQUEST_URI} [L,R=301]
+
   # Force HTTPS on non-local hosts; allow HTTP on localhost/127.0.0.1
   RewriteCond %{HTTPS} !=on
   RewriteCond %{HTTP:X-Forwarded-Proto} !https

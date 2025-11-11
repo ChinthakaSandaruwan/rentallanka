@@ -6,4 +6,4 @@ Disallow: /auth/
 
 Allow: /
 
-Sitemap: http://localhost/rentallanka/sitemap.php
+Sitemap: https://rentallanka.com/sitemap.php
