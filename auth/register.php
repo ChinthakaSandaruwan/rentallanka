@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width" />
-  <title>Welcome to Rentallanka</title>
+<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
   <style>
     body{margin:0;padding:0;background:#f6f9fc;color:#222;font-family:Arial,Helvetica,sans-serif}
     .wrap{max-width:600px;margin:0 auto;padding:24px}
@@ -243,7 +243,7 @@ HTML;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
     <meta name="robots" content="noindex,nofollow" />
     <meta http-equiv="Cache-Control" content="no-store" />

@@ -278,7 +278,7 @@ $stmt->close();
 
 <section id="properties-section" class="rl-theme container rl-section">
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="h4 mb-0 fw-bold" style="color: var(--rl-text);">Properties</h2>
+    <h2 class="h4 mb-0 fw-bold" style="color: var(--rl-text);"><i class="bi bi-house-door-fill">Properties</h2>
   </div>
   <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3">
     <?php foreach ($items as $p): ?>

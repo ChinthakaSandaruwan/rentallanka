@@ -15,7 +15,7 @@ if (!is_file($flagFile)) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>We'll be back soon</title>
+<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     :root { --rl-primary:#004E98; --rl-accent:#3A6EA5; --rl-dark:#FF6700; --rl-text:#1f2a37; --rl-muted:#6b7280; }
