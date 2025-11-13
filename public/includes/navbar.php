@@ -447,6 +447,17 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
         <!-- Navigation Links -->
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/'||$reqPath==='/index.php')?'active':'' ?>" href="<?= $base_url ?>/index.php"><i class="bi bi-house-door"></i>Home</a></li>
+          <?php if (in_array($role, ['owner','admin'], true)): ?>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle <?= in_array($reqPath, [('/owner/property/property_create.php'), ('/owner/room/room_create.php')]) ? 'active' : '' ?>" href="#" id="quickCreateNav" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-house-door me-2"></i> Create
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="quickCreateNav">
+                <li><a class="dropdown-item" href="<?= $base_url ?>/owner/property/property_create.php"><i class="bi bi-building-add me-2"></i>Property Create</a></li>
+                <li><a class="dropdown-item" href="<?= $base_url ?>/owner/room/room_create.php"><i class="bi bi-door-open me-2"></i>Room Create</a></li>
+              </ul>
+            </li>
+          <?php endif; ?>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_properties.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_properties.php"><i class="bi bi-building"></i>Properties</a></li>
           <li class="nav-item"><a class="nav-link <?= ($reqPath==='/public/includes/all_rooms.php')?'active':'' ?>" href="<?= $base_url ?>/public/includes/all_rooms.php"><i class="bi bi-door-open"></i>Rooms</a></li>
           <?php if ($loggedIn && !$isSuper && in_array($role, ['customer','owner','admin'], true)): ?>
@@ -491,18 +502,7 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
               }
             ?>
 
-            <?php if (in_array($role, ['owner','admin'], true)): ?>
-            <!-- Quick Create Dropdown (Property / Room) - appears to the left of Account -->
-            <div class="dropdown" style="position: relative; z-index: 1052;">
-              <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="createDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-plus-square"></i> Create
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="createDropdownBtn" style="z-index: 1060;">
-                <li><a class="dropdown-item" href="<?= $base_url ?>/owner/property/property_create.php"><i class="bi bi-building-add me-2"></i>Property Create</a></li>
-                <li><a class="dropdown-item" href="<?= $base_url ?>/owner/room/room_create.php"><i class="bi bi-door-open me-2"></i>Room Create</a></li>
-              </ul>
-            </div>
-            <?php endif; ?>
+            <!-- Quick Create moved to main nav (after Home) -->
 
             <div class="dropdown" style="position: relative; z-index: 1052;">
               <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="accountDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
