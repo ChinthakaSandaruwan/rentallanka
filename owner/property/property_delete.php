@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', ___DIR___ . '/../../error/error.log');
+ini_set('error_log', __DIR__ . '/../../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = ___DIR___ . '/../../error/error.log';
+  $f = __DIR__ . '/../../error/error.log';
   if (is_readable($f)) {
     $lines = 100; $data = '';
     $fp = fopen($f, 'r');
@@ -22,8 +22,8 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   }
 }
 
-require_once ___DIR___ . '/../../public/includes/auth_guard.php';
-require_once ___DIR___ . '/../../config/config.php';
+require_once __DIR__ . '/../../public/includes/auth_guard.php';
+require_once __DIR__ . '/../../config/config.php';
 require_role('owner');
 
 $uid = (int)($_SESSION['user']['user_id'] ?? 0);
@@ -97,12 +97,12 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($prow['image'])) { $imgs[] = $prow['image']; }
 
     // delete files safely
-    $baseDir = realpath(dirname(___DIR___, 2) . '/uploads/properties') ?: '';
+    $baseDir = realpath(dirname(__DIR__, 2) . '/uploads/properties') ?: '';
     foreach ($imgs as $p) {
       if (!$p) continue;
       $fname = basename(parse_url($p, PHP_URL_PATH) ?? '');
       if (!$fname) continue;
-      $full = dirname(___DIR___, 2) . '/uploads/properties/' . $fname;
+      $full = dirname(__DIR__, 2) . '/uploads/properties/' . $fname;
       $real = realpath($full) ?: '';
       if ($real && $baseDir && strpos($real, $baseDir) === 0 && is_file($real)) {
         @unlink($real);
@@ -169,7 +169,7 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
-<?php require_once ___DIR___ . '/../../public/includes/navbar.php'; ?>
+<?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
 <div class="container rl-container">
   <div class="rl-page-header">
     <h1 class="rl-page-title"><i class="bi bi-trash3"></i> Delete Property</h1>

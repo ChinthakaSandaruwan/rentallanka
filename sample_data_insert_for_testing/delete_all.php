@@ -1,5 +1,5 @@
 <?php
-require_once ___DIR___ . '/../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   header('Location: index.php');
@@ -30,8 +30,8 @@ function remove__DIR__files(string $dir): void {
 
 try {
   // Remove uploaded images from disk
-  $roomsUpload = dirname(___DIR___) . '/uploads/rooms';
-  $propsUpload = dirname(___DIR___) . '/uploads/properties';
+  $roomsUpload = dirname(__DIR__) . '/uploads/rooms';
+  $propsUpload = dirname(__DIR__) . '/uploads/properties';
   remove__DIR__files($roomsUpload);
   remove__DIR__files($propsUpload);
 

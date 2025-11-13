@@ -1,9 +1,9 @@
 <?php
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', ___DIR___ . '/error.log');
+ini_set('error_log', __DIR__ . '/error.log');
 if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
-  $f = ___DIR___ . '/error.log';
+  $f = __DIR__ . '/error.log';
   if (is_file($f)) {
     $lines = @array_slice(@file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], -100);
     if (!headers_sent()) { header('Content-Type: text/plain'); }
@@ -14,14 +14,14 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   }
   exit;
 }
-require_once ___DIR___ . '/../public/includes/auth_guard.php';
+require_once __DIR__ . '/../public/includes/auth_guard.php';
 require_super_admin();
-require_once ___DIR___ . '/../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
-$uploads_root = realpath(___DIR___ . '/../uploads');
+$uploads_root = realpath(__DIR__ . '/../uploads');
 if ($uploads_root === false) {
-    @mkdir(___DIR___ . '/../uploads', 0777, true);
-    $uploads_root = realpath(___DIR___ . '/../uploads');
+    @mkdir(__DIR__ . '/../uploads', 0777, true);
+    $uploads_root = realpath(__DIR__ . '/../uploads');
 }
 
 function um_safe_join(string $base, string $rel): ?string {
@@ -205,7 +205,7 @@ if ($rel !== '') {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
-<?php require_once ___DIR___ . '/../public/includes/navbar.php'; ?>
+<?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
 <div class="container py-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h3 class="mb-0">Uploads Management</h3>

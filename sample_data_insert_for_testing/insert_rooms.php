@@ -1,5 +1,5 @@
 <?php
-require_once ___DIR___ . '/../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 function pick_owner(?int $owner_id): ?int {
   if ($owner_id && $owner_id > 0) return $owner_id;
@@ -59,7 +59,7 @@ function pick_room_type(): string {
 function ensure_dir(string $dir): void { if (!is_dir($dir)) { @mkdir($dir, 0775, true); } }
 
 function pick_sample_images(): array {
-  $srcDir = ___DIR___ . '/images/room_images';
+  $srcDir = __DIR__ . '/images/room_images';
   $files = @scandir($srcDir) ?: [];
   $imgs = [];
   foreach ($files as $f) {
@@ -74,7 +74,7 @@ function pick_sample_images(): array {
 }
 
 function copy_image_to_uploads(string $src, int $room_id, int $idx = 0): ?array {
-  $uploads = dirname(___DIR___) . '/uploads/rooms';
+  $uploads = dirname(__DIR__) . '/uploads/rooms';
   ensure_dir($uploads);
   $ext = pathinfo($src, PATHINFO_EXTENSION) ?: 'jpg';
   $name = 'room_' . $room_id . ($idx ? ('_' . $idx) : '') . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext);

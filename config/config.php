@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', ___DIR___ . '/../error/error.log');
+ini_set('error_log', __DIR__ . '/../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-    $f = ___DIR___ . '/../error/error.log';
+    $f = __DIR__ . '/../error/error.log';
     if (is_readable($f)) {
         $lines = 100; $data = '';
         $fp = fopen($f, 'r');
@@ -22,14 +22,14 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
     }
 }
 
-require_once ___DIR___ . '/security_bootstrap.php';
+require_once __DIR__ . '/security_bootstrap.php';
 // Base URL
 
 $base_url = 'http://localhost/rentallanka';
 
 // Centralize error logging to project log file
 try {
-    $logFile = dirname(___DIR___) . DIRECTORY_SEPARATOR . 'error' . DIRECTORY_SEPARATOR . 'error.log';
+    $logFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'error' . DIRECTORY_SEPARATOR . 'error.log';
     $logDir = dirname($logFile);
     if (!is_dir($logDir)) { @mkdir($logDir, 0775, true); }
     if (function_exists('ini_set')) {
@@ -76,7 +76,7 @@ if ($__session_status === PHP_SESSION_NONE) {
 
 // Global maintenance mode enforcement
 try {
-    $flagFile = dirname(___DIR___) . DIRECTORY_SEPARATOR . 'maintain.flag';
+    $flagFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'maintain.flag';
     if (is_file($flagFile)) {
         $isSuper = isset($_SESSION['super_admin_id']) && (int)$_SESSION['super_admin_id'] > 0;
         $path = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');

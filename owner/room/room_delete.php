@@ -1,10 +1,10 @@
  <?php
  ini_set('display_errors', 0);
  ini_set('log_errors', 1);
- ini_set('error_log', ___DIR___ . '/../../error/error.log');
+ ini_set('error_log', __DIR__ . '/../../error/error.log');
 
  if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-   $f = ___DIR___ . '/../../error/error.log';
+   $f = __DIR__ . '/../../error/error.log';
    if (is_readable($f)) {
      $lines = 100; $data = '';
      $fp = fopen($f, 'r');
@@ -22,8 +22,8 @@
    }
  }
 
- require_once ___DIR___ . '/../../public/includes/auth_guard.php';
- require_once ___DIR___ . '/../../config/config.php';
+ require_once __DIR__ . '/../../public/includes/auth_guard.php';
+ require_once __DIR__ . '/../../config/config.php';
 
 $uid = (int)($_SESSION['user']['user_id'] ?? 0);
 if ($uid <= 0) {
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             db()->commit();
 
             $prefix = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/rooms/';
-            $root = dirname(___DIR___, 2) . '/uploads/rooms/';
+            $root = dirname(__DIR__, 2) . '/uploads/rooms/';
             foreach ($imgs as $path) {
                 if (!$path) continue;
                 if (strpos($path, $prefix) === 0) {
@@ -171,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-<?php require_once ___DIR___ . '/../../public/includes/navbar.php'; ?>
+<?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
 <div class="container rl-container">
     <div class="rl-page-header">
         <h1 class="rl-page-title"><i class="bi bi-trash3"></i> Delete Room</h1>

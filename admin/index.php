@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', ___DIR___ . '/../error/error.log');
+ini_set('error_log', __DIR__ . '/../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = ___DIR___ . '/../error/error.log';
+  $f = __DIR__ . '/../error/error.log';
   if (is_readable($f)) {
     $lines = 100; $data = '';
     $fp = fopen($f, 'r');
@@ -22,7 +22,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   }
 }
 
-require_once ___DIR___ . '/../public/includes/auth_guard.php';
+require_once __DIR__ . '/../public/includes/auth_guard.php';
 require_role('admin'); ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,7 +43,7 @@ require_role('admin'); ?>
 </head>
 
 <body>
-  <?php require_once ___DIR___ . '/../public/includes/navbar.php'; ?>
+  <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
 
   <div class="container py-4">
     <div class="d-flex justify-content-center align-items-center mb-3">

@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', ___DIR___ . '/../../error/error.log');
+ini_set('error_log', __DIR__ . '/../../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = ___DIR___ . '/../../error/error.log';
+  $f = __DIR__ . '/../../error/error.log';
   if (is_readable($f)) {
     $lines = 100;
     $data = '';
@@ -33,9 +33,9 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   }
 }
 
-require_once ___DIR___ . '/../../public/includes/auth_guard.php';
+require_once __DIR__ . '/../../public/includes/auth_guard.php';
 require_role('admin');
-require_once ___DIR___ . '/../../config/cache.php';
+require_once __DIR__ . '/../../config/cache.php';
 
 // Filters
 $q = trim((string)($_GET['q'] ?? ''));
@@ -101,7 +101,7 @@ if ($cached !== null) {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
-<?php require_once ___DIR___ . '/../../public/includes/navbar.php'; ?>
+<?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Packages</h1>

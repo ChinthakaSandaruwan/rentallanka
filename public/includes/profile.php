@@ -1,9 +1,9 @@
 <?php
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', ___DIR___ . '/error.log');
+ini_set('error_log', __DIR__ . '/error.log');
 if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
-  $f = ___DIR___ . '/error.log';
+  $f = __DIR__ . '/error.log';
   if (is_file($f)) {
     $lines = @array_slice(@file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], -100);
     if (!headers_sent()) { header('Content-Type: text/plain'); }
@@ -14,7 +14,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   }
   exit;
 }
-require_once ___DIR___ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/config.php';
 
 $loggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
 if (!$loggedIn) {
@@ -81,16 +81,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     redirect_with_message($base_url . '/public/includes/profile.php', 'Invalid image', 'error');
                 }
                 $dir_map = [
-                    'admin' => ___DIR___ . '/../../uploads/admin_profile_photo',
-                    'owner' => ___DIR___ . '/../../uploads/owner_profile_photo',
-                    'customer' => ___DIR___ . '/../../uploads/user_profile_photo',
+                    'admin' => __DIR__ . '/../../uploads/admin_profile_photo',
+                    'owner' => __DIR__ . '/../../uploads/owner_profile_photo',
+                    'customer' => __DIR__ . '/../../uploads/user_profile_photo',
                 ];
-                $target_dir = $dir_map[$display['role']] ?? (___DIR___ . '/../../uploads/user_profile_photo');
+                $target_dir = $dir_map[$display['role']] ?? (__DIR__ . '/../../uploads/user_profile_photo');
                 if (!is_dir($target_dir)) { @mkdir($target_dir, 0777, true); }
                 $fname = 'u' . $uid . '_' . time() . '.' . $ext;
                 $dest = rtrim($target_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fname;
                 if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $dest)) {
-                    $rel_base = str_replace('\\', '/', str_replace(___DIR___ . '/../../', '', $target_dir));
+                    $rel_base = str_replace('\\', '/', str_replace(__DIR__ . '/../../', '', $target_dir));
                     $img_path = $rel_base . '/' . $fname;
                 }
             }
@@ -517,7 +517,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
-<?php require_once ___DIR___ . '/navbar.php'; ?>
+<?php require_once __DIR__ . '/navbar.php'; ?>
 <div class="container py-4">
   <div class="row justify-content-center">
     <div class="col-12 col-md-8 col-lg-6">

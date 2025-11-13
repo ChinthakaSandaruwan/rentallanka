@@ -1,5 +1,5 @@
 <?php
-require_once ___DIR___ . '/../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 function get_owners(): array {
   $rows = [];

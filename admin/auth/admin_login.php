@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', ___DIR___ . '/../../error/error.log');
+ini_set('error_log', __DIR__ . '/../../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-    $f = ___DIR___ . '/../../error/error.log';
+    $f = __DIR__ . '/../../error/error.log';
     if (is_readable($f)) {
         $lines = 100;
         $data = '';
@@ -33,8 +33,8 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
     }
 }
 
-require_once ___DIR___ . '/../../config/config.php';
-require_once ___DIR___ . '/../../config/otp_helper.php';
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/otp_helper.php';
 
 // If already logged in as admin (or super admin), send to admin dashboard
 $role = $_SESSION['role'] ?? '';
@@ -187,7 +187,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   </style>
 </head>
 <body class="bg-light">
-  <?php require_once ___DIR___ . '/../../public/includes/navbar.php'; ?>
+  <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
   <div class="container py-5">
     <div class="row justify-content-center">
       <div class="col-12 col-md-8 col-lg-5">

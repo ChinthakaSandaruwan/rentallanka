@@ -3,9 +3,9 @@
 // If maintenance flag is removed, send users back to home automatically.
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', ___DIR___ . '/error.log');
-require_once ___DIR___ . '/config/config.php';
-$flagFile = ___DIR___ . '/maintain.flag';
+ini_set('error_log', __DIR__ . '/error.log');
+require_once __DIR__ . '/config/config.php';
+$flagFile = __DIR__ . '/maintain.flag';
 if (!is_file($flagFile)) {
   if (!headers_sent()) { header('Location: ' . rtrim($base_url, '/') . '/'); }
   exit;
