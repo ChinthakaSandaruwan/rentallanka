@@ -23,9 +23,8 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
 }
 
 require_once __DIR__ . '/security_bootstrap.php';
-// Base URL
-
-$base_url = 'http://localhost/rentallanka';
+// Base URL (can be overridden via .env / environment)
+$base_url = getenv('BASE_URL') ?: 'http://localhost/rentallanka';
 
 // Centralize error logging to project log file
 try {
@@ -47,11 +46,11 @@ if (!function_exists('app_log')) {
 }
 
 // Database connection for XAMPP default setup
-// Adjust credentials as needed for your environment
-define('DB_HOST', '127.0.0.1');
-define('DB_USER', 'root');
-define('DB_PASS', '123321555');
-define('DB_NAME', 'rentallanka');
+// Values can be overridden via environment variables (.env)
+define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') ?: '123321555');
+define('DB_NAME', getenv('DB_NAME') ?: 'rentallanka');
 
 $smslenz_user_id = getenv('SMSLENZ_USER_ID') ?: '';
 $smslenz_api_key = getenv('SMSLENZ_API_KEY') ?: '';
