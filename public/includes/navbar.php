@@ -53,6 +53,8 @@ if ($loggedIn && !$isSuper) {
 // Active link helper
 $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
 ?>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <!-- Custom Navbar Styles -->
   <style>
     /* ===========================
@@ -486,10 +488,20 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
             <?php endif; ?>
 
             <?php if (in_array($role, ['owner','admin','customer'], true)): ?>
-              <button type="button" class="btn btn-outline-secondary btn-sm position-relative" id="nl-bell" data-bs-toggle="modal" data-bs-target="#nlModal" title="Notifications">
-                <i class="bi bi-bell"></i>
-                <span class="position-absolute top-0 end-0 translate-middle-y badge rounded-pill d-none" id="nl-badge">0</span>
-              </button>
+              <div class="dropdown" style="position: relative; z-index: 1052;">
+                <button type="button" class="btn btn-outline-secondary btn-sm position-relative" id="nl-bell" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                  <i class="bi bi-bell"></i>
+                  <span class="position-absolute top-0 end-0 translate-middle-y badge rounded-pill d-none" id="nl-badge">0</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end shadow" style="width: 500px; max-height: 600px; overflow-y: auto; z-index: 1060;" aria-labelledby="nl-bell">
+                  <div class="dropdown-header">
+                    <h6 class="mb-0">Notifications</h6>
+                  </div>
+                  <div id="nl-list" class="list-group list-group-flush" style="max-height: 500px; overflow-y: auto;"></div>
+                  <div class="dropdown-divider"></div>
+                  <a href="#" class="dropdown-item text-center small text-muted py-2" id="nl-close-btn">Close</a>
+                </div>
+              </div>
             <?php endif; ?>
 
             <?php
@@ -562,23 +574,9 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
     })();
   </script>
   
+  
+  <!-- Notifications removed from modal - now uses dropdown -->
   <?php if ($loggedIn && in_array($role, ['owner','admin','customer'], true)): ?>
-  <div class="modal fade" id="nlModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Notifications</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body p-0">
-          <div id="nl-list" class="list-group list-group-flush"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
   <script>
     (function(){
       const role = <?= json_encode($role) ?>;
@@ -619,16 +617,16 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
         items.forEach(it => {
           if (String(it.is_read) === '0' || it.is_read === 0) unread++;
           const readBtn = (String(it.is_read) === '0' || it.is_read === 0)
-            ? '<button class="btn btn-sm btn-outline-primary nl-mark" data-id="'+it.notification_id+'">Mark read</button>'
-            : '<span class="badge bg-secondary me-2">Read</span>';
-          const delBtn = '<button class="btn btn-sm btn-outline-danger nl-del ms-2" data-id="'+it.notification_id+'">Delete</button>';
+            ? '<button class="btn btn-sm btn-link nl-mark p-0" data-id="'+it.notification_id+'" title="Mark as read"><i class="bi bi-check-circle"></i></button>'
+            : '<span class="badge bg-secondary"><i class="bi bi-check-circle-fill"></i></span>';
+          const delBtn = '<button class="btn btn-sm btn-link text-danger nl-del p-0" data-id="'+it.notification_id+'" title="Delete"><i class="bi bi-trash"></i></button>';
           const row = document.createElement('div');
           row.className = 'list-group-item';
-          row.innerHTML = '<div class="d-flex justify-content-between align-items-start">'
-            + '<div class="me-2"><div class="fw-semibold">'+ (it.title || 'Notification') +'</div>'
+          row.innerHTML = '<div class="d-flex justify-content-between align-items-start gap-2">'
+            + '<div class="flex-grow-1"><div class="fw-semibold">'+ (it.title || 'Notification') +'</div>'
             + '<div class="small text-muted">'+ (it.created_at || '') +'</div>'
             + '<div class="small">'+ (it.message || '') +'</div></div>'
-            + '<div class="d-flex align-items-center">'+ readBtn + delBtn +'</div>'
+            + '<div class="d-flex align-items-center gap-2 flex-shrink-0">'+ readBtn + delBtn +'</div>'
             + '</div>';
           listEl.appendChild(row);
         });
@@ -690,7 +688,19 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       fetchCsrf().then(() => { load(); pollUnread(); });
       setInterval(load, 30000);
       setInterval(pollUnread, 10000);
-      document.addEventListener('shown.bs.modal', function(e){ if (e.target && e.target.id === 'nlModal') { load(); } });
+      
+      // Close dropdown on close button click
+      const closeBtn = document.getElementById('nl-close-btn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const bellBtn = document.getElementById('nl-bell');
+          if (bellBtn && window.bootstrap) {
+            const dropdown = window.bootstrap.Dropdown.getInstance(bellBtn);
+            if (dropdown) dropdown.hide();
+          }
+        });
+      }
     })();
   </script>
   <?php endif; ?>
