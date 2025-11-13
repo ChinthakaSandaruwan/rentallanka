@@ -508,11 +508,82 @@ function norm_url($p) {
     elBody.innerHTML = '<div class="p-4 text-center text-muted">Loading…</div>';
     const url = '<?php echo rtrim($base_url, '/'); ?>/public/includes/rent_property.php?id=' + encodeURIComponent(pid) + '&ajax=1';
     fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-      .then(r => r.text())
-      .then(html => { elBody.innerHTML = html; })
-      .catch(() => { elBody.innerHTML = '<div class="p-4 text-danger">Failed to load. Please try again.</div>'; });
+      .then(async (res) => {
+        // read text first to allow robust parsing even when server prepends/append unexpected chars
+        const text = await res.text();
+        // Remove BOM and trim
+        const cleaned = text.replace(/^\uFEFF/, '').trim();
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+
+        // If response looks like JSON (by content-type or first char), try to parse and handle
+        if (ct.includes('application/json') || cleaned.charAt(0) === '{' || cleaned.charAt(0) === '[') {
+          try {
+            const data = JSON.parse(cleaned);
+            if (data && data.status === 'error') {
+              // Handle error responses with beautiful alert
+              elBody.innerHTML = `
+                <div class="p-4">
+                  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <div class="d-flex align-items-start gap-3">
+                      <div style="font-size: 1.5rem;">⚠️</div>
+                      <div class="flex-grow-1">
+                        <h5 class="alert-heading mb-2">Authentication Required</h5>
+                        <p class="mb-2">${escapeHtml(data.message || 'An error occurred')}</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                          <a href="<?php echo rtrim($base_url, '/'); ?>/auth/login.php" class="btn btn-primary btn-sm">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                          </a>
+                          <a href="<?php echo rtrim($base_url, '/'); ?>/auth/register.php" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-person-plus me-2"></i>Create Account
+                          </a>
+                          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-2"></i>Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+              return;
+            }
+            // Not an error JSON - treat as HTML fragment if string, otherwise stringify
+            elBody.innerHTML = (typeof data === 'string') ? data : cleaned;
+            return;
+          } catch (parseErr) {
+            // fall through to treat as HTML below
+          }
+        }
+
+        // Default: insert response text as HTML
+        elBody.innerHTML = text;
+      })
+      .catch(() => {
+        elBody.innerHTML = `
+          <div class="p-4">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <div class="d-flex align-items-start gap-3">
+                <div style="font-size: 1.5rem;">❌</div>
+                <div class="flex-grow-1">
+                  <h5 class="alert-heading mb-2">Failed to Load</h5>
+                  <p class="mb-3">We couldn't load the rental form. Please try again.</p>
+                  <button type="button" class="btn btn-outline-warning btn-sm" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
     const m = new bootstrap.Modal(document.getElementById('rentPropertyModal'));
     m.show();
+  }
+  
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
   // Insert Rent button next to title area if property is available and viewer is not owner
   document.addEventListener('DOMContentLoaded', function(){

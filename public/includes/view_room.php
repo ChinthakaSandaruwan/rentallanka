@@ -648,8 +648,8 @@ function norm_url($p) {
   </div>
 </div>
 <!-- Rent Modal -->
-<div class="modal fade" id="rentModal" tabindex="-1" aria-labelledby="rentModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+<div class="modal fade" id="rentModal" tabindex="-1" aria-labelledby="rentModalLabel" aria-hidden="true" style="z-index: 1070;">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="rentModalLabel">Rent Room</h5>
@@ -665,6 +665,15 @@ function norm_url($p) {
   </div>
   </div>
 
+<style>
+  /* Ensure modal appears above navbar */
+  .modal {
+    z-index: 1070 !important;
+  }
+  .modal-backdrop {
+    z-index: 1065 !important;
+  }
+</style>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -672,6 +681,13 @@ function norm_url($p) {
     const modalEl = document.getElementById('rentModal');
     const modalBody = document.getElementById('rentModalBody');
     let bsModal = null;
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
     function showSpinner(){
       modalBody.innerHTML = '<div class="d-flex align-items-center gap-3 py-4 justify-content-center text-muted">'
         + '<div class="spinner-border" role="status" aria-hidden="true"></div>'
@@ -697,7 +713,7 @@ function norm_url($p) {
           try {
             const obj = JSON.parse(res);
             if (obj && obj.status === 'error') {
-              modalBody.innerHTML = '<div class="alert alert-danger">' + (obj.message || 'Failed to load form') + '</div>';
+              modalBody.innerHTML = '<div class="p-3"><div class="alert alert-danger alert-dismissible fade show" role="alert"><div class="d-flex align-items-start gap-3"><div style="font-size: 1.5rem;">⚠️</div><div class="flex-grow-1"><h5 class="alert-heading mb-2">Authentication Required</h5><p class="mb-2">' + escapeHtml(obj.message || 'Failed to load form') + '</p><div class="d-flex gap-2 flex-wrap"><a href="<?php echo rtrim($base_url, '/'); ?>/auth/login.php" class="btn btn-primary btn-sm"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</a><a href="<?php echo rtrim($base_url, '/'); ?>/auth/register.php" class="btn btn-outline-primary btn-sm"><i class="bi bi-person-plus me-2"></i>Create Account</a><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal"><i class="bi bi-x-circle me-2"></i>Close</button></div></div></div></div></div>';
               return;
             }
           } catch(_) {}
@@ -715,7 +731,7 @@ function norm_url($p) {
         error: function(xhr){
           let msg = 'Failed to load form.';
           try { const o = JSON.parse(xhr.responseText||''); if (o && o.message) msg = o.message; } catch(_){ }
-          modalBody.innerHTML = '<div class="alert alert-danger">' + msg + '</div>';
+          modalBody.innerHTML = '<div class="p-3"><div class="alert alert-warning alert-dismissible fade show" role="alert"><div class="d-flex align-items-start gap-3"><div style="font-size: 1.5rem;">❌</div><div class="flex-grow-1"><h5 class="alert-heading mb-2">Failed to Load</h5><p class="mb-3">' + escapeHtml(msg) + '</p><button type="button" class="btn btn-outline-warning btn-sm" data-bs-dismiss="modal"><i class="bi bi-x-circle me-2"></i>Close</button></div></div></div></div>';
         }
       });
     });
