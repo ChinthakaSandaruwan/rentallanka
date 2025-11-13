@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
+require_once ___DIR___ . '/../config/config.php';
 
 function get_owners(): array {
   $rows = [];
@@ -17,7 +17,7 @@ $owners = get_owners();
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Sample Data Generator</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style> body{padding:24px} .card{max-width:720px;margin:auto} </style>
   </head>

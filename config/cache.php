@@ -1,6 +1,6 @@
 <?php
 function app_cache_dir() {
-  $dir = __DIR__ . '/../uploads/cache';
+  $dir = ___DIR___ . '/../uploads/cache';
   if (!is_dir($dir)) {
     @mkdir($dir, 0777, true);
   }

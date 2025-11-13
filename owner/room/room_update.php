@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../../error/error.log');
+ini_set('error_log', ___DIR___ . '/../../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = __DIR__ . '/../../error/error.log';
+  $f = ___DIR___ . '/../../error/error.log';
   if (is_readable($f)) {
     $lines = 100; $data = '';
     $fp = fopen($f, 'r');
@@ -22,9 +22,9 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   }
 }
 
-require_once __DIR__ . '/../../public/includes/auth_guard.php';
+require_once ___DIR___ . '/../../public/includes/auth_guard.php';
 require_role('owner');
-require_once __DIR__ . '/../../config/config.php';
+require_once ___DIR___ . '/../../config/config.php';
 
 $uid = (int)($_SESSION['user']['user_id'] ?? 0);
 if ($uid <= 0) {
@@ -187,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           // Delete file if it belongs to uploads path
           if ($affected > 0) {
             $prefix = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/rooms/';
-            $root = dirname(__DIR__, 2) . '/uploads/rooms/';
+            $root = dirname(___DIR___, 2) . '/uploads/rooms/';
             if (strpos($path, $prefix) === 0) {
               $fname = substr($path, strlen($prefix));
               $full = $root . $fname;
@@ -283,7 +283,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // File uploads
-        $dir = dirname(__DIR__, 2) . '/uploads/rooms';
+        $dir = dirname(___DIR___, 2) . '/uploads/rooms';
         if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
 
         // Replace primary image if provided
@@ -327,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               // Try unlink old file
               if ($old) {
                 $prefix = rtrim($GLOBALS['base_url'] ?? '', '/') . '/uploads/rooms/';
-                $root = dirname(__DIR__, 2) . '/uploads/rooms/';
+                $root = dirname(___DIR___, 2) . '/uploads/rooms/';
                 if (strpos($old, $prefix) === 0) {
                   $fname = substr($old, strlen($prefix));
                   $full = $root . $fname;
@@ -416,7 +416,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Update Room</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -448,7 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
-<?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
+<?php require_once ___DIR___ . '/../../public/includes/navbar.php'; ?>
 <div class="container rl-container">
   <div class="rl-page-header">
     <h1 class="rl-page-title"><i class="bi bi-door-open"></i> Update Room</h1>

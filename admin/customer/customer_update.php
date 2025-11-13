@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../../error/error.log');
+ini_set('error_log', ___DIR___ . '/../../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = __DIR__ . '/../../error/error.log';
+  $f = ___DIR___ . '/../../error/error.log';
   if (is_readable($f)) {
     $lines = 100;
     $data = '';
@@ -33,7 +33,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   }
 }
 
-require_once __DIR__ . '/../../public/includes/auth_guard.php';
+require_once ___DIR___ . '/../../public/includes/auth_guard.php';
 require_role('admin');
 
 if (empty($_SESSION['csrf_token'])) {
@@ -88,12 +88,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (!in_array($ext, ['jpg','jpeg','png','webp'], true)) {
         $valid = false;
       } else {
-        $target_dir = __DIR__ . '/../../uploads/profile';
+        $target_dir = ___DIR___ . '/../../uploads/profile';
         if (!is_dir($target_dir)) { @mkdir($target_dir, 0777, true); }
         $fname = 'u' . $user_id . '_' . time() . '.' . $ext;
         $dest = rtrim($target_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fname;
         if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $dest)) {
-          $rel_base = str_replace('\\', '/', str_replace(__DIR__ . '/../../', '', $target_dir));
+          $rel_base = str_replace('\\', '/', str_replace(___DIR___ . '/../../', '', $target_dir));
           $img_path = $rel_base . '/' . $fname;
         } else {
           $valid = false;
@@ -173,12 +173,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Update Customer</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 </head>
 <body>
-  <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
+  <?php require_once ___DIR___ . '/../../public/includes/navbar.php'; ?>
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1 class="h4 mb-0">Update Customer</h1>

@@ -1,9 +1,9 @@
 <?php
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/error.log');
+ini_set('error_log', ___DIR___ . '/error.log');
 if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
-  $f = __DIR__ . '/error.log';
+  $f = ___DIR___ . '/error.log';
   if (is_file($f)) {
     $lines = @array_slice(@file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], -100);
     if (!headers_sent()) { header('Content-Type: text/plain'); }
@@ -14,7 +14,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   }
   exit;
 }
-require_once __DIR__ . '/../../config/config.php';
+require_once ___DIR___ . '/../../config/config.php';
 $isStandalone = (basename($_SERVER['SCRIPT_NAME'] ?? '') === 'search.php');
 
 $q = trim($_GET['q'] ?? '');
@@ -421,13 +421,13 @@ if (isset($_GET['ajax']) && ($_GET['action'] ?? '') === 'cities') {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Search</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-<?php require_once __DIR__ . '/navbar.php'; ?>
+<?php require_once ___DIR___ . '/navbar.php'; ?>
 <div class="container py-4">
 <?php endif; ?>
   <div class="mb-4 rl-search-shell p-3 p-md-4" role="search" aria-label="Property and room search">
@@ -501,8 +501,8 @@ if (isset($_GET['ajax']) && ($_GET['action'] ?? '') === 'cities') {
 
   <!-- Results are rendered by property.php and room.php sections on the page -->
   <?php if ($isStandalone): ?>
-    <?php include __DIR__ . '/property.php'; ?>
-    <?php include __DIR__ . '/room.php'; ?>
+    <?php include ___DIR___ . '/property.php'; ?>
+    <?php include ___DIR___ . '/room.php'; ?>
   <?php endif; ?>
 
 <script src="<?php echo htmlspecialchars($base_url . '/public/includes/js/search.js'); ?>" defer></script>

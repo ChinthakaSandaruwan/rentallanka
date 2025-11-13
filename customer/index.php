@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../error/error.log');
+ini_set('error_log', ___DIR___ . '/../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = __DIR__ . '/../error/error.log';
+  $f = ___DIR___ . '/../error/error.log';
   if (is_readable($f)) {
     $lines = 100; $data = '';
     $fp = fopen($f, 'r');
@@ -22,7 +22,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   }
 }
 
-require_once __DIR__ . '/../public/includes/auth_guard.php';
+require_once ___DIR___ . '/../public/includes/auth_guard.php';
 require_role('customer');
 ?>
 <!DOCTYPE html>
@@ -30,7 +30,7 @@ require_role('customer');
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Customer Dashboard</title>
 
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -75,7 +75,7 @@ require_role('customer');
 </head>
 
 <body>
-  <?php require_once __DIR__ . '/../public/includes/navbar.php'; ?>
+  <?php require_once ___DIR___ . '/../public/includes/navbar.php'; ?>
 
   <div class="container rl-container">
     <div class="rl-dashboard-header">

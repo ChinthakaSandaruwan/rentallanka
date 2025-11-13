@@ -12,7 +12,7 @@ header_remove('X-Powered-By');
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-$__log_dir = __DIR__ . '/../error';
+$__log_dir = ___DIR___ . '/../error';
 if (!is_dir($__log_dir)) { @mkdir($__log_dir, 0777, true); }
 $__log_file = $__log_dir . '/error.log';
 ini_set('error_log', $__log_file);

@@ -1,9 +1,9 @@
 <?php
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/error.log');
+ini_set('error_log', ___DIR___ . '/error.log');
 if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
-  $f = __DIR__ . '/error.log';
+  $f = ___DIR___ . '/error.log';
   if (is_file($f)) {
     $lines = @array_slice(@file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], -100);
     if (!headers_sent()) { header('Content-Type: text/plain'); }
@@ -14,7 +14,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   }
   exit;
 }
-require_once __DIR__ . '/../../config/config.php';
+require_once ___DIR___ . '/../../config/config.php';
 
 $loggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
 if (!$loggedIn) { redirect_with_message($base_url . '/auth/login.php', 'Please log in first', 'error'); }
@@ -29,7 +29,7 @@ $csrf = $_SESSION['csrf_token'];
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>My Notifications</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
@@ -37,7 +37,7 @@ $csrf = $_SESSION['csrf_token'];
   </style>
 </head>
 <body>
-<?php require_once __DIR__ . '/navbar.php'; ?>
+<?php require_once ___DIR___ . '/navbar.php'; ?>
 <div class="container py-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <div>

@@ -1,9 +1,9 @@
 <?php
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/error.log');
+ini_set('error_log', ___DIR___ . '/error.log');
 if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
-  $f = __DIR__ . '/error.log';
+  $f = ___DIR___ . '/error.log';
   if (is_file($f)) {
     $lines = @array_slice(@file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], -100);
     if (!headers_sent()) { header('Content-Type: text/plain'); }
@@ -14,7 +14,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   }
   exit;
 }
-require_once __DIR__ . '/../../config/config.php';
+require_once ___DIR___ . '/../../config/config.php';
 // Current user for wishlist state
 $uid = (int)($_SESSION['user']['user_id'] ?? 0);
 
@@ -278,7 +278,10 @@ $stmt->close();
 
 <section id="properties-section" class="rl-theme container rl-section">
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="h4 mb-0 fw-bold" style="color: var(--rl-text);"><i class="bi bi-house-door-fill">Properties</h2>
+    <h2 class="h4 mb-0 fw-bold d-flex align-items-center" style="color: var(--rl-text);">
+      <i class="bi bi-building me-2" aria-hidden="true"></i>
+      Properties
+    </h2>
   </div>
   <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3">
     <?php foreach ($items as $p): ?>

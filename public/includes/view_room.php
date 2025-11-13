@@ -1,9 +1,9 @@
 <?php
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/error.log');
+ini_set('error_log', ___DIR___ . '/error.log');
 if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
-  $f = __DIR__ . '/error.log';
+  $f = ___DIR___ . '/error.log';
   if (is_file($f)) {
     $lines = @array_slice(@file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], -100);
     if (!headers_sent()) { header('Content-Type: text/plain'); }
@@ -14,7 +14,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   }
   exit;
 }
-require_once __DIR__ . '/../../config/config.php';
+require_once ___DIR___ . '/../../config/config.php';
 
 $rid = (int)($_GET['id'] ?? 0);
 if ($rid <= 0) {
@@ -525,10 +525,10 @@ function norm_url($p) {
   </style>
 </head>
 <body>
-<?php require_once __DIR__ . '/navbar.php'; ?>
+<?php require_once ___DIR___ . '/navbar.php'; ?>
 <div class="container rl-container">
   <div class="row g-4">
-    <div class="col-12 col-lg-7">
+    <div class="col-12 col-lg-7 order-lg-2">
       <div class="card rl-card">
         <div class="card-header rl-card-header">Overview</div>
         <div class="card-body rl-card-body">
@@ -615,7 +615,7 @@ function norm_url($p) {
         </div>
       </div>
     </div>
-    <div class="col-12 col-lg-5">
+    <div class="col-12 col-lg-5 order-lg-1">
       <div class="card rl-card mb-3">
         <div class="card-header rl-card-header">Images</div>
         <div class="card-body rl-card-body">

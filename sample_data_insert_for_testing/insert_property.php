@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
+require_once ___DIR___ . '/../config/config.php';
 
 function pick_owner(?int $owner_id): ?int {
   if ($owner_id && $owner_id > 0) return $owner_id;
@@ -62,7 +62,7 @@ function pick_property_type(): string {
 function ensure_dir(string $dir): void { if (!is_dir($dir)) { @mkdir($dir, 0775, true); } }
 
 function pick_sample_images(): array {
-  $srcDir = __DIR__ . '/images/property_images';
+  $srcDir = ___DIR___ . '/images/property_images';
   $files = @scandir($srcDir) ?: [];
   $imgs = [];
   foreach ($files as $f) {
@@ -77,7 +77,7 @@ function pick_sample_images(): array {
 }
 
 function copy_image_to_uploads(string $src, int $prop_id, int $idx = 0): ?array {
-  $uploads = dirname(__DIR__) . '/uploads/properties';
+  $uploads = dirname(___DIR___) . '/uploads/properties';
   ensure_dir($uploads);
   $ext = pathinfo($src, PATHINFO_EXTENSION) ?: 'jpg';
   $name = 'prop_' . $prop_id . ($idx ? ('_' . $idx) : '') . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext);
@@ -156,7 +156,7 @@ for ($i=0; $i<$count; $i++) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Generated Properties</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="p-4">

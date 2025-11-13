@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../../error/error.log');
+ini_set('error_log', ___DIR___ . '/../../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = __DIR__ . '/../../error/error.log';
+  $f = ___DIR___ . '/../../error/error.log';
   if (is_readable($f)) {
     $lines = 100; $data = '';
     $fp = fopen($f, 'r');
@@ -22,8 +22,8 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   }
 }
 ?>
-<?php require_once __DIR__ . '/../../public/includes/auth_guard.php'; require_role('owner'); ?>
-<?php require_once __DIR__ . '/../../config/config.php'; ?>
+<?php require_once ___DIR___ . '/../../public/includes/auth_guard.php'; require_role('owner'); ?>
+<?php require_once ___DIR___ . '/../../config/config.php'; ?>
 <?php
   $uid = (int)($_SESSION['user']['user_id'] ?? 0);
   $alert = ['type' => '', 'msg' => ''];
@@ -63,7 +63,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
           $bought_package_id = (int)$ust->insert_id;
           $ust->close();
 
-          $slipDir = __DIR__ . '/../../uploads/package_slips';
+          $slipDir = ___DIR___ . '/../../uploads/package_slips';
           if (!is_dir($slipDir)) { @mkdir($slipDir, 0775, true); }
           $ext = pathinfo($_FILES['payment_slip']['name'], PATHINFO_EXTENSION);
           $fname = 'pkgslip_' . $bought_package_id . '_' . time() . '.' . preg_replace('/[^a-zA-Z0-9]/','', $ext);
@@ -132,7 +132,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Buy Advertising Packages</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -496,7 +496,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   </style>
 </head>
 <body>
-<?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
+<?php require_once ___DIR___ . '/../../public/includes/navbar.php'; ?>
 <div class="container rl-container">
   <div class="rl-page-header">
     <h1 class="rl-page-title"><i class="bi bi-bag-plus"></i> Buy Advertising Packages</h1>

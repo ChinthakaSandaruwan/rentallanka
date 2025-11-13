@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../error/error.log');
+ini_set('error_log', ___DIR___ . '/../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-    $f = __DIR__ . '/../error/error.log';
+    $f = ___DIR___ . '/../error/error.log';
     if (is_readable($f)) {
         $lines = 100; $data = '';
         $fp = fopen($f, 'r');
@@ -22,7 +22,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
     }
 }
 
-require_once __DIR__ . '/config.php';
+require_once ___DIR___ . '/config.php';
 
 if (!defined('OTP_MODE')) {
     define('OTP_MODE', 'development');
@@ -32,7 +32,7 @@ function sendOtp(string $phone, string $otp, ?string $message = null): void {
     $enabled = (int)setting_get('otp_enabled', '1');
     if ($enabled !== 1) {
         echo "<div class='alert alert-warning' role='alert' style='margin:10px 0;'>OTP is currently disabled. Please try again later.</div>";
-        @file_put_contents(__DIR__ . '/../error/otp_api.log', date('Y-m-d H:i:s') . ' -> OTP disabled, skipping send for phone=' . (string)$phone . PHP_EOL, FILE_APPEND);
+        @file_put_contents(___DIR___ . '/../error/otp_api.log', date('Y-m-d H:i:s') . ' -> OTP disabled, skipping send for phone=' . (string)$phone . PHP_EOL, FILE_APPEND);
         return;
     }
     $raw = $phone;
@@ -57,5 +57,5 @@ function sendOtp(string $phone, string $otp, ?string $message = null): void {
 
     $msg = $message ?? ("Your Rentallanka OTP is: " . $otp);
     $response = smslenz_send_sms($e164, $msg);
-    @file_put_contents(__DIR__ . '/../error/otp_api.log', date('Y-m-d H:i:s') . ' -> ' . json_encode($response, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND);
+    @file_put_contents(___DIR___ . '/../error/otp_api.log', date('Y-m-d H:i:s') . ' -> ' . json_encode($response, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND);
 }

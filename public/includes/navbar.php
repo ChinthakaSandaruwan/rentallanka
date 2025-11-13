@@ -1,9 +1,9 @@
 <?php
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/error.log');
+ini_set('error_log', ___DIR___ . '/error.log');
 if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
-  $f = __DIR__ . '/error.log';
+  $f = ___DIR___ . '/error.log';
   if (is_file($f)) {
     $lines = @array_slice(@file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], -100);
     if (!headers_sent()) { header('Content-Type: text/plain'); }
@@ -28,7 +28,7 @@ if ($loggedIn) {
     elseif ($role === 'owner') { $who = "I'm an Owner"; }
     elseif ($role === 'customer') { $who = "I'm a Customer"; }
 }
-require_once __DIR__ . '/../../config/config.php';
+require_once ___DIR___ . '/../../config/config.php';
 // Wishlist count for logged-in regular users
 $wlCount = 0;
 if ($loggedIn && !$isSuper) {
@@ -464,6 +464,19 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
                 elseif ($role === 'owner') { $dashUrl = $base_url . '/owner/index.php'; }
               }
             ?>
+
+            <?php if (in_array($role, ['owner','admin'], true)): ?>
+            <!-- Quick Create Dropdown (Property / Room) - appears to the left of Account -->
+            <div class="dropdown">
+              <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="createDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-plus-square"></i> Create
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="createDropdownBtn">
+                <li><a class="dropdown-item" href="<?= $base_url ?>/owner/property/property_create.php"><i class="bi bi-building-add me-2"></i>Property Create</a></li>
+                <li><a class="dropdown-item" href="<?= $base_url ?>/owner/room/room_create.php"><i class="bi bi-door-open me-2"></i>Room Create</a></li>
+              </ul>
+            </div>
+            <?php endif; ?>
 
             <div class="dropdown">
               <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="accountDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">

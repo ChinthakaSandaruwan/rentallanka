@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../error/error.log');
+ini_set('error_log', ___DIR___ . '/../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-    $f = __DIR__ . '/../error/error.log';
+    $f = ___DIR___ . '/../error/error.log';
     if (is_readable($f)) {
         $lines = 100; $data = '';
         $fp = fopen($f, 'r');
@@ -22,8 +22,8 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
     }
 }
 
-require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../config/otp_helper.php';
+require_once ___DIR___ . '/../config/config.php';
+require_once ___DIR___ . '/../config/otp_helper.php';
 
 function normalize_phone_07(string $phone): string {
     $p = preg_replace('/\D+/', '', $phone);
@@ -86,9 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Profile image removed from registration flow
             $profileUrl = null;
 
-            if (!$error) {
-                // Generate OTP and store required data in session (no DB writes yet)
-                $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            // Generate OTP and store required data in session (no DB writes yet)
+            $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                 $expiresAt = (new DateTime('+5 minutes'))->format('Y-m-d H:i:s');
 
                 $_SESSION['reg_stage'] = 'verify';
@@ -107,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['reg_dev_otp'] = $otp; // Store OTP for dev display
                 header('Location: ' . $_SERVER['PHP_SELF']);
                 exit;
-            }
         }
     } elseif ($action === 'verify') {
         $phone07 = $_SESSION['reg_phone'] ?? '';
@@ -145,7 +143,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         exit;
                     }
                 }
-                if (!$error) {
                 // Create user now that OTP is verified
                 try {
                     $status = 'active';
@@ -158,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Send registration success email (best-effort)
                     try {
                         if (!empty($email)) {
-                            require_once __DIR__ . '/../php_mailer/mailer.php';
+                            require_once ___DIR___ . '/../php_mailer/mailer.php';
                             $subject = 'Welcome to Rentallanka';
                             $nameTo = (string)$name;
                             $safeName = htmlspecialchars($nameTo ?: 'there', ENT_QUOTES, 'UTF-8');
@@ -229,7 +226,6 @@ HTML;
                     unset($_SESSION['reg_stage']);
                     header('Location: ' . $_SERVER['PHP_SELF']);
                     exit;
-                }
                 }
             }
         }

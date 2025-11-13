@@ -1,9 +1,9 @@
 <?php
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/error.log');
+ini_set('error_log', ___DIR___ . '/error.log');
 if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
-  $f = __DIR__ . '/error.log';
+  $f = ___DIR___ . '/error.log';
   if (is_file($f)) {
     $lines = @array_slice(@file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], -100);
     if (!headers_sent()) { header('Content-Type: text/plain'); }
@@ -14,7 +14,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   }
   exit;
 }
-require_once __DIR__ . '/../../config/config.php';
+require_once ___DIR___ . '/../../config/config.php';
 
 $loggedIn = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
 if (!$loggedIn) {
@@ -81,16 +81,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     redirect_with_message($base_url . '/public/includes/profile.php', 'Invalid image', 'error');
                 }
                 $dir_map = [
-                    'admin' => __DIR__ . '/../../uploads/admin_profile_photo',
-                    'owner' => __DIR__ . '/../../uploads/owner_profile_photo',
-                    'customer' => __DIR__ . '/../../uploads/user_profile_photo',
+                    'admin' => ___DIR___ . '/../../uploads/admin_profile_photo',
+                    'owner' => ___DIR___ . '/../../uploads/owner_profile_photo',
+                    'customer' => ___DIR___ . '/../../uploads/user_profile_photo',
                 ];
-                $target_dir = $dir_map[$display['role']] ?? (__DIR__ . '/../../uploads/user_profile_photo');
+                $target_dir = $dir_map[$display['role']] ?? (___DIR___ . '/../../uploads/user_profile_photo');
                 if (!is_dir($target_dir)) { @mkdir($target_dir, 0777, true); }
                 $fname = 'u' . $uid . '_' . time() . '.' . $ext;
                 $dest = rtrim($target_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fname;
                 if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $dest)) {
-                    $rel_base = str_replace('\\', '/', str_replace(__DIR__ . '/../../', '', $target_dir));
+                    $rel_base = str_replace('\\', '/', str_replace(___DIR___ . '/../../', '', $target_dir));
                     $img_path = $rel_base . '/' . $fname;
                 }
             }
@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Profile</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -517,7 +517,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
-<?php require_once __DIR__ . '/navbar.php'; ?>
+<?php require_once ___DIR___ . '/navbar.php'; ?>
 <div class="container py-4">
   <div class="row justify-content-center">
     <div class="col-12 col-md-8 col-lg-6">

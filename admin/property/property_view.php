@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../../error/error.log');
+ini_set('error_log', ___DIR___ . '/../../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = __DIR__ . '/../../error/error.log';
+  $f = ___DIR___ . '/../../error/error.log';
   if (is_readable($f)) {
     $lines = 100;
     $data = '';
@@ -33,7 +33,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   }
 }
 
-require_once __DIR__ . '/../../public/includes/auth_guard.php';
+require_once ___DIR___ . '/../../public/includes/auth_guard.php';
 require_role('admin');
 
 $allowed_status = ['pending','available','unavailable','rented'];
@@ -191,7 +191,7 @@ if (!$list_mode) {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="overflow-x-hidden">
-  <?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
+  <?php require_once ___DIR___ . '/../../public/includes/navbar.php'; ?>
   <div class="container py-4">
   <?php if (!$list_mode): ?>
     <div class="d-flex justify-content-between align-items-center mb-3">

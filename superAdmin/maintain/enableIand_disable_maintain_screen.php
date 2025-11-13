@@ -1,13 +1,13 @@
 <?php
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/../error.log');
+ini_set('error_log', ___DIR___ . '/../error.log');
 
 if ((function_exists('session_status') ? session_status() : PHP_SESSION_NONE) === PHP_SESSION_NONE) {
   session_start();
 }
 
-require_once dirname(__DIR__, 2) . '/config/config.php';
+require_once dirname(___DIR___, 2) . '/config/config.php';
 
 // Basic access guard: only allow super admin
 $isSuper = isset($_SESSION['super_admin_id']) && (int)$_SESSION['super_admin_id'] > 0;
@@ -21,7 +21,7 @@ if (!$isSuper) {
 if (empty($_SESSION['csrf_token'])) { $_SESSION['csrf_token'] = bin2hex(random_bytes(16)); }
 $csrf = $_SESSION['csrf_token'];
 
-$flagPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'maintain.flag';
+$flagPath = dirname(___DIR___, 2) . DIRECTORY_SEPARATOR . 'maintain.flag';
 $enabled = is_file($flagPath);
 $msg = '';
 
@@ -60,7 +60,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Maintenance Mode</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     :root { --rl-primary:#004E98; --rl-accent:#3A6EA5; --rl-dark:#FF6700; --rl-border:#E5E7EB; }

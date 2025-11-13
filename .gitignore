@@ -1,0 +1,6 @@
+.env
+/error/error.log
+/error/*.log
+/vendor/
+node_modules/
+.DS_Store

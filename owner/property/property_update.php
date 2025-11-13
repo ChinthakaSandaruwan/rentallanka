@@ -1,10 +1,10 @@
 <?php
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../../error/error.log');
+ini_set('error_log', ___DIR___ . '/../../error/error.log');
 
 if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
-  $f = __DIR__ . '/../../error/error.log';
+  $f = ___DIR___ . '/../../error/error.log';
   if (is_readable($f)) {
     $lines = 100; $data = '';
     $fp = fopen($f, 'r');
@@ -22,9 +22,9 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] == '1') {
   }
 }
 
-require_once __DIR__ . '/../../public/includes/auth_guard.php';
+require_once ___DIR___ . '/../../public/includes/auth_guard.php';
 require_role('owner');
-require_once __DIR__ . '/../../config/config.php';
+require_once ___DIR___ . '/../../config/config.php';
 
 $uid = (int)($_SESSION['user']['user_id'] ?? 0);
 if ($uid <= 0) {
@@ -141,10 +141,10 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $ci->close();
             if ($img) {
                 // delete file safely
-                $baseDir = realpath(dirname(__DIR__, 2) . '/uploads/properties') ?: '';
+                $baseDir = realpath(dirname(___DIR___, 2) . '/uploads/properties') ?: '';
                 $fname = basename(parse_url($img['image_path'], PHP_URL_PATH) ?? '');
                 if ($fname) {
-                    $full = dirname(__DIR__, 2) . '/uploads/properties/' . $fname;
+                    $full = dirname(___DIR___, 2) . '/uploads/properties/' . $fname;
                     $real = realpath($full) ?: '';
                     if ($real && $baseDir && strpos($real, $baseDir) === 0 && is_file($real)) { @unlink($real); }
                 }
@@ -277,7 +277,7 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
                         $imgSize = (int)($_FILES['image']['size'] ?? 0);
                         $imgInfo = @getimagesize($_FILES['image']['tmp_name']);
                         if ($imgSize > 0 && $imgSize <= 5242880 && $imgInfo !== false) {
-                            $dir = dirname(__DIR__, 2) . '/uploads/properties';
+                            $dir = dirname(___DIR___, 2) . '/uploads/properties';
                             if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                             $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
                             $ext = preg_replace('/[^a-zA-Z0-9]/','', $ext);
@@ -306,7 +306,7 @@ if (!$selection_mode && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             $gSize = (int)($_FILES['gallery_images']['size'][$i] ?? 0);
                             $gInfo = @getimagesize($_FILES['gallery_images']['tmp_name'][$i]);
                             if ($gSize <= 0 || $gSize > 5242880 || $gInfo === false) { continue; }
-                            $dir = dirname(__DIR__, 2) . '/uploads/properties';
+                            $dir = dirname(___DIR___, 2) . '/uploads/properties';
                             if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
                             $ext = pathinfo($_FILES['gallery_images']['name'][$i], PATHINFO_EXTENSION);
                             $ext = preg_replace('/[^a-zA-Z0-9]/','', $ext);
@@ -373,7 +373,7 @@ if (empty($flash)) { [$flash, $flash_type] = get_flash(); }
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Edit Property</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -416,7 +416,7 @@ if (empty($flash)) { [$flash, $flash_type] = get_flash(); }
   </style>
 </head>
 <body>
-<?php require_once __DIR__ . '/../../public/includes/navbar.php'; ?>
+<?php require_once ___DIR___ . '/../../public/includes/navbar.php'; ?>
 <div class="container rl-container">
   <div class="rl-page-header">
     <h1 class="rl-page-title"><i class="bi bi-building"></i> Edit Property</h1>

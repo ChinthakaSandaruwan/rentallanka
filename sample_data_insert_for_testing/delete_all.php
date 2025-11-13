@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
+require_once ___DIR___ . '/../config/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   header('Location: index.php');
@@ -16,7 +16,7 @@ if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $tok
 $errors = [];
 
 // Helper to remove files in a directory (non-recursive)
-function remove_dir_files(string $dir): void {
+function remove__DIR__files(string $dir): void {
   if (!is_dir($dir)) return;
   $h = @opendir($dir);
   if ($h === false) return;
@@ -30,10 +30,10 @@ function remove_dir_files(string $dir): void {
 
 try {
   // Remove uploaded images from disk
-  $roomsUpload = dirname(__DIR__) . '/uploads/rooms';
-  $propsUpload = dirname(__DIR__) . '/uploads/properties';
-  remove_dir_files($roomsUpload);
-  remove_dir_files($propsUpload);
+  $roomsUpload = dirname(___DIR___) . '/uploads/rooms';
+  $propsUpload = dirname(___DIR___) . '/uploads/properties';
+  remove__DIR__files($roomsUpload);
+  remove__DIR__files($propsUpload);
 
   // Begin DB cleanup
   db()->begin_transaction();
@@ -69,7 +69,7 @@ try {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rentallanka – Properties & Rooms for Rent in Sri Lanka</title>
+  <title>Delete All Sample Data</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="p-4">
