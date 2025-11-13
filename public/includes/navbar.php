@@ -29,18 +29,25 @@ if ($loggedIn) {
     elseif ($role === 'customer') { $who = "I'm a Customer"; }
 }
 require_once __DIR__ . '/../../config/config.php';
-// Wishlist count for logged-in regular users
+require_once __DIR__ . '/../../config/cache.php';
+
+// Wishlist count for logged-in regular users (cached for 30 seconds)
 $wlCount = 0;
 if ($loggedIn && !$isSuper) {
     $uid = (int)($_SESSION['user']['user_id'] ?? 0);
     if ($uid > 0) {
-        $st = db()->prepare('SELECT COUNT(*) AS c FROM wishlist WHERE customer_id = ?');
-        $st->bind_param('i', $uid);
-        $st->execute();
-        $rs = $st->get_result();
-        $row = $rs ? $rs->fetch_assoc() : ['c' => 0];
-        $wlCount = (int)($row['c'] ?? 0);
-        $st->close();
+        $cacheKey = 'wishlist_count_u' . $uid;
+        $wlCount = app_cache_get($cacheKey, 30);
+        if ($wlCount === null) {
+            $st = db()->prepare('SELECT COUNT(*) AS c FROM wishlist WHERE customer_id = ?');
+            $st->bind_param('i', $uid);
+            $st->execute();
+            $rs = $st->get_result();
+            $row = $rs ? $rs->fetch_assoc() : ['c' => 0];
+            $wlCount = (int)($row['c'] ?? 0);
+            $st->close();
+            app_cache_set($cacheKey, $wlCount);
+        }
     }
 }
 // Active link helper
@@ -60,7 +67,11 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       box-shadow: 0 4px 16px rgba(0, 78, 152, 0.08) !important;
       backdrop-filter: blur(10px);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      padding: 0.75rem 0;
+  padding: 0.75rem 1rem; /* small horizontal gutter without container */
+      /* Make navbar sticky on top and above hero/other stacking contexts */
+      position: sticky;
+      top: 0;
+      z-index: 3000 !important;
     }
     
     /* Navbar scrolled state */
@@ -256,6 +267,8 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       margin-top: 0.75rem;
       min-width: 220px;
       animation: dropdownFadeIn 0.3s ease;
+      /* Ensure dropdowns appear above hero carousel and other content */
+      z-index: 3050 !important;
     }
     
     @keyframes dropdownFadeIn {
@@ -315,10 +328,15 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       gap: 0.5rem;
     }
     
+    /* Dropdown container positioning */
+    .rl-navbar .dropdown {
+      position: relative;
+    }
+    
     /* Responsive Adjustments */
     @media (max-width: 991px) {
       .rl-navbar {
-        padding: 0.5rem 0;
+        padding: 0.5rem 0.75rem;
       }
       
       .rl-navbar .navbar-brand {
@@ -355,13 +373,31 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
         margin-top: 1rem;
         padding-top: 1rem;
         border-top: 2px solid #e2e8f0;
-        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: stretch !important;
         gap: 0.75rem;
       }
       
-      .rl-navbar .btn-primary {
-        flex: 1;
-        min-width: 120px;
+      .rl-navbar-actions .dropdown {
+        width: 100%;
+      }
+      
+      .rl-navbar-actions .dropdown .btn {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .rl-navbar .btn-primary,
+      .rl-navbar .btn-outline-primary,
+      .rl-navbar .btn-outline-secondary {
+        width: 100%;
+      }
+      
+      .rl-navbar .dropdown-menu {
+        width: 100%;
+        position: static !important;
+        transform: none !important;
+        margin-top: 0.5rem;
       }
     }
     
@@ -379,18 +415,9 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
         width: 100%;
       }
       
-      .rl-navbar-actions > * {
-        flex: 1;
-        min-width: 0;
-      }
-      
       .rl-navbar .btn {
         font-size: 0.875rem;
         padding: 0.5rem 0.75rem;
-      }
-      
-      .rl-navbar .dropdown-menu {
-        min-width: calc(100vw - 3rem);
       }
     }
     
@@ -408,8 +435,7 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
     }
   </style>
 
-  <nav class="navbar navbar-expand-lg rl-navbar sticky-top">
-    <div class="container">
+  <nav class="navbar navbar-expand-lg rl-navbar sticky-top" style="z-index: 1050;">
       <a class="navbar-brand" href="<?= $base_url ?>/"><i class="bi bi-house-door-fill"></i>Rentallanka</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
         data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
@@ -434,12 +460,12 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
 
         
         <!-- Right side -->
-        <div class="d-flex align-items-center gap-2 rl-navbar-actions">
+        <div class="d-flex align-items-center gap-2 rl-navbar-actions flex-wrap flex-lg-nowrap">
 
           <?php if (!$loggedIn): ?>
             <a href="<?= $base_url ?>/auth/login.php" class="btn btn-primary btn-sm">Login</a>
           <?php else: ?>
-                        <?php if (!$isSuper): ?>
+            <?php if (!$isSuper): ?>
               <a href="<?= $base_url ?>/public/includes/wish_list.php" class="btn btn-outline-primary btn-sm position-relative" title="Wishlist">
                 <i class="bi bi-heart"></i>
                 <?php if ($wlCount > 0): ?>
@@ -467,22 +493,22 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
 
             <?php if (in_array($role, ['owner','admin'], true)): ?>
             <!-- Quick Create Dropdown (Property / Room) - appears to the left of Account -->
-            <div class="dropdown">
+            <div class="dropdown" style="position: relative; z-index: 1052;">
               <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="createDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-plus-square"></i> Create
               </button>
-              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="createDropdownBtn">
+              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="createDropdownBtn" style="z-index: 1060;">
                 <li><a class="dropdown-item" href="<?= $base_url ?>/owner/property/property_create.php"><i class="bi bi-building-add me-2"></i>Property Create</a></li>
                 <li><a class="dropdown-item" href="<?= $base_url ?>/owner/room/room_create.php"><i class="bi bi-door-open me-2"></i>Room Create</a></li>
               </ul>
             </div>
             <?php endif; ?>
 
-            <div class="dropdown">
+            <div class="dropdown" style="position: relative; z-index: 1052;">
               <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="accountDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-person-circle"></i> Account
               </button>
-              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="accountDropdownBtn">
+              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="accountDropdownBtn" style="z-index: 1060;">
                 <li><a class="dropdown-item" href="<?= $dashUrl ?>"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
                 <?php if ($role === 'customer'): ?>
                 <li><hr class="dropdown-divider"></li>
@@ -496,9 +522,7 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
             </div>
           <?php endif; ?>
         </div>
-      </div>
-    </div>
-  </nav>
+      </nav>
 
   <!-- Navbar Scroll Effect Script -->
   <script>
@@ -518,8 +542,9 @@ $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/';
       });
     })();
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script>
+  <!-- Defer SweetAlert2 to not block page rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+  <script defer>
     (function(){
       try {
         const params = new URLSearchParams(window.location.search);

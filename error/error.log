@@ -1,2 +1,14 @@
 [13-Nov-2025 09:48:17 Asia/Colombo] [Unhandled Exception] Undefined constant "_DIR_"
 [13-Nov-2025 09:48:17 Asia/Colombo] [system_alert] Unhandled Exception: Undefined constant "_DIR_"
+[13-Nov-2025 10:06:33 Asia/Colombo] PHP Fatal error:  Cannot redeclare pick_owner() (previously declared in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_property.php:4) in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_rooms.php on line 12
+[13-Nov-2025 10:06:33 Asia/Colombo] [2025-11-13 10:06:33] Fatal Error: Cannot redeclare pick_owner() (previously declared in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_property.php:4) in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_rooms.php:12
+
+[13-Nov-2025 10:06:33 Asia/Colombo] [system_alert] Fatal Error: Cannot redeclare pick_owner() (previously declared in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_property.php:4) in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_rooms.php:12
+[13-Nov-2025 10:06:44 Asia/Colombo] PHP Fatal error:  Cannot redeclare pick_owner() (previously declared in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_property.php:4) in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_rooms.php on line 12
+[13-Nov-2025 10:06:44 Asia/Colombo] [2025-11-13 10:06:44] Fatal Error: Cannot redeclare pick_owner() (previously declared in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_property.php:4) in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_rooms.php:12
+
+[13-Nov-2025 10:06:44 Asia/Colombo] [system_alert] Fatal Error: Cannot redeclare pick_owner() (previously declared in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_property.php:4) in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_rooms.php:12
+[13-Nov-2025 10:08:22 Asia/Colombo] PHP Fatal error:  Cannot redeclare pick_owner() (previously declared in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_property.php:4) in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_rooms.php on line 12
+[13-Nov-2025 10:08:22 Asia/Colombo] [2025-11-13 10:08:22] Fatal Error: Cannot redeclare pick_owner() (previously declared in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_property.php:4) in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_rooms.php:12
+
+[13-Nov-2025 10:08:22 Asia/Colombo] [system_alert] Fatal Error: Cannot redeclare pick_owner() (previously declared in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_property.php:4) in C:\xampp\htdocs\rentallanka\sample_data_insert_for_testing\insert_rooms.php:12

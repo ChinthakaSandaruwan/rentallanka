@@ -15,9 +15,10 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   exit;
 }
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/cache.php';
+
 // Current user for wishlist state
 $uid = (int)($_SESSION['user']['user_id'] ?? 0);
-
 
 $q = trim($_GET['q'] ?? '');
 $province_id = (int)($_GET['province_id'] ?? 0);

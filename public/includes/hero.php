@@ -15,7 +15,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   exit;
 }
 ?>
-<div id="heroCarousel" class="carousel slide carousel-fade rl-hero" data-bs-ride="carousel">
+<div id="heroCarousel" class="carousel slide rl-hero" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="false">
   <!-- dont add buttons and a tags to navigate other pages -->
   <style>
     /* ===========================
@@ -37,14 +37,22 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
       position: relative;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      will-change: transform;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      z-index: 1;
     }
     
-    /* Carousel Items */
+    /* Carousel Items - Optimized for performance */
     .rl-hero .carousel-item {
       position: relative;
       height: 70vh;
       min-height: 500px;
       max-height: 800px;
+      transition: transform 0.6s ease-in-out;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
     }
     
     .rl-hero .hero-img {
@@ -52,9 +60,14 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
       height: 100%;
       object-fit: cover;
       object-position: center;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
     }
     
-    /* Gradient Overlay */
+    /* Gradient Overlay - Optimized */
     .rl-hero-overlay {
       position: absolute;
       top: 0;
@@ -69,6 +82,9 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
       );
       pointer-events: none;
       z-index: 1;
+      will-change: auto;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
     }
     
     /* Caption Container */
@@ -205,12 +221,20 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
       animation: pulse 2s ease-in-out infinite;
     }
     
+    /* Remove pulse animation - causes performance issues */
     @keyframes pulse {
       0%, 100% {
-        transform: scale(1);
+        transform: scale(1) translateZ(0);
       }
       50% {
-        transform: scale(1.05);
+        transform: scale(1.05) translateZ(0);
+      }
+    }
+    
+    /* Disable pulse on mobile for better performance */
+    @media (max-width: 767px) {
+      .rl-hero-badge {
+        animation: none;
       }
     }
     
@@ -315,8 +339,15 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
       .rl-hero .carousel-indicators button:hover {
         transform: none;
       }
+      
+      .rl-hero .carousel-item {
+        transition: none;
+      }
     }
   </style>
+  
+  <!-- Preload first hero image for instant display -->
+  <link rel="preload" as="image" href="https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080" fetchpriority="high">
   <div class="carousel-indicators">
     <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
     <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
@@ -325,7 +356,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   <div class="carousel-inner">
     <!-- Slide 1: Properties -->
     <div class="carousel-item active">
-      <img src="https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg" class="d-block w-100 hero-img" alt="Modern living room" loading="eager" decoding="async" fetchpriority="high">
+      <img src="https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080" class="d-block w-100 hero-img" alt="Modern living room" loading="eager" decoding="async" fetchpriority="high">
       <div class="rl-hero-overlay"></div>
       <div class="carousel-caption">
         <span class="rl-hero-badge">🏡 Premium Properties</span>
@@ -336,7 +367,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
     
     <!-- Slide 2: Rooms -->
     <div class="carousel-item">
-      <img src="https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg" class="d-block w-100 hero-img" alt="Cozy bedroom interior" loading="lazy" decoding="async">
+      <img src="https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080" class="d-block w-100 hero-img" alt="Cozy bedroom interior" loading="lazy" decoding="async">
       <div class="rl-hero-overlay"></div>
       <div class="carousel-caption">
         <span class="rl-hero-badge">🛏️ Comfortable Rooms</span>
@@ -347,7 +378,7 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
     
     <!-- Slide 3: Location -->
     <div class="carousel-item">
-      <img src="https://images.pexels.com/photos/2251247/pexels-photo-2251247.jpeg" class="d-block w-100 hero-img" alt="City apartment exterior" loading="lazy" decoding="async">
+      <img src="https://images.pexels.com/photos/2251247/pexels-photo-2251247.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080" class="d-block w-100 hero-img" alt="City apartment exterior" loading="lazy" decoding="async">
       <div class="rl-hero-overlay"></div>
       <div class="carousel-caption">
         <span class="rl-hero-badge">📍 Prime Locations</span>
@@ -357,3 +388,48 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
     </div>
   </div>
 </div>
+
+<script>
+  // Performance optimization for hero carousel
+  (function() {
+    'use strict';
+    
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHero);
+    } else {
+      initHero();
+    }
+    
+    function initHero() {
+      const carousel = document.getElementById('heroCarousel');
+      if (!carousel) return;
+      
+      // Preload next images on idle for smoother transitions
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(function() {
+          const images = carousel.querySelectorAll('img[loading="lazy"]');
+          images.forEach(function(img) {
+            const src = img.getAttribute('src');
+            if (src) {
+              const preload = new Image();
+              preload.src = src;
+            }
+          });
+        });
+      }
+      
+      // Pause carousel when page is hidden (performance)
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+          const bsCarousel = bootstrap.Carousel.getInstance(carousel);
+          if (bsCarousel) bsCarousel.pause();
+        }
+      });
+      
+      // Force hardware acceleration
+      carousel.style.transform = 'translateZ(0)';
+      carousel.style.backfaceVisibility = 'hidden';
+    }
+  })();
+</script>

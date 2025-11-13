@@ -30,12 +30,19 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
       ];
       require_once __DIR__ . '/public/includes/seo_meta.php';
     ?>
+    <!-- Preconnect to CDNs for faster loading -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://images.pexels.com" crossorigin>
-    <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" onload="this.onload=null;this.rel='stylesheet'">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="dns-prefetch" href="https://images.pexels.com">
+    
+    <!-- Critical CSS loaded synchronously -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    
+    <!-- Non-critical CSS loaded asynchronously -->
     <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" onload="this.onload=null;this.rel='stylesheet'">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"></noscript>
+    
     <!-- Mobile Overflow Fix -->
     <link href="<?php echo $base_url; ?>/public/assets/css/mobile-fix.css" rel="stylesheet">
     <style>
@@ -58,17 +65,59 @@ if (isset($_GET['show_errors']) && $_GET['show_errors'] === '1') {
   <body>
     <div id="rl-preloader" aria-hidden="true"><div class="rl-loader" role="status" aria-label="Loading"></div></div>
     <?php include 'public/includes/navbar.php'; ?>
+    
+    <!-- Hero Section (Full Width) -->
     <?php include 'public/includes/hero.php'; ?>
-    <br/>
-    <?php include 'public/includes/search.php'; ?>
-    <hr/>
-    <?php include 'public/includes/property.php'; ?>
-    <hr/>
-    <?php include 'public/includes/room.php'; ?>
-    <hr/>
+    
+    <!-- Main Content Container -->
+    <div class="container my-4">
+      <!-- Search Section -->
+      <?php include 'public/includes/search.php'; ?>
+      
+      <hr class="my-4">
+      
+      <!-- Properties Section -->
+      <?php include 'public/includes/property.php'; ?>
+      
+      <hr class="my-4">
+      
+      <!-- Rooms Section -->
+      <?php include 'public/includes/room.php'; ?>
+    </div>
+    
     <?php include 'public/includes/footer.php'; ?>
 
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <!-- Bootstrap JS must load synchronously first -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Force dropdown initialization after Bootstrap is loaded -->
+    <script>
+      (function() {
+        // Wait for Bootstrap to be fully loaded
+        var checkBootstrap = setInterval(function() {
+          if (typeof bootstrap !== 'undefined') {
+            clearInterval(checkBootstrap);
+            
+            // Initialize all dropdowns
+            var dropdownElementList = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+            dropdownElementList.forEach(function(dropdownToggleEl) {
+              new bootstrap.Dropdown(dropdownToggleEl, {
+                autoClose: true
+              });
+            });
+            
+            console.log('Dropdowns initialized:', dropdownElementList.length);
+          }
+        }, 50);
+        
+        // Timeout after 5 seconds
+        setTimeout(function() {
+          clearInterval(checkBootstrap);
+        }, 5000);
+      })();
+    </script>
+    
+    <!-- Performance optimization script (loads after Bootstrap) -->
+    <script src="<?php echo $base_url; ?>/public/assets/js/performance.js"></script>
   </body>
 </html>
